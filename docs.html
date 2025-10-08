@@ -19,7 +19,7 @@
 </main>
 
 <!-- Editor Modal -->
-<div id="dlg" class="modal">
+<div id="dlg" class="modal" aria-modal="true" role="dialog">
   <div class="box">
     <div class="card-h" style="justify-content:space-between"><b>Seite bearbeiten</b>
       <button class="btn sm" id="btnClose">Schließen</button></div>
@@ -41,7 +41,7 @@
 </div>
 
 <!-- Info Preview Modal -->
-<div id="pv" class="modal">
+<div id="pv" class="modal" aria-modal="true" role="dialog">
   <div class="box">
     <div class="card-h" style="justify-content:space-between"><b>Vorschau</b><button class="btn sm" id="pvClose">Schließen</button></div>
     <div class="card-b"><div id="pvBody" style="white-space:pre-wrap;color:#334155"></div></div>
@@ -60,6 +60,7 @@ const read=(k,f)=>{ try{const v=localStorage.getItem(k); return v?JSON.parse(v):
 const write=(k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} };
 function uid(){ try{return crypto.randomUUID()}catch(e){return Math.random().toString(36).slice(2)} }
 function md(s){return (s||'').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/_(.+?)_/g,'<i>$1</i>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/^\-\s(.+)$/gm,'• $1');}
+function lockBody(on){ if(on){ document.body.classList.add('modal-open'); window.scrollTo({top:0,behavior:'instant'}); } else { document.body.classList.remove('modal-open'); } }
 function seed(){ if(!localStorage.getItem(LS.DOCS)) write(LS.DOCS,[
   {id:uid(), title:'Start‑Check WT‑250', cat:'Maschine', fav:true,  tags:['checklist','safety'], text:'**Start‑Check**\n- Luft, Strom, Kühlmittel\n- Referenzfahrt\n- Not‑Aus testen'},
   {id:uid(), title:'Werkzeugwechsel VDI‑30', cat:'Setup',    fav:false, tags:['halter','wechsel'], text:'Schritte:\n1. Maschine stoppen\n2. Halter lösen\n3. Werkzeug spannen\n4. Nullpunkt prüfen'},
@@ -91,19 +92,20 @@ function draw(){
   box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));
   box.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{let arr=read(LS.DOCS,[]);const i=arr.findIndex(x=>x.id===b.dataset.fav);if(i>-1){arr[i].fav=!arr[i].fav;write(LS.DOCS,arr);draw();}});
   box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{let arr=read(LS.DOCS,[]);const i=arr.findIndex(x=>x.id===b.dataset.del);if(i>-1){arr.splice(i,1);write(LS.DOCS,arr);draw();}});
-  box.querySelectorAll('[data-info]').forEach(b=>b.onclick=()=>{const d=read(LS.DOCS,[]).find(x=>x.id===b.dataset.info); if(!d) return; $('#pvBody').innerHTML=md(d.text||''); $('#pv').setAttribute('open',''); });
+  box.querySelectorAll('[data-info]').forEach(b=>b.onclick=()=>{const d=read(LS.DOCS,[]).find(x=>x.id===b.dataset.info); if(!d) return; $('#pvBody').innerHTML=md(d.text||''); $('#pv').setAttribute('open',''); lockBody(true); });
 }
 function openEditor(id){
   const a=read(LS.DOCS,[]); const cur=id?a.find(x=>x.id===id):{id:uid(),title:'',cat:'',tags:[],fav:false,text:''};
-  const dlg=$('#dlg'); dlg.setAttribute('open',''); dlg.scrollTop=0;
+  const dlg=$('#dlg'); dlg.setAttribute('open',''); dlg.scrollTop=0; lockBody(true);
   const fm=$('#fm'); fm.title.value=cur.title||''; fm.cat.value=cur.cat||''; fm.tags.value=(cur.tags||[]).join(', '); fm.text.value=cur.text||'';
   $('#btnPreview').onclick=()=>{ $('#pvBody').innerHTML=md(fm.text.value); $('#pv').setAttribute('open',''); };
-  $('#pvClose').onclick=()=>$('#pv').removeAttribute('open');
-  $('#btnCancel').onclick=()=>dlg.removeAttribute('open'); $('#btnClose').onclick=()=>dlg.removeAttribute('open');
+  $('#pvClose').onclick=()=>{ $('#pv').removeAttribute('open'); };
+  const closeAll=()=>{ dlg.removeAttribute('open'); $('#pv').removeAttribute('open'); lockBody(false); };
+  $('#btnCancel').onclick=closeAll; $('#btnClose').onclick=closeAll;
   fm.onsubmit=(e)=>{e.preventDefault();
     const obj={id:cur.id,title:fm.title.value.trim(),cat:fm.cat.value.trim(),tags:fm.tags.value.split(',').map(x=>x.trim()).filter(Boolean),fav:cur.fav,text:fm.text.value};
     let arr=read(LS.DOCS,[]); const i=arr.findIndex(x=>x.id===obj.id); if(i>-1) arr[i]=obj; else arr.unshift(obj);
-    write(LS.DOCS,arr); dlg.removeAttribute('open'); draw();
+    write(LS.DOCS,arr); closeAll(); draw();
   };
 }
 document.addEventListener('DOMContentLoaded',()=>{
@@ -113,7 +115,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('onlyFav').onchange=draw;
   document.getElementById('btnExport').onclick=()=>{const blob=new Blob([JSON.stringify({docs:read(LS.DOCS,[])},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='docs-export.json';a.click();URL.revokeObjectURL(a.href);};
   document.getElementById('fileImport').onchange=(e)=>{const f=e.target.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{try{const j=JSON.parse(fr.result);if(j.docs)write(LS.DOCS,j.docs);draw();}catch(_){alert('Import Fehler');}};fr.readAsText(f);};
-  document.getElementById('pvClose').onclick=()=>document.getElementById('pv').removeAttribute('open');
+  document.getElementById('pvClose').onclick=()=>{document.getElementById('pv').removeAttribute('open'); lockBody(false);};
 });
 </script>
 </body></html>
