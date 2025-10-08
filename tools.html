@@ -12,9 +12,7 @@
       <span style="flex:1"></span>
       <button id="btnNew" class="btn">Neue Werkzeug</button>
     </div>
-    <div class="card-b">
-      <div id="list" class="card"></div>
-    </div>
+    <div class="card-b"><div id="list" class="card"></div></div>
   </section>
 </main>
 
@@ -52,10 +50,9 @@
         <label>Ressource %<input type="number" min="0" max="100" step="1" name="res" class="btn" value="100"></label>
         <label style="grid-column:1/-1">Notiz<textarea name="note" class="btn" rows="6"></textarea></label>
         <label>Foto<input type="file" accept="image/*" id="photoIn" class="btn"></label>
-        <img id="photoPrev" class="thumb" alt="Foto" />
+        <img id="photoPrev" class="thumb-list" alt="Foto" />
       </div>
       <div class="box foot">
-        <button type="button" class="btn sm" id="btnPreview">Vorschau</button>
         <span style="flex:1"></span>
         <button type="button" class="btn" id="btnCancel">Abbrechen</button>
         <button type="submit" class="btn">Speichern</button>
@@ -70,6 +67,9 @@
     <div class="card-h" style="justify-content:space-between"><b>Werkzeug</b><button class="btn sm" id="pvClose">Schließen</button></div>
     <div class="card-b"><div id="pvBody" style="white-space:pre-wrap;color:#334155"></div></div>
     <div class="box foot">
+      <button id="pvEdit" class="btn">Bearbeiten</button>
+      <button id="pvDel" class="btn-danger">Löschen</button>
+      <span style="flex:1"></span>
       <button id="toSetup" class="btn">+ Zu Setup hinzufügen</button>
     </div>
   </div>
@@ -104,21 +104,20 @@
 </div>
 
 <nav class="dock">
-  <a class="tab" href="index.html"><span>📊</span></a>
+  <a class="tab" href="index.html" ><span>📊</span></a>
   <a class="tab" href="tools.html" aria-current="page"><span>📦</span></a>
-  <a class="tab" href="docs.html"><span>📘</span></a>
+  <a class="tab" href="docs.html" ><span>📘</span></a>
 </nav>
 
 <script>
-const NS='ct_tools_v1', LS={TOOLS:NS+'_tools', CATS:NS+'_cats', SETUP:'ct_setup_live'};
+const NS='ct_tools_v2', LS={TOOLS:NS+'_tools', CATS:NS+'_cats', SETUP:'ct_setup_live'};
 const $=s=>document.querySelector(s);
 const read=(k,f)=>{ try{const v=localStorage.getItem(k); return v?JSON.parse(v):f }catch(e){ return f } };
 const write=(k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} };
 function uid(){ try{return crypto.randomUUID()}catch(e){return Math.random().toString(36).slice(2)} }
 function isoBadge(v){ if(!v) return ''; const c=v; return '<span class="iso '+c+'">'+c+'</span>'; }
-function imgTag(b64){ return b64 ? '<img class="thumb" src="'+b64+'" alt="foto"/>' : '<div class="thumb"></div>'; }
+function imgTag(b64){ return b64 ? '<img class="thumb-list" src="'+b64+'" alt="foto"/>' : '<div class="thumb-list"></div>'; }
 
-// Seed demo
 function seed(){
   if(!localStorage.getItem(LS.CATS)) write(LS.CATS, ['Halter','Platten','Zubehör']);
   if(!localStorage.getItem(LS.TOOLS)) write(LS.TOOLS,[
@@ -129,7 +128,7 @@ function seed(){
   if(!localStorage.getItem(LS.SETUP)) write(LS.SETUP,{RO:Array(12).fill(null), RU:Array(12).fill(null)});
 }
 
-let CAT=null; let CURRENT=null; // current filter / current tool for setup
+let CAT=null; let CURRENT=null;
 
 function draw(){
   const tools=read(LS.TOOLS,[]).filter(t=>!CAT || t.cat===CAT);
@@ -145,16 +144,12 @@ function draw(){
           </div>
         </div>
         <div style="display:flex;gap:.4rem;align-items:center">
-          <button class="btn sm" data-edit="${t.id}">Bearbeiten</button>
           <button class="btn sm" data-info="${t.id}">i</button>
-          <button class="btn-danger sm" data-del="${t.id}">Löschen</button>
         </div>
       </div>
     </div>
   `).join('') || '<div class="card-b small">Keine Werkzeuge</div>';
 
-  host.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));
-  host.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{let arr=read(LS.TOOLS,[]);const i=arr.findIndex(x=>x.id===b.dataset.del);if(i>-1){arr.splice(i,1);write(LS.TOOLS,arr);draw();}});
   host.querySelectorAll('[data-info]').forEach(b=>b.onclick=()=>openInfo(b.dataset.info));
   $('#curCat').innerHTML='• Kategorie: <b>'+ (CAT||'Alle') +'</b>';
 }
@@ -186,7 +181,7 @@ function openEditor(id){
   fm.name.value=cur.name||''; fm.code.value=cur.code||''; fm.iso.value=cur.iso||''; fm.maker.value=cur.maker||''; fm.res.value=cur.res||0; fm.note.value=cur.note||'';
   const photoPrev=$('#photoPrev'); photoPrev.src=cur.photo||'';
   $('#photoIn').onchange=(e)=>{ const f=e.target.files[0]; if(!f) return; const fr=new FileReader(); fr.onload=()=>{ photoPrev.src=fr.result; }; fr.readAsDataURL(f); };
-  $('#btnCancel').onclick=()=>dlg.removeAttribute('open'); $('#btnClose').onclick=()=>dlg.removeAttribute('open'); $('#btnPreview').onclick=()=>{};
+  $('#btnCancel').onclick=()=>dlg.removeAttribute('open'); $('#btnClose').onclick=()=>dlg.removeAttribute('open');
   fm.onsubmit=(ev)=>{ev.preventDefault();
     const obj={id:cur.id||uid(), name:fm.name.value.trim(), code:fm.code.value.trim(), cat:fm.cat.value.trim(), iso:fm.iso.value, maker:fm.maker.value.trim(), res:parseInt(fm.res.value||'0'), note:fm.note.value, photo:photoPrev.src||''};
     let arr=read(LS.TOOLS,[]); const i=arr.findIndex(x=>x.id===obj.id); if(i>-1) arr[i]=obj; else arr.unshift(obj);
@@ -195,22 +190,28 @@ function openEditor(id){
 }
 
 function openInfo(id){
-  const t=read(LS.TOOLS,[]).find(x=>x.id===id); if(!t) return;
-  CURRENT=t;
+  const t=read(LS.TOOLS,[]).find(x=>x.id===id); if(!t) return; CURRENT=t;
   const warn = (t.res||0)<=0 ? '<div class="warn">Achtung: Ressource = 0%</div>' : '';
-  $('#pvBody').innerHTML = `
-    <div style="display:flex;gap:.8rem;align-items:center;margin-bottom:.4rem">
-      ${imgTag(t.photo)}
-      <div><div style="font-weight:900">${t.name}</div><div class="small">${t.code}</div></div>
-    </div>
-    <div class="small">Kategorie: <b>${t.cat||'—'}</b></div>
-    <div class="small">ISO: ${isoBadge(t.iso)||'—'}</div>
-    <div class="small">Hersteller: ${t.maker||'—'}</div>
-    <div class="small">Ressource: ${t.res||0}%</div>
-    <div class="small" style="margin-top:.4rem;white-space:pre-wrap">${t.note||''}</div>
-    ${warn}
-  `;
+  $('#pvBody').innerHTML = [
+    '<div style="display:flex;gap:.8rem;align-items:center;margin-bottom:.4rem">',
+      '<img class="pv-img" src="'+(t.photo||'')+'" alt="Foto">',
+      '<div><div style="font-weight:900">'+(t.name||'')+'</div><div class="small">'+(t.code||'')+'</div></div>',
+    '</div>',
+    '<div class="small">Kategorie: <b>'+(t.cat||'—')+'</b></div>',
+    '<div class="small">ISO: '+(t.iso?('<span class="iso '+t.iso+'">'+t.iso+'</span>'):'—')+'</div>',
+    '<div class="small">Hersteller: '+(t.maker||'—')+'</div>',
+    '<div class="small">Ressource: '+((t.res||0))+'%</div>',
+    '<div class="small" style="margin-top:.4rem;white-space:pre-wrap">'+(t.note||'')+'</div>',
+    warn
+  ].join('');
   $('#pv').setAttribute('open','');
+
+  // Footer actions are bound here
+  document.getElementById('pvEdit').onclick=()=>{ document.getElementById('pv').removeAttribute('open'); openEditor(id); };
+  document.getElementById('pvDel').onclick=()=>{
+    let arr=read(LS.TOOLS,[]); const i=arr.findIndex(x=>x.id===id); if(i>-1){ arr.splice(i,1); write(LS.TOOLS,arr); }
+    document.getElementById('pv').removeAttribute('open'); draw();
+  };
 }
 
 function fillSetupPositions(plane){
@@ -222,40 +223,40 @@ function fillSetupPositions(plane){
     const used = !!slots[i-1];
     const opt = document.createElement('option');
     opt.value = String(i);
-    opt.textContent = used ? `${i} (belegt)` : `${i}`;
+    opt.textContent = used ? i+' (belegt)' : String(i);
     if(used) opt.disabled = true;
     sel.appendChild(opt);
   }
-  // preselect first free
   const free = slots.findIndex(x=>!x);
   sel.value = free>=0 ? String(free+1) : '1';
 }
 
 function openSetupDlg(){
-  $('#setupDlg').setAttribute('open','');
-  const fm=$('#setupFm');
-  const warn=$('#warnRes'); warn.textContent = (CURRENT.res||0)<=0 ? '⚠️ Bestand 0% — prüfen!' : '';
+  if(!CURRENT) return;
+  document.getElementById('setupDlg').setAttribute('open','');
+  const fm=document.getElementById('setupFm');
+  const warn=document.getElementById('warnRes'); warn.textContent = (CURRENT.res||0)<=0 ? '⚠️ Bestand 0% — prüfen!' : '';
   fillSetupPositions(fm.plane.value);
   fm.plane.onchange=()=>fillSetupPositions(fm.plane.value);
-  $('#setupCancel').onclick=()=>$('#setupDlg').removeAttribute('open');
-  $('#setupClose').onclick=()=>$('#setupDlg').removeAttribute('open');
+  document.getElementById('setupCancel').onclick=()=>document.getElementById('setupDlg').removeAttribute('open');
+  document.getElementById('setupClose').onclick=()=>document.getElementById('setupDlg').removeAttribute('open');
   fm.onsubmit=(e)=>{e.preventDefault();
     const plane=fm.plane.value; const pos=parseInt(fm.pos.value)-1;
     const setup=read(LS.SETUP,{RO:Array(12).fill(null), RU:Array(12).fill(null)});
     setup[plane][pos] = {toolId:CURRENT.id, name:CURRENT.name, code:CURRENT.code, iso:CURRENT.iso, maker:CURRENT.maker, op:fm.op.value, note:fm.note.value};
     write(LS.SETUP, setup);
-    $('#setupDlg').removeAttribute('open'); alert('Hinzugefügt zu '+plane+' Pos '+(pos+1));
+    document.getElementById('setupDlg').removeAttribute('open'); alert('Hinzugefügt zu '+plane+' Pos '+(pos+1));
   };
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
   seed(); draw(); drawCats();
-  $('#btnCats').onclick=()=>$('#cats').setAttribute('open','');
-  $('#catsClose').onclick=()=>$('#cats').removeAttribute('open');
-  $('#addCat').onclick=()=>{ const name=$('#newCatName').value.trim(); if(!name) return; let cats=read(LS.CATS,[]); if(!cats.includes(name)){ cats.push(name); write(LS.CATS,cats); $('#newCatName').value=''; drawCats(); } };
-  $('#btnNew').onclick=()=>openEditor(null);
-  $('#pvClose').onclick=()=>$('#pv').removeAttribute('open');
-  $('#toSetup').onclick=()=>{ $('#pv').removeAttribute('open'); openSetupDlg(); };
+  document.getElementById('btnCats').onclick=()=>document.getElementById('cats').setAttribute('open','');
+  document.getElementById('catsClose').onclick=()=>document.getElementById('cats').removeAttribute('open');
+  document.getElementById('addCat').onclick=()=>{ const name=document.getElementById('newCatName').value.trim(); if(!name) return; let cats=read(LS.CATS,[]); if(!cats.includes(name)){ cats.push(name); write(LS.CATS,cats); document.getElementById('newCatName').value=''; drawCats(); } };
+  document.getElementById('btnNew').onclick=()=>openEditor(null);
+  document.getElementById('pvClose').onclick=()=>document.getElementById('pv').removeAttribute('open');
+  document.getElementById('toSetup').onclick=()=>{ document.getElementById('pv').removeAttribute('open'); openSetupDlg(); };
 });
 </script>
 
