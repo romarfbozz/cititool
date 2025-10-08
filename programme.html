@@ -21,6 +21,7 @@
   <a class="tab" href="programme.html" aria-current="page"><span>💾</span></a>
   <a class="tab" href="setup.html" ><span>🛠️</span></a>
   <a class="tab" href="tools.html" ><span>📦</span></a>
+  <a class="tab" href="docs.html" ><span>📚</span></a>
 </nav>
 <div id="ed" class="modal">
   <div class="box">
@@ -45,13 +46,14 @@
     </div>
   </div>
 </div>
-
+<div class="toast" id="toast"></div>
 <script>
 const LS_PROG='ct_programs_v1', LS_TOOLS='ct_tools_v2_tools';
 const $=s=>document.querySelector(s);
 const read=(k,f)=>{ try{const v=localStorage.getItem(k); return v?JSON.parse(v):f }catch(e){ return f } };
 const write=(k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} };
 const uid=()=>Math.random().toString(36).slice(2,9);
+const toast=t=>{const el=document.getElementById('toast'); el.textContent=t; el.setAttribute('show',''); setTimeout(()=>el.removeAttribute('show'),1200);};
 
 function listLine(p){
   const count = (p.tools||[]).length;
@@ -71,45 +73,43 @@ function listLine(p){
 
 function redraw(){
   const progs = read(LS_PROG,[]);
-  $('#list').innerHTML = progs.length? progs.map(listLine).join('') : '<div class="small">Keine Programme. Klicke „Neue Programm“.</div>';
-  $('#list').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openEditor(b.dataset.open));
-  $('#list').querySelectorAll('[data-active]').forEach(b=>b.onclick=()=>{ localStorage.setItem('ct_setup_active_program', b.dataset.active); alert('Aktive Programm gesetzt. Öffne Setup.'); });
+  document.getElementById('list').innerHTML = progs.length? progs.map(listLine).join('') : '<div class="small">Keine Programme. Klicke „Neue Programm“.</div>';
+  document.getElementById('list').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openEditor(b.dataset.open));
+  document.getElementById('list').querySelectorAll('[data-active]').forEach(b=>b.onclick=()=>{ localStorage.setItem('ct_setup_active_program', b.dataset.active); toast('Aktives Programm gesetzt'); });
 }
 
 function openEditor(id){
   const progs = read(LS_PROG,[]);
   let p = progs.find(x=>x.id===id);
   if(!p){ p={id:uid(), nr:'', name:'', date:new Date().toISOString().slice(0,10), tools:[]}; progs.push(p); write(LS_PROG,progs); }
-  $('#pNr').value=p.nr||''; $('#pName').value=p.name||''; $('#pDate').value=p.date||'';
-  $('#edTitle').textContent = p.name||'Programm';
+  document.getElementById('pNr').value=p.nr||''; document.getElementById('pName').value=p.name||''; document.getElementById('pDate').value=p.date||'';
+  document.getElementById('edTitle').textContent = p.name||'Programm';
   drawTools(p);
-  $('#ed').setAttribute('open','');
-  $('#edClose').onclick=()=>$('#ed').removeAttribute('open');
-  $('#saveProg').onclick=()=>{
-    p.nr=$('#pNr').value.trim(); p.name=$('#pName').value.trim(); p.date=$('#pDate').value||'';
-    write(LS_PROG,progs); $('#ed').removeAttribute('open'); redraw();
+  document.getElementById('ed').setAttribute('open','');
+  document.getElementById('edClose').onclick=()=>document.getElementById('ed').removeAttribute('open');
+  document.getElementById('saveProg').onclick=()=>{
+    p.nr=document.getElementById('pNr').value.trim(); p.name=document.getElementById('pName').value.trim(); p.date=document.getElementById('pDate').value||'';
+    write(LS_PROG,progs); document.getElementById('ed').removeAttribute('open'); redraw();
   };
-  $('#delProg').onclick=()=>{
-    if(confirm('Programm löschen?')){ const arr=read(LS_PROG,[]).filter(x=>x.id!==p.id); write(LS_PROG,arr); $('#ed').removeAttribute('open'); redraw(); }
+  document.getElementById('delProg').onclick=()=>{
+    if(confirm('Programm löschen?')){ const arr=read(LS_PROG,[]).filter(x=>x.id!==p.id); write(LS_PROG,arr); document.getElementById('ed').removeAttribute('open'); redraw(); }
   };
-  $('#addTool').onclick=()=>addTool(p);
+  document.getElementById('addTool').onclick=()=>addTool(p);
 }
 
 function drawTools(p){
-  const host=$('#toolList'); const tools=p.tools||[];
+  const host=document.getElementById('toolList'); const tools=p.tools||[];
   host.innerHTML = tools.map((t,i)=>{
-    return `<div class="toolline">
-      <div style="display:flex;align-items:center;gap:.6rem">
-        ${t.photo?`<img class="thumb" src="${t.photo}">`:`<div class="thumb"></div>`}
-        <div>
-          <div style="font-weight:800">T${t.station||'?'} — ${t.name||''}</div>
-          <div class="small">${t.code||''} • ${t.maker||''}</div>
-          <div class="small">Op: ${t.op||'—'} • Note: ${t.note||'—'}</div>
+    return `<div class="item">
+      <div class="item-head">
+        <div style="min-width:0">
+          <div class="item-line">T${t.station||'?'} — ${t.name||''}</div>
+          <div class="item-sub">${t.code||''} • ${t.maker||''} • Op: ${t.op||'—'} • Note: ${t.note||'—'}</div>
         </div>
-      </div>
-      <div class="row">
-        <button class="btn sm" data-edit="${i}">✏️</button>
-        <button class="btn sm" data-del="${i}">🗑️</button>
+        <div class="row">
+          <button class="btn sm" data-edit="${i}">✏️</button>
+          <button class="btn sm" data-del="${i}">🗑️</button>
+        </div>
       </div>
     </div>`;
   }).join('') || '<div class="small">Keine Werkzeuge</div>';
@@ -119,7 +119,7 @@ function drawTools(p){
 
 function pickTool(){
   const list = read(LS_TOOLS,[]);
-  if(!list.length){ alert('Werkzeuge fehlen (ct_tools_v2_tools). Öffne Werkzeugschrank und füge Demo hinzu.'); return null; }
+  if(!list.length){ alert('Werkzeuge fehlen (Werkzeugschrank).'); return null; }
   const names = list.map((t,i)=>`${i+1}. ${t.name} / ${t.code}`).join('\n');
   const pick = prompt('Werkzeug wählen:\n'+names, '1'); if(pick===null) return null;
   const i = parseInt(pick)-1; if(isNaN(i)||i<0||i>=list.length){ alert('Falsche Nummer'); return null; }
@@ -131,9 +131,8 @@ function addTool(p){
   const station = parseInt(prompt('Station (1-12):','1')||'1'); if(isNaN(station)||station<1||station>12){ alert('1..12'); return; }
   if((p.tools||[]).some(x=>x.station===station)){ if(!confirm('Station belegt. Überschreiben?')) return; p.tools = p.tools.filter(x=>x.station!==station); }
   const op=prompt('Operation:','')||''; const note=prompt('Notiz:','')||'';
-  p.tools = p.tools || [];
-  p.tools.push({station, toolId:t.id, name:t.name, code:t.code, maker:t.maker, iso:t.iso, photo:t.photo||'', op, note});
-  write(LS_PROG, read(LS_PROG,[])); drawTools(p); redraw();
+  p.tools = p.tools || []; p.tools.push({station, toolId:t.id, name:t.name, code:t.code, maker:t.maker, iso:t.iso, photo:t.photo||'', op, note});
+  write(LS_PROG, read(LS_PROG,[])); drawTools(p); redraw(); 
 }
 
 function editTool(p,i){
