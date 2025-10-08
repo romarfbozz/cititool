@@ -1,0 +1,159 @@
+<!doctype html><html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CitiTool — Programme</title><link rel="stylesheet" href="style.css"></head><body>
+<header class="header"><div class="wrap row">
+  <div class="brand"><div class="logo">CT</div><div><div class="title">CitiTool Assistent</div><div class="sub">Programme</div></div></div>
+</div></header>
+<main class="wrap" style="padding:1rem">
+  <section class="card">
+    <div class="card-h">
+      <b>Programme</b>
+      <div class="row">
+        <button class="btn" id="newProg">➕ Neue Programm</button>
+        <button class="btn" id="seed">Demo laden</button>
+      </div>
+    </div>
+    <div class="card-b" id="list"></div>
+  </section>
+</main>
+<nav class="dock">
+  <a class="tab" href="index.html" ><span>📊</span></a>
+  <a class="tab" href="programme.html" aria-current="page"><span>💾</span></a>
+  <a class="tab" href="setup.html" ><span>🛠️</span></a>
+  <a class="tab" href="tools.html" ><span>📦</span></a>
+</nav>
+<div id="ed" class="modal">
+  <div class="box">
+    <div class="card-h"><b id="edTitle">Programm</b><button class="btn sm" id="edClose">Schließen</button></div>
+    <div class="card-b">
+      <div class="row">
+        <input id="pNr" class="input" placeholder="Programm-Nr" style="min-width:160px">
+        <input id="pName" class="input" placeholder="Name" style="flex:1;min-width:200px">
+        <input id="pDate" class="input" type="date">
+      </div>
+    </div>
+    <div class="card-b">
+      <div class="small" style="margin-bottom:6px">Werkzeuge</div>
+      <div id="toolList"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="addTool">Aus Werkzeugschrank hinzufügen</button>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn warn" id="delProg">Löschen</button>
+      <button class="btn" id="saveProg">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_PROG='ct_programs_v1', LS_TOOLS='ct_tools_v2_tools';
+const $=s=>document.querySelector(s);
+const read=(k,f)=>{ try{const v=localStorage.getItem(k); return v?JSON.parse(v):f }catch(e){ return f } };
+const write=(k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} };
+const uid=()=>Math.random().toString(36).slice(2,9);
+
+function listLine(p){
+  const count = (p.tools||[]).length;
+  return `<div class="item">
+    <div class="item-head">
+      <div style="min-width:0">
+        <div class="item-line">${p.nr||'—'} • ${p.name||'—'}</div>
+        <div class="item-sub">${p.date||'—'} • Tools: ${count}</div>
+      </div>
+      <div class="row">
+        <button class="btn sm" data-open="${p.id}">Öffnen</button>
+        <button class="btn sm" data-active="${p.id}">Als aktiv setzen</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function redraw(){
+  const progs = read(LS_PROG,[]);
+  $('#list').innerHTML = progs.length? progs.map(listLine).join('') : '<div class="small">Keine Programme. Klicke „Neue Programm“.</div>';
+  $('#list').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openEditor(b.dataset.open));
+  $('#list').querySelectorAll('[data-active]').forEach(b=>b.onclick=()=>{ localStorage.setItem('ct_setup_active_program', b.dataset.active); alert('Aktive Programm gesetzt. Öffne Setup.'); });
+}
+
+function openEditor(id){
+  const progs = read(LS_PROG,[]);
+  let p = progs.find(x=>x.id===id);
+  if(!p){ p={id:uid(), nr:'', name:'', date:new Date().toISOString().slice(0,10), tools:[]}; progs.push(p); write(LS_PROG,progs); }
+  $('#pNr').value=p.nr||''; $('#pName').value=p.name||''; $('#pDate').value=p.date||'';
+  $('#edTitle').textContent = p.name||'Programm';
+  drawTools(p);
+  $('#ed').setAttribute('open','');
+  $('#edClose').onclick=()=>$('#ed').removeAttribute('open');
+  $('#saveProg').onclick=()=>{
+    p.nr=$('#pNr').value.trim(); p.name=$('#pName').value.trim(); p.date=$('#pDate').value||'';
+    write(LS_PROG,progs); $('#ed').removeAttribute('open'); redraw();
+  };
+  $('#delProg').onclick=()=>{
+    if(confirm('Programm löschen?')){ const arr=read(LS_PROG,[]).filter(x=>x.id!==p.id); write(LS_PROG,arr); $('#ed').removeAttribute('open'); redraw(); }
+  };
+  $('#addTool').onclick=()=>addTool(p);
+}
+
+function drawTools(p){
+  const host=$('#toolList'); const tools=p.tools||[];
+  host.innerHTML = tools.map((t,i)=>{
+    return `<div class="toolline">
+      <div style="display:flex;align-items:center;gap:.6rem">
+        ${t.photo?`<img class="thumb" src="${t.photo}">`:`<div class="thumb"></div>`}
+        <div>
+          <div style="font-weight:800">T${t.station||'?'} — ${t.name||''}</div>
+          <div class="small">${t.code||''} • ${t.maker||''}</div>
+          <div class="small">Op: ${t.op||'—'} • Note: ${t.note||'—'}</div>
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn sm" data-edit="${i}">✏️</button>
+        <button class="btn sm" data-del="${i}">🗑️</button>
+      </div>
+    </div>`;
+  }).join('') || '<div class="small">Keine Werkzeuge</div>';
+  host.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editTool(p, parseInt(b.dataset.edit)));
+  host.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ p.tools.splice(parseInt(b.dataset.del),1); write(LS_PROG,read(LS_PROG,[])); drawTools(p); redraw(); });
+}
+
+function pickTool(){
+  const list = read(LS_TOOLS,[]);
+  if(!list.length){ alert('Werkzeuge fehlen (ct_tools_v2_tools). Öffne Werkzeugschrank und füge Demo hinzu.'); return null; }
+  const names = list.map((t,i)=>`${i+1}. ${t.name} / ${t.code}`).join('\n');
+  const pick = prompt('Werkzeug wählen:\n'+names, '1'); if(pick===null) return null;
+  const i = parseInt(pick)-1; if(isNaN(i)||i<0||i>=list.length){ alert('Falsche Nummer'); return null; }
+  return list[i];
+}
+
+function addTool(p){
+  const t = pickTool(); if(!t) return;
+  const station = parseInt(prompt('Station (1-12):','1')||'1'); if(isNaN(station)||station<1||station>12){ alert('1..12'); return; }
+  if((p.tools||[]).some(x=>x.station===station)){ if(!confirm('Station belegt. Überschreiben?')) return; p.tools = p.tools.filter(x=>x.station!==station); }
+  const op=prompt('Operation:','')||''; const note=prompt('Notiz:','')||'';
+  p.tools = p.tools || [];
+  p.tools.push({station, toolId:t.id, name:t.name, code:t.code, maker:t.maker, iso:t.iso, photo:t.photo||'', op, note});
+  write(LS_PROG, read(LS_PROG,[])); drawTools(p); redraw();
+}
+
+function editTool(p,i){
+  const t = p.tools[i]; if(!t) return;
+  const station = parseInt(prompt('Station (1-12):', String(t.station))||String(t.station)); if(isNaN(station)||station<1||station>12){ alert('1..12'); return; }
+  const op=prompt('Operation:', t.op||'')||''; const note=prompt('Notiz:', t.note||'')||'';
+  t.station=station; t.op=op; t.note=note; write(LS_PROG, read(LS_PROG,[])); drawTools(p); redraw();
+}
+
+function seedDemo(){
+  if(read(LS_PROG,[]).length) { if(!confirm('Demo hinzufügen? (Bestehende bleiben)')) return; }
+  const p1={id:uid(), nr:'P-5401', name:'Flansch RO54', date:new Date().toISOString().slice(0,10), tools:[]};
+  const p2={id:uid(), nr:'P-5502', name:'Halbring RU55', date:new Date().toISOString().slice(0,10), tools:[]};
+  const arr=read(LS_PROG,[]); arr.push(p1,p2); write(LS_PROG,arr); redraw();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  redraw();
+  document.getElementById('newProg').onclick=()=>openEditor(uid());
+  document.getElementById('seed').onclick=seedDemo;
+});
+</script>
+</body></html>

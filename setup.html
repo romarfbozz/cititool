@@ -1,28 +1,90 @@
-<!doctype html><html lang='de'><head>
-<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
-<title>CitiTool — Setup</title><link rel='stylesheet' href='style.css'><script defer src='app.js'></script></head><body>
-<div id="splash" class="splash"><div class="card"><div class="logo">CT</div><div class="brand-big">CitiTool Assistent</div><div class="brand-sub">Lädt…</div></div></div>
-<header class="header">
-  <div class="wrap row">
-    <div class="brand">
-      <div class="logo">CT</div>
-      <div><div class="title">CitiTool Assistent</div><div class="sub">Setup</div></div>
-    </div>
-    <div style="margin-left:auto"><!-- right controls slot --></div>
-  </div>
-</header>
+<!doctype html><html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CitiTool — Setup Planner</title><link rel="stylesheet" href="style.css"></head><body>
+<header class="header"><div class="wrap row">
+  <div class="brand"><div class="logo">CT</div><div><div class="title">CitiTool Assistent</div><div class="sub">Setup Planner</div></div></div>
+</div></header>
 <main class="wrap" style="padding:1rem">
-  <section class="card"><div class="card-h"><b>Setup</b></div>
-    <div class="card-b muted">Platzhalter — Modul folgt nach „Dokumentation“.</div>
+  <section class="card">
+    <div class="card-h" style="justify-content:space-between;gap:.5rem;flex-wrap:wrap">
+      <div>
+        <button class="btn" id="tabRO" aria-pressed="true">RO (G54)</button>
+        <button class="btn" id="tabRU" aria-pressed="false">RU (G55)</button>
+      </div>
+      <div>
+        <button class="btn" id="btnClear">Alles leeren</button>
+      </div>
+    </div>
+    <div class="card-b">
+      <div id="grid" class="grid"></div>
+    </div>
   </section>
 </main>
 <nav class="dock">
   <a class="tab" href="index.html" ><span>📊</span></a>
+  <a class="tab" href="programme.html" ><span>💾</span></a>
   <a class="tab" href="setup.html" aria-current="page"><span>🛠️</span></a>
   <a class="tab" href="tools.html" ><span>📦</span></a>
-  <a class="tab" href="calc.html" ><span>🧮</span></a>
-  <a class="tab" href="fasen.html" ><span>✂️</span></a>
-  <a class="tab" href="docs.html" ><span>📘</span></a>
-  <a class="tab" href="settings.html" ><span>⚙️</span></a>
 </nav>
+<div id="pv" class="modal-setup" aria-modal="true" role="dialog">
+  <div class="box-setup">
+    <div class="card-h" style="justify-content:space-between"><b>Station</b><button class="btn sm" id="pvClose">Schließen</button></div>
+    <div class="card-b"><div id="pvBody" style="white-space:pre-wrap;color:#334155"></div></div>
+    <div class="card-b" style="border-top:1px solid var(--border);display:flex;gap:.5rem;justify-content:flex-end">
+      <button id="pvEdit" class="btn">Bearbeiten</button>
+      <button id="pvDel" class="btn warn">Entfernen</button>
+    </div>
+  </div>
+</div>
+<script>
+const LS_SETUP='ct_setup_live', LS_TOOLS='ct_tools_v2_tools';
+const $=s=>document.querySelector(s);
+const read=(k,f)=>{ try{const v=localStorage.getItem(k); return v?JSON.parse(v):f }catch(e){ return f } };
+const write=(k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} };
+if(!localStorage.getItem(LS_SETUP)) write(LS_SETUP,{RO:Array(12).fill(null), RU:Array(12).fill(null)});
+let PLANE='RO';
+function thumb(src){ return src?('<img class="thumb" src="'+src+'" alt="thumb">'):'<div class="thumb"></div>'; }
+function draw(){
+  const dat = read(LS_SETUP,{RO:Array(12).fill(null), RU:Array(12).fill(null)})[PLANE];
+  const tools = read(LS_TOOLS,[]);
+  const host = $('#grid');
+  host.innerHTML = dat.map((s,idx)=>{
+    if(!s){ return `<div class='card'><div class='card-b'><div style='display:flex;justify-content:space-between;align-items:center'><b>Station ${idx+1}</b><button class='btn sm' data-add='${idx}'>+ Hinzufügen</button></div><div class='small'>frei</div></div></div>`; }
+    const t = tools.find(x=>x.id===s.toolId)||s;
+    return `<div class='card'><div class='card-b'><div style='display:flex;justify-content:space-between;align-items:center'><b>Station ${idx+1}</b><button class='btn sm' data-info='${idx}'>i</button></div><div style='display:flex;align-items:center;gap:.6rem;margin-top:.4rem'>${thumb(t.photo||'')}<div><div style='font-weight:800'>${t.name||'—'}</div><div class='small'>${t.code||'—'} • ${t.maker||'—'}</div></div></div></div></div>`;
+  }).join('');
+  host.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>edit(parseInt(b.dataset.add), null));
+  host.querySelectorAll('[data-info]').forEach(b=>b.onclick=()=>openInfo(parseInt(b.dataset.info)));
+}
+function pickTool(){
+  const tools = read(LS_TOOLS,[]);
+  if(!tools.length){ alert('Werkzeuge fehlen (ct_tools_v2_tools).'); return null; }
+  const names = tools.map((t,i)=>`${i+1}. ${t.name} / ${t.code}`).join('\n');
+  let pick = prompt('Werkzeug wählen:\n'+names, '1'); if(pick===null) return null; const i=parseInt(pick)-1;
+  if(isNaN(i)||i<0||i>=tools.length){ alert('Falsche Nummer'); return null; }
+  return tools[i];
+}
+function edit(index, cur){
+  const t = pickTool(); if(!t) return;
+  const op=prompt('Operation:',cur?(cur.op||''):'')||''; const note=prompt('Notiz:',cur?(cur.note||''):'')||'';
+  const setup=read(LS_SETUP,{RO:Array(12).fill(null), RU:Array(12).fill(null)});
+  if(setup[PLANE].some((x,id)=>x && x.toolId===t.id && id!==index)){ if(!confirm('Werkzeug bereits vorhanden. Trotzdem?')) return; }
+  setup[PLANE][index]={toolId:t.id,name:t.name,code:t.code,iso:t.iso,maker:t.maker,op,note,photo:t.photo||''}; write(LS_SETUP,setup); draw();
+}
+function openInfo(index){
+  const setup=read(LS_SETUP,{RO:Array(12).fill(null), RU:Array(12).fill(null)}); const s=setup[PLANE][index];
+  const tools=read(LS_TOOLS,[]); const t=s?(tools.find(x=>x.id===s.toolId)||s):null; if(!t) return;
+  document.getElementById('pvBody').innerHTML = ['<div style="display:flex;gap:.8rem;align-items:center;margin-bottom:.4rem">','<img class="pv-img" style="width:180px;height:180px;border-radius:12px;border:1px solid var(--border);object-fit:cover;background:#f8fafc" src="'+(t.photo||'')+'" alt="Foto">','<div><div style="font-weight:900">'+(t.name||'')+'</div><div class="small">'+(t.code||'')+'</div></div>','</div>','<div class="small">ISO: '+(t.iso||'—')+'</div>','<div class="small">Operation: '+(s.op||'—')+'</div>','<div class="small">Notiz: '+(s.note||'—')+'</div>'].join('');
+  document.getElementById('pv').setAttribute('open','');
+  document.getElementById('pvEdit').onclick=()=>{ document.getElementById('pv').removeAttribute('open'); edit(index,s); };
+  document.getElementById('pvDel').onclick=()=>{ const u=read(LS_SETUP,{RO:[],RU:[]}); u[PLANE][index]=null; write(LS_SETUP,u); document.getElementById('pv').removeAttribute('open'); draw(); };
+  document.getElementById('pvClose').onclick=()=>{ document.getElementById('pv').removeAttribute('open'); };
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  draw();
+  document.getElementById('tabRO').onclick=()=>{PLANE='RO'; draw(); document.getElementById('tabRO').setAttribute('aria-pressed','true'); document.getElementById('tabRU').setAttribute('aria-pressed','false');};
+  document.getElementById('tabRU').onclick=()=>{PLANE='RU'; draw(); document.getElementById('tabRU').setAttribute('aria-pressed','true'); document.getElementById('tabRO').setAttribute('aria-pressed','false');};
+  document.getElementById('btnClear').onclick=()=>{ if(confirm('Alles in '+PLANE+' leeren?')){ const s=read(LS_SETUP,{RO:[],RU:[]}); s[PLANE]=Array(12).fill(null); write(LS_SETUP,s); draw(); } };
+});
+</script>
 </body></html>
