@@ -1,0 +1,92 @@
+
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CitiTool — Dokumentation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="header">
+  <div class="wrap row">
+    <div class="brand">
+      <div class="logo">CT</div>
+      <div>
+        <div class="title">CitiTool Assistent</div>
+        <div class="sub">Dokumentation</div>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:.4rem">
+      <button class="btn" id="btnFilter">Filter</button>
+      <button class="btn-solid" id="btnNew">Neue Seite</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" style="padding:1rem">
+  <section class="card">
+    <div class="card-h">
+      <input id="q" class="btn" placeholder="Suchen… (Titel, Tags, Text)" style="flex:1;min-width:120px">
+      <label class="btn" style="display:inline-flex;gap:.45rem;align-items:center"><input id="onlyFav" type="checkbox"> Nur Favoriten</label>
+      <button id="btnExport" class="btn">Export</button>
+      <label class="btn">Import<input id="fileImport" type="file" accept="application/json" style="display:none"></label>
+    </div>
+    <div class="card-b"><div id="list" class="card"></div></div>
+  </section>
+</main>
+
+<footer class="wrap" style="padding:2rem 0 5.6rem;color:#64748b">© <span id="y"></span> CitiTool • Docs‑Module v1</footer>
+
+<!-- Drawer -->
+<div id="drawer" class="drawer">
+  <div class="mask" onclick="this.parentElement.removeAttribute('open')"></div>
+  <div class="sht">
+    <div class="hdr"><b>Kategorien</b><button class="btn sm" onclick="this.closest('.drawer').removeAttribute('open')">Schließen</button></div>
+    <div class="sub small" style="margin-bottom:6px">Aktuell: <span id="catSel" data-value="ALLE">Alle Kategorien</span></div>
+    <div id="catList" class="list" style="margin-bottom:10px"></div>
+    <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+      <button id="catNew" class="btn sm">Neu</button>
+      <button id="catRename" class="btn sm">Umbenennen</button>
+      <button id="catDel" class="btn-danger sm">Löschen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editor -->
+<div id="dlg" class="modal">
+  <div class="box">
+    <div class="card-h" style="justify-content:space-between"><b>Seite bearbeiten</b>
+      <button class="btn sm" onclick="this.closest('.modal').removeAttribute('open')">Schließen</button></div>
+    <form id="fm">
+      <div class="card-b grid">
+        <label>Titel<input name="title" class="btn" required></label>
+        <label>Kategorie<input name="cat" class="btn" placeholder="z. B. Maschine"></label>
+        <label style="grid-column:1/-1">Tags (Komma)<input name="tags" class="btn" placeholder="setup, safety"></label>
+        <div style="grid-column:1/-1">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div class="sub small">Markdown</div>
+            <button type="button" id="togglePrev" class="btn sm">Vorschau umschalten</button>
+          </div>
+          <div class="grid" style="grid-template-columns:1fr 1fr">
+            <textarea name="text" class="btn" rows="12"></textarea>
+            <div id="preview" class="btn" style="white-space:pre-wrap;overflow:auto"></div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><div class="actions">
+        <button type="button" class="btn" onclick="this.closest('.modal').removeAttribute('open')">Abbrechen</button>
+        <button type="submit" class="btn-solid">Speichern</button></div></div>
+    </form>
+  </div>
+</div>
+
+<nav class="dock">
+  <a class="tab" href="docs.html" aria-current="page"><span>📘</span></a>
+  <a class="tab" href="#"><span>⬜</span></a>
+  <a class="tab" href="#"><span>⬜</span></a>
+</nav>
+
+<div id="toasts"></div>
+<script src="app.js"></script>
+</body>
+</html>
