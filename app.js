@@ -3,7 +3,7 @@ const NS='ctdocs_v1', LS={DOCS:NS+'_docs', CATS:NS+'_cats'};
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const read=(k,f)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}};
 const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
-function id(){try{return crypto.randomUUID()}catch(e){return Math.random().toString(36).slice(2)}}
+function uid(){try{return crypto.randomUUID()}catch(e){return Math.random().toString(36).slice(2)}}
 function toast(msg,type='info'){ let w=$('#toasts'); if(!w){w=document.createElement('div');w.id='toasts';w.className='toast-wrap';document.body.appendChild(w)}; const t=document.createElement('div'); t.className='toast'+(type==='error'?' error':type==='success'?' success':type==='warn'?' warn':''); t.textContent=msg; w.appendChild(t); setTimeout(()=>{t.style.opacity='0'; t.style.transition='opacity .25s'; setTimeout(()=>t.remove(),260)},1800);}
 
 function seed(){
