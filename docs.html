@@ -1,48 +1,41 @@
-
-<!doctype html>
-<html lang="de">
-<head>
+<!doctype html><html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CitiTool — Dokumentation</title>
-<link rel="stylesheet" href="style.css">
-</head>
-<body>
+<title>CitiTool — Dokumentation</title><link rel="stylesheet" href="style.css"><script defer src="app.js"></script></head><body>
+<div id="splash" class="splash"><div class="card"><div class="logo">CT</div><div class="brand-big">CitiTool Assistent</div><div class="brand-sub">Lädt…</div></div></div>
 <header class="header">
   <div class="wrap row">
     <div class="brand">
       <div class="logo">CT</div>
-      <div>
-        <div class="title">CitiTool Assistent</div>
-        <div class="sub">Dokumentation</div>
-      </div>
+      <div><div class="title">CitiTool Assistent</div><div class="sub">Dokumentation</div></div>
     </div>
-    <div style="margin-left:auto;display:flex;gap:.4rem">
-      <button class="btn" id="btnFilter">Filter</button>
-      <button class="btn-solid" id="btnNew">Neue Seite</button>
-    </div>
+    <div style="margin-left:auto"><!-- right controls slot --></div>
   </div>
 </header>
-
 <main class="wrap" style="padding:1rem">
   <section class="card">
     <div class="card-h">
-      <input id="q" class="btn" placeholder="Suchen… (Titel, Tags, Text)" style="flex:1;min-width:120px">
-      <label class="btn" style="display:inline-flex;gap:.45rem;align-items:center"><input id="onlyFav" type="checkbox"> Nur Favoriten</label>
-      <button id="btnExport" class="btn">Export</button>
-      <label class="btn">Import<input id="fileImport" type="file" accept="application/json" style="display:none"></label>
+      <button class="btn" id="btnFilter">Filter</button>
+      <button class="btn-solid" id="btnNew" style="margin-left:auto">Neue Seite</button>
     </div>
-    <div class="card-b"><div id="list" class="card"></div></div>
+    <div class="card-b" style="border-top:1px solid var(--border)">
+      <div class="card-h" style="border:0; padding:0 0 12px 0; gap:.7rem">
+        <input id="q" class="btn" placeholder="Suchen… (Titel, Tags, Text)" style="flex:1;min-width:120px">
+        <label class="btn" style="display:inline-flex;gap:.45rem;align-items:center"><input id="onlyFav" type="checkbox"> Nur Favoriten</label>
+        <button id="btnExport" class="btn">Export</button>
+        <label class="btn">Import<input id="fileImport" type="file" accept="application/json" style="display:none"></label>
+      </div>
+      <div id="list" class="card"></div>
+    </div>
   </section>
+  <footer class="wrap" style="padding:2rem 0 0;color:#64748b">© <span id="y"></span> CitiTool • Docs‑Module</footer>
 </main>
-
-<footer class="wrap" style="padding:2rem 0 5.6rem;color:#64748b">© <span id="y"></span> CitiTool • Docs‑Module v1</footer>
 
 <!-- Drawer -->
 <div id="drawer" class="drawer">
   <div class="mask" onclick="this.parentElement.removeAttribute('open')"></div>
   <div class="sht">
     <div class="hdr"><b>Kategorien</b><button class="btn sm" onclick="this.closest('.drawer').removeAttribute('open')">Schließen</button></div>
-    <div class="sub small" style="margin-bottom:6px">Aktuell: <span id="catSel" data-value="ALLE">Alle Kategorien</span></div>
+    <div class="small muted" style="margin-bottom:6px">Aktuell: <span id="catSel" data-value="ALLE">Alle Kategorien</span></div>
     <div id="catList" class="list" style="margin-bottom:10px"></div>
     <div style="display:flex;gap:.4rem;flex-wrap:wrap">
       <button id="catNew" class="btn sm">Neu</button>
@@ -56,7 +49,7 @@
 <div id="dlg" class="modal">
   <div class="box">
     <div class="card-h" style="justify-content:space-between"><b>Seite bearbeiten</b>
-      <button class="btn sm" onclick="this.closest('.modal').removeAttribute('open')">Schließen</button></div>
+      <button class="btn sm" id="btnClose">Schließen</button></div>
     <form id="fm">
       <div class="card-b grid">
         <label>Titel<input name="title" class="btn" required></label>
@@ -64,7 +57,7 @@
         <label style="grid-column:1/-1">Tags (Komma)<input name="tags" class="btn" placeholder="setup, safety"></label>
         <div style="grid-column:1/-1">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div class="sub small">Markdown</div>
+            <div class="small muted">Markdown</div>
             <button type="button" id="togglePrev" class="btn sm">Vorschau umschalten</button>
           </div>
           <div class="grid" style="grid-template-columns:1fr 1fr">
@@ -74,19 +67,21 @@
         </div>
       </div>
       <div class="foot"><div class="actions">
-        <button type="button" class="btn" onclick="this.closest('.modal').removeAttribute('open')">Abbrechen</button>
+        <button type="button" class="btn" id="btnCancel">Abbrechen</button>
         <button type="submit" class="btn-solid">Speichern</button></div></div>
     </form>
   </div>
 </div>
 
 <nav class="dock">
+  <a class="tab" href="index.html" ><span>📊</span></a>
+  <a class="tab" href="setup.html" ><span>🛠️</span></a>
+  <a class="tab" href="tools.html" ><span>📦</span></a>
+  <a class="tab" href="calc.html" ><span>🧮</span></a>
+  <a class="tab" href="fasen.html" ><span>✂️</span></a>
   <a class="tab" href="docs.html" aria-current="page"><span>📘</span></a>
-  <a class="tab" href="#"><span>⬜</span></a>
-  <a class="tab" href="#"><span>⬜</span></a>
+  <a class="tab" href="settings.html" ><span>⚙️</span></a>
 </nav>
-
 <div id="toasts"></div>
-<script src="app.js"></script>
-</body>
-</html>
+<script src="docs.js"></script>
+</body></html>
