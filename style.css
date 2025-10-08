@@ -56,3 +56,5 @@ body{margin:0;background:linear-gradient(180deg,#f7faff 0%,#eef3f9 70%);color:va
 /* Info modal image */
 .pv-img{width:180px;height:180px;border-radius:12px;border:1px solid var(--border);object-fit:cover;background:#f8fafc}
 @media (max-width:480px){ .pv-img{width:128px;height:128px} .thumb-list{width:32px;height:32px} }
+
+.btn.warn:hover{border-color:#e11d48;box-shadow:0 0 0 2px rgba(225,29,72,.15) inset;color:#b91c1c}
