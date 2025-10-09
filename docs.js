@@ -1,106 +1,17 @@
-// CitiTool Dokumentation module (demo pages included)
-const NS='ct_docs_nav_v1', LS={DOCS:NS+'_docs', CATS:NS+'_cats'};
-const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+
+const LS_DOCS='ct_docs_v2';
+const $=s=>document.querySelector(s);
 const read=(k,f)=>{ try{const v=localStorage.getItem(k); return v?JSON.parse(v):f }catch(e){ return f } };
 const write=(k,v)=>{ try{localStorage.setItem(k,JSON.stringify(v))}catch(e){} };
-function uid(){ try{return crypto.randomUUID()}catch(e){return Math.random().toString(36).slice(2)} }
-function toast(msg,type='info'){ let w=$('#toasts'); if(!w){ w=document.createElement('div'); w.id='toasts'; w.className='toast-wrap'; document.body.appendChild(w);} const t=document.createElement('div'); t.className='toast '+(type==='error'?'error':type==='success'?'success':type==='warn'?'warn':''); t.textContent=msg; w.appendChild(t); setTimeout(()=>{t.style.opacity='0'; t.style.transition='opacity .25s'; setTimeout(()=>t.remove(),260)},1800); }
-
-function seed(){
-  if(!localStorage.getItem(LS.CATS)) write(LS.CATS, ['Maschine','Setup','Qualität','Sicherheit']);
-  if(!localStorage.getItem(LS.DOCS)) write(LS.DOCS,[
-    {id:uid(), title:'Start‑Check WT‑250', cat:'Maschine', fav:true, tags:['start','check'], text:'**Start‑Check**\\n- Luft, Strom, Kühlmittel\\n- Referenzfahrt\\n- Hydraulik prüfen'},
-    {id:uid(), title:'Werkzeugwechsel VDI‑30', cat:'Setup', fav:false, tags:['halter','wechsel'], text:'1. Maschine stoppen\\n2. Schraube lösen\\n3. Ausrichten\\n4. Anziehen 35Nm'},
-    {id:uid(), title:'Sicherheit — PSA', cat:'Sicherheit', fav:false, tags:['ppe'], text:'_Pflicht:_ Schutzbrille, Gehörschutz;\\n**Hinweis:** lange Haare binden'}
-  ]);
-}
-
-function mdLite(s){
-  return (s||'').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>')
-                .replace(/_(.+?)_/g,'<i>$1</i>')
-                .replace(/`(.+?)`/g,'<code>$1</code>')
-                .replace(/^\-\s(.+)$/gm,'• $1');
-}
-
-function draw(){
-  const q = $('#q').value.trim().toLowerCase();
-  const onlyFav = $('#onlyFav').checked;
-  const cat = $('#catSel').dataset.value || 'ALLE';
-  let arr = read(LS.DOCS, []);
-  if(cat!=='ALLE') arr = arr.filter(d => (d.cat||'')===cat);
-  if(onlyFav) arr = arr.filter(d => d.fav);
-  if(q) arr = arr.filter(d => (d.title+' '+(d.tags||[]).join(' ')+' '+(d.text||'')).toLowerCase().includes(q));
-  const box = $('#list');
-  box.innerHTML = arr.map(d => `
-    <details class="item">
-      <summary class="card-b">
-        <div style="display:flex;gap:.7rem;align-items:center;justify-content:space-between">
-          <div style="flex:1;min-width:0">
-            <div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.title}</div>
-            <div class="small muted">${d.cat||'—'}${d.fav?' • ★':''}${d.tags && d.tags.length?' • '+d.tags.join(', '):''}</div>
-          </div>
-          <div class="small muted">Tippen</div>
-        </div>
-      </summary>
-      <div class="card-b">
-        <div class="muted" style="white-space:pre-wrap">${mdLite(d.text||'')}</div>
-        <div style="display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap">
-          <button class="btn sm" data-edit="${d.id}">Bearbeiten</button>
-          <button class="btn sm" data-fav="${d.id}">${d.fav?'★ Entfernen':'☆ Favorit'}</button>
-          <button class="btn-danger sm" data-del="${d.id}">Löschen</button>
-        </div>
-      </div>
-    </details>
-  `).join('') || '<div class="card-b muted">Keine Seiten</div>';
-  box.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(b.dataset.edit));
-  box.querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{ let a=read(LS.DOCS,[]); const i=a.findIndex(x=>x.id===b.dataset.fav); if(i>-1){ a[i].fav=!a[i].fav; write(LS.DOCS,a); draw(); } });
-  box.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ let a=read(LS.DOCS,[]); const i=a.findIndex(x=>x.id===b.dataset.del); if(i>-1){ a.splice(i,1); write(LS.DOCS,a); draw(); toast('Gelöscht','warn'); } });
-}
-
-function openEditor(rowId){
-  const arr = read(LS.DOCS,[]);
-  const cur = rowId ? arr.find(x=>x.id===rowId) : {id:uid(), title:'', cat:'', fav:false, tags:[], text:''};
-  const dlg = $('#dlg'); dlg.setAttribute('open','');
-  const fm = $('#fm');
-  fm.title.value = cur.title||'';
-  fm.cat.value   = cur.cat||'';
-  fm.tags.value  = (cur.tags||[]).join(', ');
-  fm.text.value  = cur.text||'';
-  const prev = $('#preview'); prev.innerHTML = mdLite(cur.text||'');
-  $('#togglePrev').onclick = ()=>{ prev.parentElement.classList.toggle('hidden') };
-  $('#btnCancel').onclick = ()=> dlg.removeAttribute('open');
-  $('#btnClose').onclick  = ()=> dlg.removeAttribute('open');
-  fm.onsubmit = (e)=>{
-    e.preventDefault();
-    const obj = { id: cur.id, title: fm.title.value.trim(), cat: fm.cat.value.trim(), fav: cur.fav,
-                  tags: fm.tags.value.split(',').map(x=>x.trim()).filter(Boolean), text: fm.text.value };
-    let a = read(LS.DOCS,[]); const i = a.findIndex(x=>x.id===obj.id);
-    if(i>-1) a[i]=obj; else a.unshift(obj);
-    write(LS.DOCS,a); dlg.removeAttribute('open'); draw(); toast('Gespeichert','success');
-  };
-}
-
-function openDrawer(){
-  const dr = $('#drawer'); dr.setAttribute('open','');
-  const cats = read(LS.CATS,[]); const lst = $('#catList'); lst.innerHTML = '';
-  const mk = (label,val)=>{ const b=document.createElement('button'); b.className='btn'; b.textContent=label;
-    b.onclick=()=>{ $('#catSel').textContent=label; $('#catSel').dataset.value=val; dr.removeAttribute('open'); draw(); };
-    return b; };
-  lst.append(mk('Alle Kategorien','ALLE')); cats.forEach(c=>lst.append(mk(c,c)));
-  $('#catNew').onclick=()=>{ const n=prompt('Neue Kategorie:'); if(!n) return; let a=read(LS.CATS,[]); if(!a.includes(n)){a.push(n); write(LS.CATS,a);} openDrawer(); };
-  $('#catRename').onclick=()=>{ const cur=$('#catSel').dataset.value; if(!cur || cur==='ALLE'){toast('Kategorie wählen','warn'); return;}
-    const n=prompt('Neuer Name',cur); if(!n || n===cur) return; let a=read(LS.CATS,[]); const i=a.indexOf(cur); if(i>-1){ a[i]=n; write(LS.CATS,a); let d=read(LS.DOCS,[]); d.forEach(x=>{ if(x.cat===cur) x.cat=n; }); write(LS.DOCS,d); $('#catSel').textContent=n; $('#catSel').dataset.value=n; toast('Umbenannt','success'); openDrawer(); } };
-  $('#catDel').onclick=()=>{ const cur=$('#catSel').dataset.value; if(!cur || cur==='ALLE'){toast('Kategorie wählen','warn'); return;}
-    const used=read(LS.DOCS,[]).some(x=>x.cat===cur); if(used){toast('Kategorie wird benutzt','error'); return;}
-    let a=read(LS.CATS,[]).filter(x=>x!==cur); write(LS.CATS,a); $('#catSel').textContent='Alle Kategorien'; $('#catSel').dataset.value='ALLE'; dr.removeAttribute('open'); draw(); };
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  seed(); draw();
-  $('#btnNew').onclick=()=>openEditor(null);
-  $('#btnFilter').onclick=openDrawer;
-  $('#q').oninput=draw; $('#onlyFav').onchange=draw;
-  $('#btnExport').onclick=()=>{ const blob=new Blob([JSON.stringify({docs:read(LS.DOCS,[]),cats:read(LS.CATS,[])},null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='docs-export.json'; a.click(); URL.revokeObjectURL(a.href); };
-  $('#fileImport').onchange=(e)=>{ const f=e.target.files[0]; if(!f) return; const fr=new FileReader(); fr.onload=()=>{ try{ const j=JSON.parse(fr.result); if(j.cats) write(LS.CATS,j.cats); if(j.docs) write(LS.DOCS,j.docs); draw(); toast('Import fertig','success'); }catch(err){ toast('Import Fehler','error'); } }; fr.readAsText(f); };
-  document.getElementById('y')?.textContent=new Date().getFullYear();
-});
+const uid=()=>Math.random().toString(36).slice(2,9);
+const toast=t=>{ let el=document.getElementById('toast'); if(!el){ el=document.createElement('div'); el.id='toast'; el.className='toast'; document.body.appendChild(el);} el.textContent=t; el.setAttribute('show',''); setTimeout(()=>el.removeAttribute('show'),1200);};
+function md(text){ return (text||'').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/\*(.*?)\*/g,'<i>$1</i>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\n/g,'<br>'); }
+function line(p){ return `<div class='item'><div class='item-head'><div style='min-width:0'><div class='item-line'>${p.title||'—'}</div><div class='item-sub'>${(p.tags||[]).join(', ')}</div></div><div class='row'><button class='btn sm' data-open='${p.id}'>Öffnen</button><button class='btn sm' data-fav='${p.id}'>${p.fav?'★':'☆'}</button></div></div></div>`; }
+function redraw(){ const q=$('#q').value.toLowerCase(); const favOnly=$('#favOnly').dataset.on==='1'; const arr=read(LS_DOCS,[]).filter(x=> (favOnly?x.fav:true) && (q? (x.title||'').toLowerCase().includes(q) || (x.body||'').toLowerCase().includes(q):true)); $('#list').innerHTML=arr.length? arr.map(line).join('') : '<div class="small">Keine Seiten</div>'; $('#list').querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openEd(b.dataset.open)); $('#list').querySelectorAll('[data-fav]').forEach(b=>b.onclick=()=>{ const id=b.dataset.fav; const a=read(LS_DOCS,[]); const p=a.find(x=>x.id===id); p.fav=!p.fav; write(LS_DOCS,a); redraw(); }); }
+let CUR=null;
+function openEd(id){ const a=read(LS_DOCS,[]); let p=a.find(x=>x.id===id); if(!p){ p={id:uid(), title:'', tags:[], body:'', fav:false}; a.push(p); write(LS_DOCS,a); } CUR=p; $('#dTitle').value=p.title||''; $('#dTags').value=(p.tags||[]).join(', '); $('#dBody').value=p.body||''; $('#preview').style.display='none'; $('#ed').setAttribute('open',''); }
+function saveEd(){ const a=read(LS_DOCS,[]); const p=a.find(x=>x.id===CUR.id); p.title=$('#dTitle').value.trim(); p.tags=($('#dTags').value||'').split(',').map(s=>s.trim()).filter(Boolean); p.body=$('#dBody').value; write(LS_DOCS,a); $('#ed').removeAttribute('open'); redraw(); toast('Gespeichert'); }
+function delEd(){ if(!CUR) return; if(confirm('Seite löschen?')){ const n=read(LS_DOCS,[]).filter(x=>x.id!==CUR.id); write(LS_DOCS,n); $('#ed').removeAttribute('open'); redraw(); toast('Gelöscht'); } }
+function exportJson(){ const data=JSON.stringify(read(LS_DOCS,[])); const blob=new Blob([data],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='cititool_docs.json'; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},400); }
+function importJson(){ const f=$('#impFile'); f.value=''; f.click(); f.onchange=()=>{ const file=f.files[0]; if(!file) return; const r=new FileReader(); r.onload=()=>{ try{ const arr=JSON.parse(r.result); write(LS_DOCS,arr); redraw(); toast('Importiert'); }catch(e){ alert('Falsches JSON'); } }; r.readAsText(file); }; }
+document.addEventListener('DOMContentLoaded',()=>{ if(!read(LS_DOCS,[]).length){ write(LS_DOCS,[ {id:uid(), title:'Nullpunkt-Check', tags:['Setup','Prüfen'], body:'**G54** prüfen, *Taster* kalibrieren.', fav:true}, {id:uid(), title:'VDI30 Halter', tags:['Werkzeug'], body:'Anzugsmoment: `35 Nm`.', fav:false} ]); } redraw(); $('#btnNew').onclick=()=>openEd(null); $('#edClose').onclick=()=>$('#ed').removeAttribute('open'); $('#dSave').onclick=saveEd; $('#dDelete').onclick=delEd; $('#q').oninput=redraw; $('#btnPreview').onclick=()=>{ const html=md($('#dBody').value); const pv=$('#preview'); pv.innerHTML=html; pv.style.display='block'; }; $('#btnExport').onclick=exportJson; '#btnImport' in window && document.getElementById('btnImport').addEventListener('click', importJson); $('#favOnly').onclick=()=>{ const b=$('#favOnly'); b.dataset.on=b.dataset.on==='1'?'0':'1'; b.textContent=b.dataset.on==='1'?'Nur Favoriten (an)':'Nur Favoriten'; redraw(); }; });
