@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CitiTool — ZIP Download (Offline)</title>
+<style>
+:root{--border:#e5e7eb;--muted:#64748b;--ring:#93c5fd}
+*{box-sizing:border-box} body{margin:0;font:16px/1.4 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Arial}
+.wrap{max-width:900px;margin:0 auto;padding:20px}
+.h{display:flex;align-items:center;gap:12px;margin:12px 0 20px}
+.logo{width:40px;height:40px;border:1px solid var(--border);border-radius:10px;display:grid;place-items:center;font-weight:900}
+h1{margin:0;font-size:20px}
+.card{border:1px solid var(--border);border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.06);background:#fff;margin-bottom:14px}
+.card-h{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.card-b{padding:12px 14px}
+.btn{appearance:none;border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px 14px;font-weight:700;cursor:pointer}
+.btn:focus{outline:2px solid var(--ring)}
+.small{color:var(--muted);font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+pre{white-space:pre-wrap;word-break:break-word;background:#f8fafc;border:1px dashed var(--border);padding:10px;border-radius:10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="h">
+    <div class="logo">CT</div>
+    <div>
+      <h1>CitiTool — ZIP Download</h1>
+      <div class="small">Готовит 3 отдельных архива прямо в браузере (iPhone Safari OK).</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><b>1) Dokumentation (rev2)</b><button class="btn" id="zipDocs">Download Dokumentation.zip</button></div>
+    <div class="card-b small">Содержимое: <code>docs.html</code>, <code>docs.js</code>, <code>docs.css</code></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><b>2) Werkzeugschrank (v1)</b><button class="btn" id="zipTools">Download Werkzeugschrank.zip</button></div>
+    <div class="card-b small">Содержимое: <code>tools.html</code>, <code>tools.js</code>, <code>tools.css</code>, <code>style.css</code></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><b>3) Setup Planner (v1)</b><button class="btn" id="zipSetup">Download SetupPlanner.zip</button></div>
+    <div class="card-b small">Содержимое: <code>setup.html</code>, <code>setup.js</code>, <code>setup.css</code>, <code>style.css</code></div>
+  </div>
+
+  <div class="card">
+    <div class="card-h"><b>Подсказка</b></div>
+    <div class="card-b small">
+      На iPhone/Safari файл сохранится через «Поделиться» → «Сохранить в Файлы».  
+      Все данные — офлайн, ничего не отправляется в сеть.
+    </div>
+  </div>
+
+  <pre class="small">Если вдруг кнопка «не реагирует», коснись ещё раз — Safari требует явный «user gesture» для скачивания Blob.</pre>
+</div>
+
+<script>
+/* ---------- Мини ZIP-пакер (store, без компрессии) — совместим с iOS Safari ---------- */
+const te = new TextEncoder();
+
+/* CRC32 */
+const CRC_TABLE = (()=>{let c,t=[];for(let n=0;n<256;n++){c=n;for(let k=0;k<8;k++) c = (c&1)?(0xEDB88320 ^ (c>>>1)):(c>>>1);t[n]=c>>>0}return t})();
+function crc32(buf){
+  let c=0xffffffff;
+  for(let i=0;i<buf.length;i++) c = CRC_TABLE[(c^buf[i])&0xff] ^ (c>>>8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+/* DOS time/date (поставим 0) */
+const DOS_TIME = 0, DOS_DATE = 0;
+
+/* Помощь для записи чисел little-endian */
+function u16(v){ return new Uint8Array([v&255,(v>>>8)&255]); }
+function u32(v){ return new Uint8Array([v&255,(v>>>8)&255,(v>>>16)&255,(v>>>24)&255]); }
+
+function concat(arrs){
+  let len=0; arrs.forEach(a=>len+=a.length);
+  const out = new Uint8Array(len);
+  let o=0; for(const a of arrs){ out.set(a,o); o+=a.length; }
+  return out;
+}
+
+/* Запись одного файла (без сжатия) */
+function zipFileRecord(name, data, offset){
+  const nameBytes = te.encode(name);
+  const size = data.length;
+  const crc = crc32(data);
+
+  // Local file header
+  const LFH = concat([
+    u32(0x04034b50),      // signature
+    u16(20),              // version needed
+    u16(0),               // flags
+    u16(0),               // method = store
+    u16(DOS_TIME), u16(DOS_DATE),
+    u32(crc), u32(size), u32(size),
+    u16(nameBytes.length), u16(0),
+    nameBytes,
+    data
+  ]);
+
+  // Central directory header (без extra/comment)
+  const CDH = concat([
+    u32(0x02014b50),      // signature
+    u16(20),              // version made by
+    u16(20),              // version needed
+    u16(0),               // flags
+    u16(0),               // method
+    u16(DOS_TIME), u16(DOS_DATE),
+    u32(crc), u32(size), u32(size),
+    u16(nameBytes.length), u16(0), u16(0),
+    u16(0), u16(0), u32(0),
+    u32(offset),
+    nameBytes
+  ]);
+
+  return { LFH, CDH, length: LFH.length };
+}
+
+/* Собрать ZIP из набора {name, text} */
+function makeZip(files){
+  let offset = 0;
+  const LFHs = [];
+  const CDs = [];
+  for(const f of files){
+    const data = te.encode(f.text);
+    const {LFH, CDH, length} = zipFileRecord(f.name, data, offset);
+    LFHs.push(LFH);
+    CDs.push(CDH);
+    offset += length;
+  }
+  const central = concat(CDs);
+  const totalSize = offset + central.length + 22; // 22 = EOCD size
+
+  const EOCD = concat([
+    u32(0x06054b50), // signature
+    u16(0), u16(0),  // disk numbers
+    u16(files.length), u16(files.length),
+    u32(central.length),
+    u32(offset),
+    u16(0) // comment length
+  ]);
+
+  const zipBytes = concat([...LFHs, central, EOCD]);
+  return new Blob([zipBytes], {type:"application/zip"});
+}
+
+/* ---------- Содержимое модулей ---------- */
+
+/* 1) Dokumentation (rev2) */
+const DOCS = {
+  name: "Dokumentation.zip",
+  files: [
+    {name:"docs.html", text:`<!doctype html><html lang='de'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'><title>CitiTool — Dokumentation</title><link rel='stylesheet' href='style.css'><link rel='stylesheet' href='docs.css'></head><body><header class='header'><div class='wrap row'><div class='brand'><div class='logo'>CT</div><div><div class='title'>CitiTool Assistent</div><div class='sub'>Dokumentation</div></div></div></div></header><main class='wrap' style='padding:1rem'><section class='card'><div class='card-h'><b>Dokumentation</b><div class='row'><button class='btn' id='favOnly'>Nur Favoriten</button><button class='btn' id='btnExport'>Export</button><button class='btn' id='btnImport'>Import</button><button class='btn' id='btnNew'>Neue Seite</button></div></div><div class='card-b'><div class='row' style='margin-bottom:8px'><input id='q' class='input' placeholder='Suche…'></div><div id='list'></div></div></section></main><nav class='dock'><a class='tab' href='index.html'><span>📊</span></a><a class='tab' href='programme.html'><span>💾</span></a><a class='tab' href='setup.html'><span>🛠️</span></a><a class='tab' href='tools.html'><span>📦</span></a><a class='tab' href='docs.html' aria-current='page'><span>📚</span></a></nav><div id='view' class='modal'><div class='box'><div class='card-h'><b id='vTitle'>Seite</b><button class='btn sm' id='vClose'>Schließen</button></div><div class='card-b doc-body' id='vBody'></div><div class='foot' style='justify-content:space-between'><div class='row'><button class='btn sm' id='vFav'>☆</button></div><div><button class='btn sm' id='vDel'>Löschen</button><button class='btn sm' id='vEdit'>Bearbeiten</button></div></div></div></div><div id='ed' class='modal'><div class='box'><div class='card-h'><b>Seite bearbeiten</b><button class='btn sm' id='edClose'>Schließen</button></div><div class='card-b'><div class='row'><input id='dTitle' class='input' placeholder='Titel'><input id='dTags' class='input' placeholder='Tags (Komma)'></div><div class='row' style='margin-top:8px'><textarea id='dBody' rows='12' class='input' placeholder='Markdown/Text…'></textarea></div><div class='row' style='margin-top:8px'><button class='btn' id='btnPreview'>Vorschau</button></div><div id='preview' class='doc-preview doc-body'></div></div><div class='foot'><button class='btn sm' id='dDelete'>Löschen</button><button class='btn' id='dSave'>Speichern</button></div></div></div><input id='impFile' type='file' accept='.json' style='display:none'><div class='toast' id='toast'></div><script src='docs.js'></script></body></html>`},
+    {name:"docs.css", text:".doc-preview{display:none;border:1px dashed var(--border);border-radius:8px;padding:10px;margin-top:8px;background:#f8fafc}.doc-body{line-height:1.55}.doc-body code{background:#eef2ff;border:1px solid #dbeafe;padding:.05rem .3rem;border-radius:6px}"},
+    {name:"style.css", text:":root{--border:#e5e7eb;--ring:#93c5fd}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Inter,Segoe UI,Roboto,Arial}.header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--border)}.wrap{max-width:1100px;margin:0 auto;padding:0 14px}.header .row{display:flex;align-items:center;gap:.9rem;height:64px}.brand{display:flex;align-items:center;gap:.7rem}.logo{height:36px;width:36px;border:1px solid var(--border);border-radius:10px;display:grid;place-items:center;font-weight:900}.title{font-weight:900}.sub{font-size:.86rem;color:#64748b}.card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,.08)}.card-h{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.card-b{padding:14px 16px}.btn{display:inline-flex;align-items:center;gap:.45rem;border:1px solid var(--border);background:#fff;border-radius:12px;padding:.52rem .82rem;cursor:pointer}.btn.sm{padding:.36rem .6rem;border-radius:9px}.input{border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem;width:100%}.input:focus{outline:2px solid var(--ring)}.row{display:flex;gap:.6rem;flex-wrap:wrap}.item{border-top:1px solid var(--border);padding:10px 0}.item:first-child{border-top:none}.item-head{display:flex;justify-content:space-between;align-items:center;gap:.6rem}.item-line{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item-sub{font-size:.85rem;color:#6b7280}.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(15,23,42,.35);padding:16px;z-index:60}.modal[open]{display:grid}.box{background:#fff;max-width:920px;width:96vw;border:1px solid var(--border);border-radius:16px;box-shadow:0 34px 70px rgba(0,0,0,.2);display:flex;flex-direction:column;max-height:calc(100vh - 48px)}.box .foot{margin-top:auto;border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:.5rem;justify-content:flex-end;background:#fff;position:sticky;bottom:0}.dock{position:fixed;left:0;right:0;bottom:0;display:flex;gap:.5rem;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:#fff;border-top:1px solid var(--border)}.tab{flex:1;display:grid;place-items:center}"},
+    {name:"docs.js", text:`const LS_DOCS='ct_docs_v3';const $=s=>document.querySelector(s);const read=(k,f)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}};const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};const uid=()=>Math.random().toString(36).slice(2,9);const toast=t=>{let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el)}el.textContent=t;el.setAttribute('show','');setTimeout(()=>el.removeAttribute('show'),1200)};function md(t){return (t||'').replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>').replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/\\*\\*(.*?)\\*\\*/g,'<b>$1</b>').replace(/\\*(.*?)\\*/g,'<i>$1</i>').replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\\n/g,'<br>')}function line(p){return \`<div class='item'><div class='item-head'><div style='min-width:0'><div class='item-line'>\${p.title||'—'}</div><div class='item-sub'>\${(p.tags||[]).join(', ')}</div></div><div class='row'><button class='btn sm' data-open='\${p.id}'>i</button></div></div></div>\`}function redraw(){const q=document.getElementById('q')?document.getElementById('q').value.toLowerCase():'';const favOnly=document.getElementById('favOnly')&&document.getElementById('favOnly').dataset.on==='1';const arr=read(LS_DOCS,[]).filter(x=>(favOnly?x.fav:true)&&(q?(x.title||'').toLowerCase().includes(q)||(x.body||'').toLowerCase().includes(q):true));const host=document.getElementById('list');if(!host)return;host.innerHTML=arr.length?arr.map(line).join(''):'<div class=small>Keine Seiten</div>';host.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openView(b.dataset.open))}let CUR=null;function openView(id){const arr=read(LS_DOCS,[]);const p=arr.find(x=>x.id===id);if(!p)return;CUR=p;document.getElementById('vTitle').textContent=p.title||'Seite';document.getElementById('vBody').innerHTML=md(p.body||'');const fav=document.getElementById('vFav');fav.textContent=p.fav?'★':'☆';fav.onclick=()=>{p.fav=!p.fav;write(LS_DOCS,arr);redraw();openView(id)};document.getElementById('vEdit').onclick=()=>{document.getElementById('view').removeAttribute('open');openEd(id)};document.getElementById('vDel').onclick=()=>{if(confirm('Löschen?')){const n=arr.filter(x=>x.id!==id);write(LS_DOCS,n);document.getElementById('view').removeAttribute('open');redraw()}};document.getElementById('vClose').onclick=()=>document.getElementById('view').removeAttribute('open');document.getElementById('view').setAttribute('open','')}function openEd(id){const a=read(LS_DOCS,[]);let p=a.find(x=>x.id===id);if(!p){p={id:uid(),title:'',tags:[],body:'',fav:false};a.push(p);write(LS_DOCS,a)}CUR=p;document.getElementById('dTitle').value=p.title||'';document.getElementById('dTags').value=(p.tags||[]).join(', ');document.getElementById('dBody').value=p.body||'';document.getElementById('preview').style.display='none';document.getElementById('ed').setAttribute('open','')}function saveEd(){const a=read(LS_DOCS,[]);const p=a.find(x=>x.id===CUR.id);p.title=document.getElementById('dTitle').value.trim();p.tags=(document.getElementById('dTags').value||'').split(',').map(s=>s.trim()).filter(Boolean);p.body=document.getElementById('dBody').value;write(LS_DOCS,a);document.getElementById('ed').removeAttribute('open');redraw()}function delEd(){if(!CUR)return;if(confirm('Seite löschen?')){const n=read(LS_DOCS,[]).filter(x=>x.id!==CUR.id);write(LS_DOCS,n);document.getElementById('ed').removeAttribute('open');redraw()}}function exportJson(){const data=JSON.stringify(read(LS_DOCS,[]));const blob=new Blob([data],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='cititool_docs.json';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},400)}function importJson(){const f=document.getElementById('impFile');f.value='';f.click();f.onchange=()=>{const file=f.files[0];if(!file)return;const r=new FileReader();r.onload=()=>{try{const arr=JSON.parse(r.result);write(LS_DOCS,arr);redraw()}catch(e){alert('Falsches JSON')}};r.readAsText(file)}}document.addEventListener('DOMContentLoaded',()=>{if(!read(LS_DOCS,[]).length){write(LS_DOCS,[{id:uid(),title:'Nullpunkt-Check',tags:['Setup','Prüfen'],body:'**G54** prüfen, *Taster* kalibrieren.',fav:true},{id:uid(),title:'VDI30 Halter',tags:['Werkzeug'],body:'Anzugsmoment: \\`35 Nm\\`.',fav:false}])}redraw();const b=document.getElementById('btnNew');if(b)b.onclick=()=>openEd(null);const c=document.getElementById('edClose');if(c)c.onclick=()=>document.getElementById('ed').removeAttribute('open');const s=document.getElementById('dSave');if(s)s.onclick=saveEd;const d=document.getElementById('dDelete');if(d)d.onclick=delEd;const q=document.getElementById('q');if(q)q.oninput=redraw;const pv=document.getElementById('btnPreview');if(pv)pv.onclick=()=>{const html=md(document.getElementById('dBody').value);const p=document.getElementById('preview');p.innerHTML=html;p.style.display='block'};const e=document.getElementById('btnExport');if(e)e.onclick=exportJson;const im=document.getElementById('btnImport');if(im)im.onclick=importJson;const fav=document.getElementById('favOnly');if(fav)fav.onclick=()=>{fav.dataset.on=fav.dataset.on==='1'?'0':'1';fav.textContent=fav.dataset.on==='1'?'Nur Favoriten (an)':'Nur Favoriten';redraw()}});`}
+  ]
+};
+
+/* 2) Werkzeugschrank (v1) */
+const TOOLS = {
+  name: "Werkzeugschrank.zip",
+  files: [
+    {name:"tools.html", text:`<!doctype html><html lang='de'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>CitiTool — Werkzeugschrank</title><link rel='stylesheet' href='style.css'><link rel='stylesheet' href='tools.css'></head><body><header class='header'><div class='wrap row'><div class='brand'><div class='logo'>CT</div><div><div class='title'>CitiTool Assistent</div><div class='sub'>Werkzeugschrank</div></div></div></div></header><main class='wrap' style='padding:1rem'><section class='card'><div class='card-h'><b>Werkzeuge</b><div class='row'><button class='btn' id='btnCats'>Kategorien</button><button class='btn' id='btnNew'>Neues Werkzeug</button></div></div><div class='card-b'><div class='row' style='margin-bottom:8px'><input id='q' class='input' placeholder='Suche (Name/Code)…'><select id='fltCat' class='input'><option value=''>Alle Kategorien</option></select></div><div id='list'></div></div></section></main><nav class='dock'><a class='tab' href='index.html'><span>📊</span></a><a class='tab' href='programme.html'><span>💾</span></a><a class='tab' href='setup.html'><span>🛠️</span></a><a class='tab' href='tools.html' aria-current='page'><span>📦</span></a><a class='tab' href='docs.html'><span>📚</span></a></nav><div class='modal' id='info'><div class='box'><div class='card-h'><b id='iTitle'>Werkzeug</b><button class='btn sm' id='iClose'>Schließen</button></div><div class='card-b'><div class='row'><img id='iImg' class='pv' alt='Bild'><div><div id='iCode' class='small'></div><div id='iIso' class='small'></div><div id='iMan' class='small'></div><div id='iNote' class='small'></div></div></div></div><div class='foot'><button class='btn sm' id='iDel'>Löschen</button><button class='btn sm' id='iEdit'>Bearbeiten</button><button class='btn' id='iAdd'>Zu Setup</button></div></div></div><div class='modal' id='edit'><div class='box'><div class='card-h'><b id='eTitle'>Werkzeug bearbeiten</b><button class='btn sm' id='eClose'>Schließen</button></div><div class='card-b'><div class='row'><input id='fName' class='input' placeholder='Name'><input id='fCode' class='input' placeholder='Code'><select id='fCat' class='input'></select><input id='fISO' class='input' placeholder='ISO'><input id='fMan' class='input' placeholder='Hersteller'></div><div class='row'><input id='fImg' class='input' placeholder='Bild-URL (kleines Vorschaubild)'></div><div class='row'><textarea id='fNote' class='input' rows='4' placeholder='Notizen'></textarea></div></div><div class='foot'><button class='btn sm' id='eDel'>Löschen</button><button class='btn' id='eSave'>Speichern</button></div></div></div><div class='modal' id='cats'><div class='box'><div class='card-h'><b>Kategorien</b><button class='btn sm' id='cClose'>Schließen</button></div><div class='card-b'><div id='catList'></div><div class='row' style='margin-top:8px'><input id='catNew' class='input' placeholder='Neue Kategorie'><button class='btn sm' id='catAdd'>Hinzufügen</button></div></div></div></div><script src='tools.js'></script></body></html>`},
+    {name:"tools.css", text:".thumb{width:40px;height:40px;border-radius:8px;border:1px solid var(--border);object-fit:cover;background:#f1f5f9}.pv{width:140px;height:140px;border-radius:12px;border:1px solid var(--border);object-fit:cover;background:#f8fafc}"},
+    {name:"style.css", text:":root{--border:#e5e7eb;--ring:#93c5fd}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Inter,Segoe UI,Roboto,Arial}.header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--border)}.wrap{max-width:1100px;margin:0 auto;padding:0 14px}.header .row{display:flex;align-items:center;gap:.9rem;height:64px}.brand{display:flex;align-items:center;gap:.7rem}.logo{height:36px;width:36px;border:1px solid var(--border);border-radius:10px;display:grid;place-items:center;font-weight:900}.title{font-weight:900}.sub{font-size:.86rem;color:#64748b}.card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,.08)}.card-h{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.card-b{padding:14px 16px}.btn{display:inline-flex;align-items:center;gap:.45rem;border:1px solid var(--border);background:#fff;border-radius:12px;padding:.52rem .82rem;cursor:pointer}.btn.sm{padding:.36rem .6rem;border-radius:9px}.input{border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem;width:100%}.input:focus{outline:2px solid var(--ring)}.row{display:flex;gap:.6rem;flex-wrap:wrap}.item{border-top:1px solid var(--border);padding:10px 0}.item:first-child{border-top:none}.item-head{display:flex;justify-content:space-between;align-items:center;gap:.6rem}.item-line{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item-sub{font-size:.85rem;color:#6b7280}.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(15,23,42,.35);padding:16px;z-index:60}.modal[open]{display:grid}.box{background:#fff;max-width:920px;width:96vw;border:1px solid var(--border);border-radius:16px;box-shadow:0 34px 70px rgba(0,0,0,.2);display:flex;flex-direction:column;max-height:calc(100vh - 48px)}.box .foot{margin-top:auto;border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:.5rem;justify-content:flex-end;background:#fff;position:sticky;bottom:0}.dock{position:fixed;left:0;right:0;bottom:0;display:flex;gap:.5rem;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:#fff;border-top:1px solid var(--border)}.tab{flex:1;display:grid;place-items:center}"},
+    {name:"tools.js", text:`const LS_TOOLS='ct_tools_v1', LS_CATS='ct_tool_cats_v1';const $=s=>document.querySelector(s);const el=(h)=>{const d=document.createElement('div');d.innerHTML=h.trim();return d.firstChild};const read=(k,f)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}};const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};const uid=()=>Math.random().toString(36).slice(2,9);function demo(){ if(!read(LS_CATS,[]).length) write(LS_CATS,['Halter','Platten','Zubehör']); if(!read(LS_TOOLS,[]).length) write(LS_TOOLS,[{id:uid(),name:'VDI30-Halter',code:'VDI30-R',cat:'Halter',iso:'',man:'DMG',img:'',note:''},{id:uid(),name:'CNMG120408',code:'CNMG12',cat:'Platten',iso:'P',man:'Sandvik',img:'',note:'Stahl P'},{id:uid(),name:'Bohrer Ø10',code:'DR10',cat:'Zubehör',iso:'',man:'Guhring',img:'',note:''}])}function badgeISO(t){ if(!t) return ''; const m={P:'#2563eb',M:'#facc15',K:'#dc2626',N:'#059669',S:'#f97316',H:'#111827'}; const c=m[t]||'#64748b'; const tc=(t==='M'||t==='S')?'#111':'#fff'; return "<span style='display:inline-block;border-radius:999px;padding:.1rem .4rem;font-size:.75rem;color:"+tc+";background:"+c+"'>"+t+"</span>"}function line(w){return "<div class='item'><div class='item-head'><div style='min-width:0;display:flex;align-items:center;gap:.6rem'><img class='thumb' src='"+(w.img||"")+"' onerror=\\\"this.style.display='none'\\\"/><div><div class='item-line'>"+w.name+" <span class='small'>/ "+(w.code||'')+"</span></div><div class='item-sub'>"+badgeISO(w.iso)+" "+(w.cat||'')+" • "+(w.man||'')+"</div></div></div><div class='row'><button class='btn sm' data-i='"+w.id+"'>i</button></div></div></div>"}function draw(){ const q=$('#q').value.toLowerCase(); const fc=$('#fltCat').value; const arr=read(LS_TOOLS,[]).filter(x=>(!fc||x.cat===fc)&& (q?(x.name+' '+(x.code||'')).toLowerCase().includes(q):true)); $('#list').innerHTML=arr.map(line).join('')||'<div class=small>Keine Werkzeuge</div>'; $('#list').querySelectorAll('[data-i]').forEach(b=>b.onclick=()=>openInfo(b.dataset.i)); }function fillCats(){ const cats=read(LS_CATS,[]); const s=$('#fltCat'); s.innerHTML='<option value=\"\">Alle Kategorien</option>'+cats.map(c=>`<option>${c}</option>`).join(''); const sf=$('#fCat'); if(sf) sf.innerHTML=cats.map(c=>`<option>${c}</option>`).join('')}function openInfo(id){ const w=read(LS_TOOLS,[]).find(x=>x.id===id); if(!w) return; $('#iTitle').textContent=w.name; $('#iCode').textContent='Code: '+(w.code||'—'); $('#iIso').textContent='ISO: '+(w.iso||'—'); $('#iMan').textContent='Hersteller: '+(w.man||'—'); $('#iNote').textContent=w.note||''; const img=$('#iImg'); img.src=w.img||''; img.style.display=w.img?'block':'none'; $('#iDel').onclick=()=>{ if(confirm('Löschen?')){ let a=read(LS_TOOLS,[]).filter(x=>x.id!==id); write(LS_TOOLS,a); $('#info').removeAttribute('open'); draw(); } }; $('#iEdit').onclick=()=>{ $('#info').removeAttribute('open'); edit(id); }; $('#iAdd').onclick=()=>{ alert('Zu Setup hinzufügen (Demo)'); }; $('#iClose').onclick=()=>$('#info').removeAttribute('open'); $('#info').setAttribute('open','') }function edit(id){ const cats=read(LS_CATS,[]); const a=read(LS_TOOLS,[]); let w=a.find(x=>x.id===id)||{id:uid(),name:'',code:'',cat:cats[0]||'',iso:'',man:'',img:'',note:''}; $('#eTitle').textContent=w.name? 'Werkzeug bearbeiten':'Neues Werkzeug'; fillCats(); $('#fName').value=w.name||''; $('#fCode').value=w.code||''; $('#fCat').value=w.cat||''; $('#fISO').value=w.iso||''; $('#fMan').value=w.man||''; $('#fImg').value=w.img||''; $('#fNote').value=w.note||''; $('#eSave').onclick=()=>{ w.name=$('#fName').value.trim(); if(!w.name) return alert('Name erforderlich'); w.code=$('#fCode').value.trim(); w.cat=$('#fCat').value; w.iso=$('#fISO').value.trim().toUpperCase(); w.man=$('#fMan').value.trim(); w.img=$('#fImg').value.trim(); w.note=$('#fNote').value; const i=a.findIndex(x=>x.id===w.id); if(i>=0) a[i]=w; else a.push(w); write(LS_TOOLS,a); $('#edit').removeAttribute('open'); draw(); }; $('#eDel').onclick=()=>{ if(!a.find(x=>x.id===w.id)) return $('#edit').removeAttribute('open'); if(confirm('Löschen?')){ write(LS_TOOLS,a.filter(x=>x.id!==w.id)); $('#edit').removeAttribute('open'); draw(); } }; $('#eClose').onclick=()=>$('#edit').removeAttribute('open'); $('#edit').setAttribute('open','') }function openCats(){ const box=$('#catList'); const cats=read(LS_CATS,[]); box.innerHTML=''; cats.forEach((c,i)=>{ const row=el(`<div class='item'><div class='item-head'><div class='item-line'>${c}</div><div class='row'><button class='btn sm' data-r='${i}'>Löschen</button></div></div></div>`); box.appendChild(row) }); box.querySelectorAll('[data-r]').forEach(b=>b.onclick=()=>{ const cats=read(LS_CATS,[]); const name=cats[b.dataset.r]; const used=read(LS_TOOLS,[]).some(t=>t.cat===name); if(used) return alert('Kategorie wird benutzt'); cats.splice(b.dataset.r,1); write(LS_CATS,cats); openCats(); fillCats(); draw(); }); $('#cClose').onclick=()=>$('#cats').removeAttribute('open'); $('#catAdd').onclick=()=>{ const v=$('#catNew').value.trim(); if(!v) return; const cats=read(LS_CATS,[]); if(!cats.includes(v)) cats.push(v); write(LS_CATS,cats); $('#catNew').value=''; openCats(); fillCats(); }; $('#cats').setAttribute('open','') }document.addEventListener('DOMContentLoaded',()=>{ demo(); fillCats(); draw(); $('#btnNew').onclick=()=>edit(null); $('#btnCats').onclick=openCats; $('#q').oninput=draw; $('#fltCat').onchange=draw; $('#iClose').onclick=()=>$('#info').removeAttribute('open') });`}
+  ]
+};
+
+/* 3) Setup Planner (v1) */
+const SETUP = {
+  name: "SetupPlanner.zip",
+  files: [
+    {name:"setup.html", text:`<!doctype html><html lang='de'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>CitiTool — Setup Planner</title><link rel='stylesheet' href='style.css'><link rel='stylesheet' href='setup.css'></head><body><header class='header'><div class='wrap row'><div class='brand'><div class='logo'>CT</div><div><div class='title'>CitiTool Assistent</div><div class='sub'>Setup Planner</div></div></div></div></header><main class='wrap' style='padding:1rem'><section class='card'><div class='card-h'><b>Setup — RO / RU</b><div class='row'><button class='btn sm' data-t='RO'>RO(G54)</button><button class='btn sm' data-t='RU'>RU(G55)</button></div></div><div class='card-b'><div id='grid' class='grid'></div></div></section></main><nav class='dock'><a class='tab' href='index.html'><span>📊</span></a><a class='tab' href='programme.html'><span>💾</span></a><a class='tab' href='setup.html' aria-current='page'><span>🛠️</span></a><a class='tab' href='tools.html'><span>📦</span></a><a class='tab' href='docs.html'><span>📚</span></a></nav><div class='modal' id='ed'><div class='box'><div class='card-h'><b id='eTitle'>Station</b><button class='btn sm' id='eClose'>Schließen</button></div><div class='card-b'><div class='row'><input id='fTool' class='input' placeholder='Tool Name'><input id='fHold' class='input' placeholder='Halter'><input id='fIns' class='input' placeholder='Insert ISO'><input id='fOp' class='input' placeholder='Operation'></div><div class='row'><textarea id='fNote' class='input' rows='3' placeholder='Notizen'></textarea></div></div><div class='foot'><button class='btn sm' id='eDel'>Löschen</button><button class='btn' id='eSave'>Speichern</button></div></div></div><script src='setup.js'></script></body></html>`},
+    {name:"setup.css", text:".grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}@media(max-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.grid{grid-template-columns:1fr}}.slot{border:1px solid var(--border);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:.3rem}.slot h4{margin:0}.slot .small{color:#64748b}.iso{display:inline-block;border-radius:999px;padding:.1rem .4rem;font-size:.75rem;color:#fff;background:#2563eb}"},
+    {name:"style.css", text:":root{--border:#e5e7eb;--ring:#93c5fd}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Inter,Segoe UI,Roboto,Arial}.header{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--border)}.wrap{max-width:1100px;margin:0 auto;padding:0 14px}.header .row{display:flex;align-items:center;gap:.9rem;height:64px}.brand{display:flex;align-items:center;gap:.7rem}.logo{height:36px;width:36px;border:1px solid var(--border);border-radius:10px;display:grid;place-items:center;font-weight:900}.title{font-weight:900}.sub{font-size:.86rem;color:#64748b}.card{background:#fff;border:1px solid var(--border);border-radius:16px;box-shadow:0 12px 28px rgba(0,0,0,.08)}.card-h{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.card-b{padding:14px 16px}.btn{display:inline-flex;align-items:center;gap:.45rem;border:1px solid var(--border);background:#fff;border-radius:12px;padding:.52rem .82rem;cursor:pointer}.btn.sm{padding:.36rem .6rem;border-radius:9px}.input{border:1px solid var(--border);border-radius:10px;padding:.55rem .7rem;width:100%}.input:focus{outline:2px solid var(--ring)}.row{display:flex;gap:.6rem;flex-wrap:wrap}.modal{position:fixed;inset:0;display:none;place-items:center;background:rgba(15,23,42,.35);padding:16px;z-index:60}.modal[open]{display:grid}.box{background:#fff;max-width:920px;width:96vw;border:1px solid var(--border);border-radius:16px;box-shadow:0 34px 70px rgba(0,0,0,.2);display:flex;flex-direction:column;max-height:calc(100vh - 48px)}.box .foot{margin-top:auto;border-top:1px solid var(--border);padding:10px 16px;display:flex;gap:.5rem;justify-content:flex-end;background:#fff;position:sticky;bottom:0}.dock{position:fixed;left:0;right:0;bottom:0;display:flex;gap:.5rem;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:#fff;border-top:1px solid var(--border)}.tab{flex:1;display:grid;place-items:center}.small{font-size:.86rem}"},
+    {name:"setup.js", text:`const LS_RO='ct_setup_ro_v1', LS_RU='ct_setup_ru_v1';const $=s=>document.querySelector(s);const read=(k,f)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):f}catch(e){return f}};const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};const uid=()=>Math.random().toString(36).slice(2,9);let SIDE='RO', CUR=null;function blank(){return Array.from({length:12},(_,i)=>({id:uid(),pos:i+1,tool:'',hold:'',ins:'',op:'',note:''}))}function ensure(){ if(!read(LS_RO,[]).length) write(LS_RO,blank()); if(!read(LS_RU,[]).length) write(LS_RU,blank()); }function cell(s){return "<div class='slot'><h4>Station "+s.pos+"</h4><div class='small'>"+(s.tool||'—')+"</div><div class='small'>"+(s.hold||'')+"</div><div class='small'><span class='iso'>"+(s.ins||'')+"</span></div><div class='row'><button class='btn sm' data-e='"+s.id+"'>✏️</button><button class='btn sm' data-x='"+s.id+"'>🗑️</button></div></div>"}function draw(){ const key=SIDE==='RO'?LS_RO:LS_RU; const arr=read(key,blank()); const grid=document.getElementById('grid'); grid.innerHTML=arr.map(cell).join(''); grid.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>openEd(b.dataset.e)); grid.querySelectorAll('[data-x]').forEach(b=>b.onclick=()=>del(b.dataset.x)); }function openEd(id){ const key=SIDE==='RO'?LS_RO:LS_RU; const arr=read(key,blank()); CUR=arr.find(x=>x.id===id); if(!CUR) return; document.getElementById('eTitle').textContent=SIDE+' — Station '+CUR.pos; fTool.value=CUR.tool||''; fHold.value=CUR.hold||''; fIns.value=CUR.ins||''; fOp.value=CUR.op||''; fNote.value=CUR.note||''; document.getElementById('ed').setAttribute('open',''); }function save(){ const key=SIDE==='RO'?LS_RO:LS_RU; const arr=read(key,blank()); const i=arr.findIndex(x=>x.id===CUR.id); if(i<0) return; arr[i]={...arr[i],tool:fTool.value.trim(),hold:fHold.value.trim(),ins:fIns.value.trim().toUpperCase(),op:fOp.value.trim(),note:fNote.value}; write(key,arr); document.getElementById('ed').removeAttribute('open'); draw(); }function del(id){ const key=SIDE==='RO'?LS_RO:LS_RU; const arr=read(key,blank()); const i=arr.findIndex(x=>x.id===id); if(i<0) return; arr[i]={...arr[i],tool:'',hold:'',ins:'',op:'',note:''}; write(key,arr); draw(); }document.addEventListener('DOMContentLoaded',()=>{ ensure(); draw(); document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{SIDE=b.dataset.t; draw();}); eClose.onclick=()=>ed.removeAttribute('open'); eSave.onclick=save; eDel.onclick=()=>{ if(!CUR) return; del(CUR.id); ed.removeAttribute('open'); }; });`}
+  ]
+};
+
+/* ---------- Кнопки скачивания ---------- */
+function downloadZip(pack){
+  const blob = makeZip(pack.files);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = pack.name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 2000);
+}
+
+document.getElementById('zipDocs').addEventListener('click', ()=>downloadZip(DOCS), {passive:true});
+document.getElementById('zipTools').addEventListener('click', ()=>downloadZip(TOOLS), {passive:true});
+document.getElementById('zipSetup').addEventListener('click', ()=>downloadZip(SETUP), {passive:true});
+</script>
+</body>
+</html>
