@@ -1,4 +1,4 @@
-
+===== FILE: /setup.html =====
 <!doctype html>
 <html lang="de">
 <head>
@@ -9,7 +9,10 @@
 <body data-active="programme">
 <header class="appbar">
   <div class="wrap">
-    <a class="logo" href="./index.html"><img src="./ui/brand.png" class="badge" alt=""><div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup + Programme</div></div></a>
+    <a class="logo" href="./index.html">
+      <span class="ct-badge" aria-hidden="true">CT</span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup + Programme</div></div>
+    </a>
     <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
   </div>
 </header>
@@ -40,7 +43,7 @@ CT.ready(()=>{
   let side = 'ro';
   let currentProgId = progs[0]?.id;
 
-  function progTitle(p){ return `#${p.number} — ${p.title}`; }
+  function progTitle(p){ return \`#\${p.number} — \${p.title}\`; }
   function refreshProgSelect(){
     const cur = progs.find(p=>p.id===currentProgId);
     document.getElementById('progSelect').textContent = cur? progTitle(cur) : 'Programm wählen…';
@@ -88,25 +91,27 @@ CT.ready(()=>{
         const t = tools.find(x=>x.id===v.toolId);
         const name = t? t.name : '—';
         const code = t? t.code : '';
-        const note = v.note||'';
-        if(q && !(name.toLowerCase().includes(q)||code.toLowerCase().includes(q)||note.toLowerCase().includes(q))) { continue; }
+        if(q && !(name.toLowerCase().includes(q)||code.toLowerCase().includes(q))) { continue; }
+
+        // мини-фото или placeholder "no foto"
+        const thumb = t?.imgData
+          ? `<img class="thumb" src="${t.imgData}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">`
+          : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
+
         cell.innerHTML = `
           <div class="slot-full">
-            ${t?.imgData?`<img class="thumb" src="${t.imgData}" alt="">`:''}
+            ${thumb}
             <div class="meta">
-              <div class="name">${CT.escape(name)}</div>
+              <div class="name"><b>${CT.escape(name)}</b></div>
               <div class="sub">${CT.escape(code)}</div>
             </div>
-            <div class="tail" style="display:grid;gap:.25rem;justify-items:end">
-              ${note?`<span class="badge" title="${CT.escape(note)}">Note</span>`:''}
-              <div class="row" style="gap:.25rem">
-                <button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
-                <button class="btn ghost sm" data-i="${i}">Ändern</button>
-              </div>
+            <div class="tail" style="display:flex;gap:.25rem;align-items:center">
+              <button class="icon-btn info" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
+              <button class="icon-btn" data-edit aria-label="Ändern"><svg><use href="./ui/icons.svg#edit"/></svg></button>
             </div>
           </div>`;
-        cell.querySelector('.icon-btn').onclick=()=> infoSlot(i);
-        cell.querySelector('.btn').onclick=()=> selectToolFor(i);
+        cell.querySelector('.icon-btn.info').onclick=()=> infoSlot(i);
+        cell.querySelector('[data-edit]').onclick=()=> selectToolFor(i);
       }
       root.appendChild(cell);
     }
@@ -116,30 +121,21 @@ CT.ready(()=>{
     const tools = CT.storage.read(CT_KEYS.TOOLS, []);
     const items = tools.map(t=>({id:t.id, title:t.name, meta:t.code}));
     CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
-      const prev = live[side][idx] || {};
-      live[side][idx] = {toolId:id, note: prev.note || ''};
+      live[side][idx] = {toolId:id, note:''};
       CT.storage.write(CT_KEYS.SETUP, live); CT.closeDrawer(); CT.toast('Aktualisiert','ok'); render();
     }});
   }
-
   function infoSlot(i){
-    const cell = live[side][i];
-    const t = cell ? CT.getToolFromSlot(live, side, i) : null;
+    const t = CT.getToolFromSlot(live, side, i);
     if(!t){ CT.toast('Kein Werkzeug','err'); return; }
     const html = `
       ${t.imgData?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
-      <b>${CT.escape(t.name)}</b>
-      <div class="i-row">${CT.escape(t.code)} • ${CT.escape(t.iso||'')}</div>
-      <label class="fld">Notiz zur Position #${i+1}<textarea id="slot_note" rows="4" placeholder="Bemerkung, Schnittdaten, G-Code…">${CT.escape(cell.note||'')}</textarea></label>
+      <b>${CT.escape(t.name)}</b><div class="i-row">${CT.escape(t.code)} • ${CT.escape(t.iso||'')}</div>
       <div class="row">
         <button class="btn warn" id="rem">Entfernen aus Programm</button>
         <button class="btn brand" id="edt">Bearbeiten Tool</button>
       </div>`;
-    CT.openModal({title:`Position #${i+1}`, html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
-      const note = document.getElementById('slot_note').value||'';
-      const data=CT.storage.read(CT_KEYS.SETUP,{ro:Array(12).fill(null), ru:Array(12).fill(null)});
-      if(data[side][i]){ data[side][i].note = note; CT.storage.write(CT_KEYS.SETUP,data); CT.toast('Notiz gespeichert','ok'); render(); }
-    }});
+    CT.openModal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
     document.getElementById('rem').onclick=()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
     document.getElementById('edt').onclick=()=>{ CT.closeModal(); location.href='./tools.html'; };
   }
@@ -160,3 +156,4 @@ CT.ready(()=>{
 </script>
 </body>
 </html>
+===== END FILE
