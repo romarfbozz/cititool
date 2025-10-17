@@ -1,4 +1,4 @@
-
+===== FILE: /docs.html =====
 <!doctype html>
 <html lang="de">
 <head>
@@ -15,10 +15,6 @@
       <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Dokumentation</div></div>
     </a>
     <div class="actions">
-      <button class="btn ghost sm" id="btnFav">Nur Favoriten</button>
-      <button class="btn sm" id="btnImport">Import</button>
-      <button class="btn sm" id="btnExportAll">Export (alle)</button>
-      <button class="btn sm" id="btnSelect">Auswahl</button>
       <button class="btn brand sm" id="btnNew">Neue Seite</button>
       <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
     </div>
@@ -33,14 +29,22 @@
   <section class="section">
     <h2>Notizen</h2>
 
-    <div class="row" id="bulkBar" style="display:none">
+    <ul id="docList" class="cards"></ul>
+
+    <!-- нижняя панель действий (компактная) -->
+    <div class="row" id="bottomBar" style="margin-top:.5rem;gap:.4rem;flex-wrap:wrap">
+      <button class="btn sm" id="btnImport">Import</button>
+      <button class="btn sm" id="btnExportAll">Export</button>
+      <button class="btn sm" id="btnSelect">Auswahl</button>
+    </div>
+
+    <!-- массовые действия при выборе -->
+    <div class="row" id="bulkBar" style="display:none;gap:.4rem;flex-wrap:wrap">
       <span class="badge" id="bulkCount">0</span>
       <button class="btn sm warn" id="bulkDelete">Löschen (0)</button>
       <button class="btn sm" id="bulkExport">Export (0)</button>
       <button class="btn sm ghost" id="bulkCancel">Abbrechen</button>
     </div>
-
-    <ul id="docList" class="cards"></ul>
   </section>
 </main>
 
@@ -52,7 +56,6 @@
 CT.ready(()=>{
   CT.ensureSeeds();
 
-  let onlyFav=false;
   let selectMode=false;
   let selected=new Set();
 
@@ -69,11 +72,11 @@ CT.ready(()=>{
     const q=(docSearch.value||'').toLowerCase();
     const docs=CT.storage.read(CT_KEYS.DOCS, []);
     let data = docs.filter(d=>{
-      if(onlyFav && !d.favorite) return false;
       const hay=(d.title+' '+(d.category||'')+' '+(d.body||'')).toLowerCase();
       return !q || hay.includes(q);
     });
-    data.sort((a,b)=>(b.favorite|0)-(a.favorite|0) || String(a.title).localeCompare(String(b.title)));
+    // сортировка по названию
+    data.sort((a,b)=>String(a.title||'').localeCompare(String(b.title||'')));
 
     const list = document.getElementById('docList'); list.innerHTML='';
     if(!data.length){ list.innerHTML='<li class="muted">Keine Notizen</li>'; return; }
@@ -82,7 +85,7 @@ CT.ready(()=>{
       const li=document.createElement('li'); li.className='card note';
       const thumb = d.imgData
         ? `<img class="thumb" src="${d.imgData}" alt="">`
-        : '';
+        : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
       const snippet = d.body ? `<div class="muted" style="font-size:13px;line-height:1.2">${CT.escape(CT.snippet(d.body,120))}</div>` : '';
       li.innerHTML = `
         ${thumb}
@@ -92,7 +95,6 @@ CT.ready(()=>{
           ${snippet}
         </div>
         <div class="tail" style="display:grid;justify-items:end;gap:.25rem">
-          ${d.favorite?'<span class="badge">★ Fav</span>':''}
           ${selectMode
             ? `<label class="chk"><input type="checkbox" class="sel" ${selected.has(d.id)?'checked':''}></label>`
             : `<button class="icon-btn info" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>`}
@@ -116,7 +118,6 @@ CT.ready(()=>{
       <div class="doc-body" style="white-space:pre-wrap">${CT.escape(d.body||'')}</div>
       <div class="row" style="margin-top:.5rem">
         <button class="btn" id="dup">Duplizieren</button>
-        <button class="btn ${d.favorite?'ok':''}" id="favToggle">${d.favorite?'★ Un-Favorit':'☆ Favorit'}</button>
         <button class="btn brand" id="edit">Bearbeiten</button>
         <button class="btn warn" id="del">Löschen</button>
       </div>`;
@@ -127,10 +128,6 @@ CT.ready(()=>{
       arr.push({...d, id:CT.uid(), title:(d.title||'Untitled')+' (Kopie)'});
       CT.storage.write(CT_KEYS.DOCS,arr); CT.toast('Kopiert','ok'); render();
     };
-    favToggle.onclick=()=>{
-      const arr=CT.storage.read(CT_KEYS.DOCS,[]);
-      const i=arr.findIndex(x=>x.id===d.id); if(i>-1){ arr[i].favorite=!arr[i].favorite; CT.storage.write(CT_KEYS.DOCS,arr); CT.closeModal(); render(); CT.toast('Aktualisiert','ok'); }
-    };
     edit.onclick=()=>{ CT.closeModal(); editDoc(d); };
     del.onclick=()=>{
       const arr=CT.storage.read(CT_KEYS.DOCS,[]).filter(x=>x.id!==d.id);
@@ -140,13 +137,12 @@ CT.ready(()=>{
 
   function editDoc(d){
     const isNew=!d;
-    const cur=d||{id:CT.uid(), title:'', category:'', tags:[], body:'', favorite:false, imgData:''};
+    const cur=d||{id:CT.uid(), title:'', category:'', tags:[], body:'', imgData:''};
     const html=`
       <label class="fld">Titel<input id="t" value="${CT.escape(cur.title)}"></label>
       <label class="fld">Kategorie<input id="c" value="${CT.escape(cur.category)}"></label>
       <label class="fld">Tags (durch Komma)<input id="g" value="${CT.escape((cur.tags||[]).join(', '))}"></label>
       <label class="fld">Text<textarea id="b" rows="8">${CT.escape(cur.body||'')}</textarea></label>
-      <label class="chk"><input type="checkbox" id="fav" ${cur.favorite?'checked':''}/> Favorit</label>
       <label class="fld file">Bild<input id="img" type="file" accept="image/*"></label>
     `;
     CT.openModal({title:isNew?'Neue Seite':'Notiz bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
@@ -155,19 +151,35 @@ CT.ready(()=>{
       up.category=c.value||'';
       up.tags=(g.value||'').split(',').map(s=>s.trim()).filter(Boolean);
       up.body=b.value||'';
-      up.favorite=fav.checked;
       const file=img.files?.[0];
       const commit=()=>{ let arr=CT.storage.read(CT_KEYS.DOCS,[]); const i=arr.findIndex(x=>x.id===up.id); if(i>-1)arr[i]=up; else arr.push(up); CT.storage.write(CT_KEYS.DOCS,arr); CT.toast('Gespeichert','ok'); render(); };
       if(file){ CT.readFileAsDataURL(file).then(data=>{up.imgData=data; commit();}); } else commit();
     }});
   }
 
-  // Toolbar
+  // нижняя панель
   btnNew.onclick=()=>editDoc(null);
-  btnFav.onclick=()=>{ onlyFav=!onlyFav; btnFav.classList.toggle('ok', onlyFav); render(); };
-  btnExportAll.onclick=()=>{ const data=CT.storage.read(CT_KEYS.DOCS,[]); const stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19); CT.exportJSON(`ct_docs_${stamp}.json`, data); };
-  btnImport.onclick=async()=>{ const data=await CT.importJSON(); if(!Array.isArray(data)) return CT.toast('Falsches Format','err'); CT.openModal({title:'Import', html:'Ersetzen statt Mergen?', okText:'Ersetzen', cancelText:'Mergen', onOk:()=>{ CT.storage.write(CT_KEYS.DOCS, data); CT.toast('Importiert','ok'); render(); }}); const cancel=document.querySelector('.modal .footer .cancel'); cancel.onclick=()=>{ const cur=CT.storage.read(CT_KEYS.DOCS,[]); const map=new Map(cur.map(x=>[x.id,x])); data.forEach(x=>map.set(x.id, {...map.get(x.id), ...x})); CT.storage.write(CT_KEYS.DOCS, Array.from(map.values())); CT.closeModal(); CT.toast('Gemergt','ok'); render(); }; };
+  btnImport.onclick=async()=>{
+    const data=await CT.importJSON();
+    if(!Array.isArray(data)) return CT.toast('Falsches Format','err');
+    CT.openModal({title:'Import', html:'Ersetzen statt Mergen?', okText:'Ersetzen', cancelText:'Mergen',
+      onOk:()=>{ CT.storage.write(CT_KEYS.DOCS, data); CT.toast('Importiert','ok'); render(); }});
+    const cancel=document.querySelector('.modal .footer .cancel');
+    cancel.onclick=()=>{
+      const cur=CT.storage.read(CT_KEYS.DOCS,[]); const map=new Map(cur.map(x=>[x.id,x]));
+      data.forEach(x=>map.set(x.id, {...map.get(x.id), ...x}));
+      CT.storage.write(CT_KEYS.DOCS, Array.from(map.values()));
+      CT.closeModal(); CT.toast('Gemergt','ok'); render();
+    };
+  };
+  btnExportAll.onclick=()=>{
+    const data=CT.storage.read(CT_KEYS.DOCS,[]);
+    const stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    CT.exportJSON(`ct_docs_${stamp}.json`, data);
+  };
   btnSelect.onclick=()=>{ selectMode=!selectMode; selected.clear(); btnSelect.classList.toggle('ok', selectMode); render(); };
+
+  // массовые действия
   bulkCancel.onclick=()=>{ selectMode=false; selected.clear(); btnSelect.classList.remove('ok'); render(); };
   bulkDelete.onclick=()=>{ if(!selected.size) return; const ids=[...selected]; const arr=CT.storage.read(CT_KEYS.DOCS,[]).filter(x=>!ids.includes(x.id)); CT.storage.write(CT_KEYS.DOCS, arr); CT.toast(`Gelöscht: ${ids.length}`,'ok'); selected.clear(); selectMode=false; btnSelect.classList.remove('ok'); render(); };
   bulkExport.onclick=()=>{ if(!selected.size) return CT.toast('Nichts gewählt','err'); const ids=[...selected]; const arr=CT.storage.read(CT_KEYS.DOCS,[]).filter(x=>ids.includes(x.id)); const stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19); CT.exportJSON(`ct_docs_selected_${stamp}.json`, arr); };
@@ -180,3 +192,4 @@ CT.ready(()=>{
 </script>
 </body>
 </html>
+===== END FILE =====
