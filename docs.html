@@ -1,0 +1,103 @@
+===== FILE: /docs.html =====
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>CitiTool • Dokumentation</title>
+  <link rel="stylesheet" href="./ui/core.css">
+</head>
+<body data-active="docs">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html"><img src="./ui/brand.png" class="badge" alt=""><div class="tit"><div class="title">CitiTool</div><div class="subtitle">Dokumentation</div></div></a>
+    <div class="actions">
+      <button class="btn ghost sm" id="btnFav">Nur Favoriten</button>
+      <button class="btn sm" id="btnExport">Export</button>
+      <button class="btn sm" id="btnImport">Import</button>
+      <button class="btn brand sm" id="btnNew">Neue Seite</button>
+      <button class="icon-btn" data-ct="search-toggle"><svg><use href="./ui/icons.svg#search"/></svg></button>
+    </div>
+  </div>
+</header>
+<div class="searchbar collapsed"><input class="field" type="search" placeholder="Dokumente suchen…" id="docSearch"></div>
+
+<main class="container">
+  <section class="section">
+    <h2>Notizen</h2>
+    <ul id="docList" class="cards"></ul>
+  </section>
+</main>
+<nav class="dock" id="dock"></nav>
+
+<script src="./ui/core.js"></script>
+<script src="./ui/dock.js"></script>
+<script>
+CT.ready(()=>{
+  CT.ensureSeeds();
+  let onlyFav=false;
+
+  function render(){
+    const q=(document.getElementById('docSearch').value||'').toLowerCase();
+    const docs=CT.storage.read(CT_KEYS.DOCS, []);
+    const list=document.getElementById('docList'); list.innerHTML='';
+    let data = docs.filter(d => (!onlyFav || d.favorite) && ( !q || (d.title+d.category+(d.tags||[]).join(',')+d.body).toLowerCase().includes(q) ));
+    if(!data.length){ list.innerHTML='<li class="muted">Keine Notizen</li>'; return; }
+    data.sort((a,b)=>(b.favorite|0)-(a.favorite|0));
+    data.forEach(d=>{
+      const li=document.createElement('li'); li.className='card note';
+      li.innerHTML=`${d.imgData?`<img class="thumb" src="${d.imgData}" alt="">`:''}
+        <div class="meta"><div class="name">${CT.escape(d.title)}</div>
+        <div class="sub">${CT.escape(d.category||'')}</div>
+        <div class="tags">${(d.tags||[]).map(t=>`<span>${CT.escape(t)}</span>`).join('')}</div></div>
+        <div class="tail"><button class="icon-btn"><svg><use href="./ui/icons.svg#info"/></svg></button></div>`;
+      li.querySelector('button').onclick=()=>openDoc(d);
+      list.appendChild(li);
+    });
+  }
+  function openDoc(d){
+    const html = `
+      ${d.imgData?`<div class="imgwrap"><img src="${d.imgData}" alt=""></div>`:''}
+      <b>${CT.escape(d.title)}</b>
+      <div class="i-row">${CT.escape(d.category||'')} • ${(d.tags||[]).map(t=>`#${CT.escape(t)}`).join(' ')}</div>
+      <div class="doc-body">${CT.escape(d.body||'')}</div>
+      <div class="row"><button class="btn brand" id="edit">Bearbeiten</button><button class="btn warn" id="del">Löschen</button></div>`;
+    CT.openModal({title:'Notiz', html, cancelText:'Schließen'});
+    document.getElementById('edit').onclick=()=>{ CT.closeModal(); editDoc(d); };
+    document.getElementById('del').onclick=()=>{ const arr=CT.storage.read(CT_KEYS.DOCS,[]).filter(x=>x.id!==d.id); CT.storage.write(CT_KEYS.DOCS,arr); CT.closeModal(); render(); CT.toast('Gelöscht','ok'); };
+  }
+  function editDoc(d){
+    const isNew=!d;
+    const cur=d||{id:CT.uid(), title:'', category:'', tags:[], body:'', favorite:false, imgData:''};
+    const html=`
+      <label class="fld">Titel<input id="t" value="${CT.escape(cur.title)}"></label>
+      <label class="fld">Kategorie<input id="c" value="${CT.escape(cur.category)}"></label>
+      <label class="fld">Tags (durch Komma)<input id="g" value="${CT.escape((cur.tags||[]).join(', '))}"></label>
+      <label class="fld">Text<textarea id="b" rows="6">${CT.escape(cur.body||'')}</textarea></label>
+      <label class="chk"><input type="checkbox" id="fav" ${cur.favorite?'checked':''}/> Favorit</label>
+      <label class="fld file">Bild<input id="img" type="file" accept="image/*"></label>
+    `;
+    CT.openModal({title:isNew?'Neue Seite':'Notiz bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
+      const up={...cur};
+      up.title=document.getElementById('t').value||'Untitled';
+      up.category=document.getElementById('c').value||'';
+      up.tags=(document.getElementById('g').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+      up.body=document.getElementById('b').value||'';
+      up.favorite=document.getElementById('fav').checked;
+      const file=document.getElementById('img').files?.[0];
+      const commit=()=>{ let arr=CT.storage.read(CT_KEYS.DOCS,[]); const i=arr.findIndex(x=>x.id===up.id); if(i>-1)arr[i]=up; else arr.push(up); CT.storage.write(CT_KEYS.DOCS,arr); CT.toast('Gespeichert','ok'); render(); };
+      if(file){ CT.readFileAsDataURL(file).then(data=>{up.imgData=data; commit();}); } else commit();
+    }});
+  }
+
+  document.getElementById('btnNew').onclick=()=>editDoc(null);
+  document.getElementById('btnFav').onclick=()=>{onlyFav=!onlyFav; render();};
+  document.getElementById('btnExport').onclick=()=>CT.exportJSON('ct_docs.json', CT.storage.read(CT_KEYS.DOCS,[]));
+  document.getElementById('btnImport').onclick=()=>CT.importJSON().then(data=>{ if(!Array.isArray(data)) return CT.toast('Falsches Format','err'); CT.openModal({title:'Import', html:'Ersetzen statt Mergen?', okText:'Ersetzen', cancelText:'Mergen', onOk:()=>{ CT.storage.write(CT_KEYS.DOCS, data); CT.toast('Importiert','ok'); render(); }, }); const cancel=document.querySelector('.modal .footer .cancel'); cancel.onclick=()=>{ const arr=CT.storage.read(CT_KEYS.DOCS,[]).concat(data); CT.storage.write(CT_KEYS.DOCS, arr); CT.closeModal(); CT.toast('Gemergt','ok'); render(); }; });
+  document.getElementById('docSearch').addEventListener('input', render);
+  CT.bindGlobalSearch(()=>render());
+  render();
+});
+</script>
+</body>
+</html>
+===== END FILE =====
