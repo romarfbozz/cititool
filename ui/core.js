@@ -141,12 +141,29 @@ window.CT = (function(){
   function importJSON(){ return new Promise((resolve)=>{ const i=document.createElement('input'); i.type='file'; i.accept='application/json'; i.onchange=()=>{ const f=i.files[0]; const r=new FileReader(); r.onload=()=>resolve(JSON.parse(r.result||'[]')); r.readAsText(f); }; i.click(); }); }
   function getToolFromSlot(live, side, idx){ const v=live[side][idx]; if(!v) return null; const tools=storage.read(CT_KEYS.TOOLS,[]); return tools.find(t=>t.id===v.toolId)||null; }
 
+  // ➕ КОРОТКИЙ СНИППЕТ ДЛЯ ПРЕВЬЮ ТЕКСТА
+  function snippet(txt, max=120){
+    if(!txt) return '';
+    let s = String(txt)
+      .replace(/```[\s\S]*?```/g,' ')
+      .replace(/`[^`]+`/g,' ')
+      .replace(/\*\*|__/g,'')
+      .replace(/\*([^*]+)\*/g,'$1')
+      .replace(/#+\s?/g,'')
+      .replace(/[\r\n]+/g,' ')
+      .replace(/[^\w\d\s.,;:!?()\-+#/%]/g,' ')
+      .replace(/\s{2,}/g,' ')
+      .trim();
+    if(s.length<=max) return s;
+    return s.slice(0, max).replace(/\s+\S*$/,'')+'…';
+  }
+
   return {
     ready, uid, escape:escapeHTML,
     storage, splash, openModal, closeModal, openDrawer, closeDrawer, toast,
     readFileAsDataURL, exportJSON, importJSON,
     bindGlobalSearch, ensureSeeds, getToolFromSlot,
+    snippet, // ← добавлено
   };
 })();
 window.CT_KEYS = CT.CT_KEYS || { TOOLS:'ct_tools_v2', CATS:'ct_cats_v1', SETUP:'ct_setup_live', PROGS:'ct_programs_v1', DASH:'ct_dash_v1', DOCS:'ct_docs_v3' };
-
