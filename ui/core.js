@@ -60,12 +60,26 @@ window.CT = (function(){
     }
   }
 
-  // Splash
-  function splash({logo, ms=700}){
-    const el=document.createElement('div'); el.className='modal show'; el.innerHTML=`<div class="overlay" style="backdrop-filter:blur(10px)"></div><div class="card" style="text-align:center;padding:24px"><img src="${logo}" alt="" style="width:64px;height:64px;border-radius:16px;margin:10px auto 8px"><div style="font-weight:800;font-size:18px">CitiTool</div><div class="muted">lädt…</div></div>`;
-    document.body.appendChild(el); document.body.classList.add('noscroll'); setTimeout(()=>{ el.remove(); document.body.classList.remove('noscroll'); }, ms);
-  }
+  // // Замените вашу функцию splash на эту версию (JS-файл, не CSS!)
+function splash({logo=':ct', ms=700}){
+  const badgeHTML = `<span class="ct-badge lg" aria-hidden="true">CT</span>`;
+  const logoHTML = (logo && logo !== ':ct')
+    ? `<img src="${logo}" alt="CitiTool" style="width:64px;height:64px;border-radius:16px;margin:10px auto 8px">`
+    : badgeHTML;
 
+  const el=document.createElement('div');
+  el.className='modal show splash';
+  el.innerHTML=`
+    <div class="overlay" style="backdrop-filter:blur(10px)"></div>
+    <div class="card splash-card" style="text-align:center;padding:24px">
+      ${logoHTML}
+      <div style="font-weight:800;font-size:18px">CitiTool</div>
+      <div class="muted">lädt…</div>
+    </div>`;
+  document.body.appendChild(el);
+  document.body.classList.add('noscroll');
+  setTimeout(()=>{ el.remove(); document.body.classList.remove('noscroll'); }, ms);
+}
   // Modal
   function openModal({title='', html='', okText, cancelText='Schließen', onOk}){
     closeModal();
