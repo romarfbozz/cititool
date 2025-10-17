@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="de">
 <head>
@@ -65,9 +64,25 @@ CT.ready(()=>{
     document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
   }
 
+  // Drawer программ: список + кнопка "Neues Programm"
   function openProgMenu(){
     const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
-    CT.openDrawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; CT.closeDrawer(); refreshProgSelect(); render(); }});
+    const htmlTop = `
+      <div class="row" style="margin-bottom:.5rem">
+        <button class="btn sm" id="newProg">+ Neues Programm</button>
+      </div>`;
+    CT.openDrawer({title:'Programme', html: htmlTop + `<ul class="list">${
+      items.map(it=>`<li data-id="${it.id}"><div><b>${CT.escape(it.title)}</b><div class="muted">${CT.escape(it.meta||'')}</div></div><button class="btn sm">Wählen</button></li>`).join('') || '<li class="muted">Keine Programme</li>'
+    }</ul>`});
+
+    const drawer = document.querySelector('.drawer');
+    const btnNew = drawer.querySelector('#newProg');
+    if(btnNew) btnNew.onclick = ()=>{ CT.closeDrawer(); currentProgId=null; editProg(); };
+
+    drawer.querySelectorAll('.list li').forEach(li=>{
+      const id = li.dataset.id;
+      li.querySelector('button').onclick = ()=>{ currentProgId=id; CT.closeDrawer(); refreshProgSelect(); render(); };
+    });
   }
 
   function applyToLive(){
@@ -91,7 +106,8 @@ CT.ready(()=>{
       const up = {...cur};
       up.number = document.getElementById('pr_n').value || cur.number;
       up.title  = document.getElementById('pr_t').value || cur.title;
-      if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
+      if(isNew) { progs.push(up); }
+      else      { progs = progs.map(x=>x.id===up.id?up:x); }
       CT.storage.write(CT_KEYS.PROGS, progs);
       currentProgId = up.id;
       refreshProgSelect();
@@ -129,7 +145,7 @@ CT.ready(()=>{
     }});
   }
 
-  // -------- render slots (12 позиций, не скрываем из-за поиска) ----------
+  // -------- render slots (12 позиций, сетка slot-tnum) ----------
   function render(){
     const root = document.getElementById('slots');
     root.innerHTML = '';
@@ -144,14 +160,20 @@ CT.ready(()=>{
 
       // текущий номер слота
       const tnum = (v && v.tnum) ? v.tnum : defaultTnum(i);
-      const tnumBtn = `<button class="btn sm ghost" data-tnum="${i}" style="min-width:72px">${CT.escape(tnum)}</button>`;
+      const tnumBtn = `<button class="badge tnum-btn" data-tnum="${i}">${CT.escape(tnum)}</button>`;
 
       if(!v){
         cell.innerHTML = `
-          <div class="slot-empty" style="gap:.5rem">
+          <div class="slot-full slot-tnum">
             ${tnumBtn}
-            <span class="muted">#${i+1} • Leer</span>
-            <button class="btn" data-i="${i}">Hinzufügen</button>
+            <div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>
+            <div class="meta">
+              <div class="name"><b>#${i+1} • Leer</b></div>
+              <div class="sub">—</div>
+            </div>
+            <div class="tail" style="display:flex;gap:.25rem;align-items:center">
+              <button class="btn" data-i="${i}">Hinzufügen</button>
+            </div>
           </div>`;
         cell.querySelector('[data-i]').onclick=()=>selectToolFor(i);
         cell.querySelector('[data-tnum]').onclick=()=>editSlotNumber(i);
@@ -167,7 +189,7 @@ CT.ready(()=>{
           : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
 
         cell.innerHTML = `
-          <div class="slot-full" ${matches?'':'style="opacity:.45"'} >
+          <div class="slot-full slot-tnum" ${matches?'':'style="opacity:.45"'} >
             ${tnumBtn}
             ${thumb}
             <div class="meta">
@@ -193,11 +215,7 @@ CT.ready(()=>{
     const items = tools.map(t=>({id:t.id, title:t.name, meta:t.code}));
     CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
       const prev = live[side][idx] || {};
-      live[side][idx] = {
-        toolId:id,
-        note: prev.note || '',
-        tnum: prev.tnum || defaultTnum(idx)
-      };
+      live[side][idx] = { toolId:id, note:prev.note||'', tnum: prev.tnum || defaultTnum(idx) };
       CT.storage.write(CT_KEYS.SETUP, live);
       CT.closeDrawer();
       CT.toast('Aktualisiert','ok');
