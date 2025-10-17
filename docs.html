@@ -2,31 +2,50 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Dokumentation</title>
   <link rel="stylesheet" href="./ui/core.css">
 </head>
 <body data-active="docs">
 <header class="appbar">
   <div class="wrap">
-    <a class="logo" href="./index.html"><img src="./ui/brand.png" class="badge" alt=""><div class="tit"><div class="title">CitiTool</div><div class="subtitle">Dokumentation</div></div></a>
+    <a class="logo" href="./index.html">
+      <img src="./ui/brand.png" class="badge" alt="">
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Dokumentation</div></div>
+    </a>
     <div class="actions">
       <button class="btn ghost sm" id="btnFav">Nur Favoriten</button>
-      <button class="btn sm" id="btnExport">Export</button>
       <button class="btn sm" id="btnImport">Import</button>
+      <button class="btn sm" id="btnExportAll">Export (alle)</button>
+      <button class="btn sm" id="btnSelect">Auswahl</button>
       <button class="btn brand sm" id="btnNew">Neue Seite</button>
-      <button class="icon-btn" data-ct="search-toggle"><svg><use href="./ui/icons.svg#search"/></svg></button>
+      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
     </div>
   </div>
 </header>
-<div class="searchbar collapsed"><input class="field" type="search" placeholder="Dokumente suchen…" id="docSearch"></div>
+
+<div class="searchbar collapsed">
+  <input class="field" type="search" placeholder="Dokumente suchen…" id="docSearch">
+</div>
 
 <main class="container">
   <section class="section">
     <h2>Notizen</h2>
+    <div class="row" id="activeFilters" style="display:none"></div>
+
+    <!-- Bulk actions -->
+    <div class="row" id="bulkBar" style="display:none">
+      <span class="badge" id="bulkCount">0</span>
+      <button class="btn sm warn" id="bulkDelete">Löschen (0)</button>
+      <button class="btn sm" id="bulkExport">Export (0)</button>
+      <button class="btn sm ghost" id="bulkCancel">Abbrechen</button>
+    </div>
+
     <ul id="docList" class="cards"></ul>
   </section>
 </main>
+
 <nav class="dock" id="dock"></nav>
 
 <script src="./ui/core.js"></script>
@@ -34,47 +53,224 @@
 <script>
 CT.ready(()=>{
   CT.ensureSeeds();
+
   let onlyFav=false;
+  let tagFilter=null;
+  let selectMode=false;
+  let selected=new Set(); // ids
+
+  function allTags(){
+    const docs=CT.storage.read(CT_KEYS.DOCS, []);
+    const set=new Set();
+    docs.forEach(d=>(d.tags||[]).forEach(t=>set.add(String(t))));
+    return Array.from(set).sort((a,b)=>a.localeCompare(b));
+  }
+
+  function setActiveFilterBadge(){
+    const wrap = document.getElementById('activeFilters');
+    wrap.innerHTML='';
+    if(tagFilter){
+      wrap.style.display='flex';
+      const badge=document.createElement('span');
+      badge.className='badge';
+      badge.textContent = '#'+tagFilter;
+      const btn=document.createElement('button');
+      btn.className='btn sm';
+      btn.textContent='Filter entfernen';
+      btn.onclick=()=>{ tagFilter=null; render(); };
+      wrap.appendChild(badge); wrap.appendChild(btn);
+    }else{
+      wrap.style.display='none';
+    }
+  }
+
+  function updateBulkBar(){
+    const n=selected.size;
+    document.getElementById('bulkBar').style.display = selectMode ? 'flex' : 'none';
+    document.getElementById('bulkCount').textContent = n;
+    document.getElementById('bulkDelete').textContent = `Löschen (${n})`;
+    document.getElementById('bulkExport').textContent = `Export (${n})`;
+  }
 
   function render(){
+    setActiveFilterBadge();
+    updateBulkBar();
+    const list=document.getElementById('docList');
     const q=(document.getElementById('docSearch').value||'').toLowerCase();
+
     const docs=CT.storage.read(CT_KEYS.DOCS, []);
-    const list=document.getElementById('docList'); list.innerHTML='';
-    let data = docs.filter(d => (!onlyFav || d.favorite) && ( !q || (d.title+d.category+(d.tags||[]).join(',')+d.body).toLowerCase().includes(q) ));
+    let data = docs.filter(d=>{
+      if(onlyFav && !d.favorite) return false;
+      if(tagFilter && !(d.tags||[]).map(String).includes(tagFilter)) return false;
+      if(!q) return true;
+      const hay=(d.title+' '+(d.category||'')+' '+(d.tags||[]).join(',')+' '+(d.body||'')).toLowerCase();
+      return hay.includes(q);
+    });
+
+    data.sort((a,b)=>(b.favorite|0)-(a.favorite|0) || String(a.title).localeCompare(String(b.title)));
+
+    list.innerHTML='';
     if(!data.length){ list.innerHTML='<li class="muted">Keine Notizen</li>'; return; }
-    data.sort((a,b)=>(b.favorite|0)-(a.favorite|0));
+
     data.forEach(d=>{
-      const li=document.createElement('li'); li.className='card note';
-      li.innerHTML=`${d.imgData?`<img class="thumb" src="${d.imgData}" alt="">`:''}
-        <div class="meta"><div class="name">${CT.escape(d.title)}</div>
-        <div class="sub">${CT.escape(d.category||'')}</div>
-        <div class="tags">${(d.tags||[]).map(t=>`<span>${CT.escape(t)}</span>`).join('')}</div></div>
-        <div class="tail"><button class="icon-btn"><svg><use href="./ui/icons.svg#info"/></svg></button></div>`;
-      li.querySelector('button').onclick=()=>openDoc(d);
+      const li=document.createElement('li');
+      li.className='card note';
+      li.innerHTML = `
+        ${d.imgData?`<img class="thumb" src="${d.imgData}" alt="">`:''}
+        <div class="meta">
+          <div class="name">${CT.escape(d.title||'Untitled')}</div>
+          <div class="sub">${CT.escape(d.category||'')}</div>
+          <div class="tags">${(d.tags||[]).map(t=>`<span data-tag="${CT.escape(t)}">#${CT.escape(t)}</span>`).join('')}</div>
+        </div>
+        <div class="tail" style="display:grid;justify-items:end;gap:.25rem">
+          ${d.favorite?'<span class="badge">★ Fav</span>':''}
+          ${selectMode ? `<label class="chk"><input type="checkbox" class="sel" ${selected.has(d.id)?'checked':''}></label>` : `<button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>`}
+        </div>
+      `;
+
+      if(selectMode){
+        const cb=li.querySelector('.sel');
+        cb.onchange=()=>{ cb.checked? selected.add(d.id) : selected.delete(d.id); updateBulkBar(); };
+        li.onclick=(e)=>{ if(e.target.tagName==='INPUT') return; cb.checked=!cb.checked; cb.onchange(); };
+      }else{
+        li.querySelector('.icon-btn').onclick=()=>openDoc(d);
+      }
+
+      li.querySelectorAll('.tags span').forEach(sp=>{
+        sp.onclick=(ev)=>{ ev.stopPropagation(); tagFilter = sp.dataset.tag; render(); };
+      });
+
       list.appendChild(li);
     });
   }
+
+  /* ---------- Lightweight Markdown ---------- */
+  function mdInline(s){
+    // assume s is already escaped
+    // code `x`
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    // bold **x**
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+    // italics *x*
+    s = s.replace(/\*([^*]+)\*/g, '<i>$1</i>');
+    return s;
+  }
+  function mdRender(text){
+    const lines = (text||'').split(/\r?\n/);
+    let html='', inList=false, inCode=false, codeBuf=[];
+    for(const raw of lines){
+      const line = raw;
+      if(line.trim().startsWith('```')){
+        if(!inCode){ inCode=true; codeBuf=[]; }
+        else{
+          // close code
+          html += `<pre><code>${CT.escape(codeBuf.join('\n'))}</code></pre>`;
+          inCode=false;
+        }
+        continue;
+      }
+      if(inCode){ codeBuf.push(line); continue; }
+
+      const mH = line.match(/^(#{1,6})\s+(.*)$/);
+      if(mH){
+        if(inList){ html+='</ul>'; inList=false; }
+        const lvl=mH[1].length; const txt=mdInline(CT.escape(mH[2]));
+        html += `<h${lvl}>${txt}</h${lvl}>`;
+        continue;
+      }
+      const mLi = line.match(/^\s*[-*]\s+(.*)$/);
+      if(mLi){
+        if(!inList){ html+='<ul>'; inList=true; }
+        html += `<li>${mdInline(CT.escape(mLi[1]))}</li>`;
+        continue;
+      }else{
+        if(inList){ html+='</ul>'; inList=false; }
+      }
+      if(line.trim()===''){ html += '<br>'; }
+      else html += `<p>${mdInline(CT.escape(line))}</p>`;
+    }
+    if(inList) html+='</ul>';
+    if(inCode) html += `<pre><code>${CT.escape(codeBuf.join('\n'))}</code></pre>`;
+    return html;
+  }
+
   function openDoc(d){
+    const bodyHTML = mdRender(d.body||'');
     const html = `
       ${d.imgData?`<div class="imgwrap"><img src="${d.imgData}" alt=""></div>`:''}
-      <b>${CT.escape(d.title)}</b>
+      <b>${CT.escape(d.title||'Untitled')}</b>
       <div class="i-row">${CT.escape(d.category||'')} • ${(d.tags||[]).map(t=>`#${CT.escape(t)}`).join(' ')}</div>
-      <div class="doc-body">${CT.escape(d.body||'')}</div>
-      <div class="row"><button class="btn brand" id="edit">Bearbeiten</button><button class="btn warn" id="del">Löschen</button></div>`;
+      <div class="doc-body" id="docBody" style="white-space:pre-wrap">${CT.escape(d.body||'')}</div>
+      <div class="row" style="margin-top:.5rem">
+        <button class="btn" id="viewToggle">Als HTML anzeigen</button>
+        <button class="btn" id="dup">Duplizieren</button>
+        <button class="btn ${d.favorite?'ok':''}" id="favToggle">${d.favorite?'★ Un-Favorit':'☆ Favorit'}</button>
+        <button class="btn brand" id="edit">Bearbeiten</button>
+        <button class="btn warn" id="del">Löschen</button>
+      </div>`;
     CT.openModal({title:'Notiz', html, cancelText:'Schließen'});
+
+    let htmlMode=false;
+    document.getElementById('viewToggle').onclick=()=>{
+      const el=document.getElementById('docBody');
+      htmlMode=!htmlMode;
+      if(htmlMode){
+        el.style.whiteSpace='normal';
+        el.innerHTML = bodyHTML;
+        document.getElementById('viewToggle').textContent='Als Text anzeigen';
+      }else{
+        el.style.whiteSpace='pre-wrap';
+        el.textContent = d.body||'';
+        document.getElementById('viewToggle').textContent='Als HTML anzeigen';
+      }
+    };
+
+    document.getElementById('dup').onclick=()=>{
+      const arr=CT.storage.read(CT_KEYS.DOCS,[]);
+      const clone={...d, id:CT.uid(), title:(d.title||'Untitled')+' (Kopie)'};
+      arr.push(clone);
+      CT.storage.write(CT_KEYS.DOCS,arr);
+      CT.toast('Kopiert','ok'); render();
+    };
+
+    document.getElementById('favToggle').onclick=()=>{
+      const arr=CT.storage.read(CT_KEYS.DOCS,[]);
+      const i=arr.findIndex(x=>x.id===d.id); if(i>-1){ arr[i].favorite=!arr[i].favorite; CT.storage.write(CT_KEYS.DOCS,arr); CT.closeModal(); render(); CT.toast('Aktualisiert','ok'); }
+    };
     document.getElementById('edit').onclick=()=>{ CT.closeModal(); editDoc(d); };
-    document.getElementById('del').onclick=()=>{ const arr=CT.storage.read(CT_KEYS.DOCS,[]).filter(x=>x.id!==d.id); CT.storage.write(CT_KEYS.DOCS,arr); CT.closeModal(); render(); CT.toast('Gelöscht','ok'); };
+    document.getElementById('del').onclick=()=>{
+      const arr=CT.storage.read(CT_KEYS.DOCS,[]).filter(x=>x.id!==d.id);
+      CT.storage.write(CT_KEYS.DOCS,arr); CT.closeModal(); render(); CT.toast('Gelöscht','ok');
+    };
   }
+
   function editDoc(d){
     const isNew=!d;
     const cur=d||{id:CT.uid(), title:'', category:'', tags:[], body:'', favorite:false, imgData:''};
+    const tagsAll=allTags();
+
     const html=`
-      <label class="fld">Titel<input id="t" value="${CT.escape(cur.title)}"></label>
-      <label class="fld">Kategorie<input id="c" value="${CT.escape(cur.category)}"></label>
-      <label class="fld">Tags (durch Komma)<input id="g" value="${CT.escape((cur.tags||[]).join(', '))}"></label>
-      <label class="fld">Text<textarea id="b" rows="6">${CT.escape(cur.body||'')}</textarea></label>
-      <label class="chk"><input type="checkbox" id="fav" ${cur.favorite?'checked':''}/> Favorit</label>
-      <label class="fld file">Bild<input id="img" type="file" accept="image/*"></label>
+      <div class="grid2">
+        <div>
+          <label class="fld">Titel<input id="t" value="${CT.escape(cur.title)}" placeholder="Titel"></label>
+          <label class="fld">Kategorie<input id="c" value="${CT.escape(cur.category)}" placeholder="z.B. Setup, Material"></label>
+          <label class="fld">Tags (durch Komma)
+            <input id="g" value="${CT.escape((cur.tags||[]).join(', '))}" placeholder="z.B. iso, gcode">
+          </label>
+          <div class="row" id="tagSug" style="flex-wrap:wrap;gap:.35rem"></div>
+          <label class="chk"><input type="checkbox" id="fav" ${cur.favorite?'checked':''}/> Favorit</label>
+          <label class="fld file">Bild<input id="img" type="file" accept="image/*"></label>
+        </div>
+        <div>
+          <label class="fld">Text (Markdown unterstützt)
+            <textarea id="b" rows="12" placeholder="# Überschrift&#10;- Punkt A&#10;- Punkt B&#10;**Fett** *Kursiv* \`Code\`">${CT.escape(cur.body||'')}</textarea>
+          </label>
+          <div class="card" style="max-height:40vh;overflow:auto">
+            <div class="muted" style="font-size:12px;margin-bottom:.25rem">Vorschau</div>
+            <div id="mdPrev" style="line-height:1.35"></div>
+          </div>
+        </div>
+      </div>
     `;
     CT.openModal({title:isNew?'Neue Seite':'Notiz bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
       const up={...cur};
@@ -87,17 +283,104 @@ CT.ready(()=>{
       const commit=()=>{ let arr=CT.storage.read(CT_KEYS.DOCS,[]); const i=arr.findIndex(x=>x.id===up.id); if(i>-1)arr[i]=up; else arr.push(up); CT.storage.write(CT_KEYS.DOCS,arr); CT.toast('Gespeichert','ok'); render(); };
       if(file){ CT.readFileAsDataURL(file).then(data=>{up.imgData=data; commit();}); } else commit();
     }});
+
+    // Live preview
+    const prev = document.getElementById('mdPrev');
+    const bodyEl = document.getElementById('b');
+    function refreshPreview(){ prev.innerHTML = mdRender(bodyEl.value||''); }
+    bodyEl.addEventListener('input', refreshPreview);
+    refreshPreview();
+
+    // Tag suggestions chips
+    const wrap=document.getElementById('tagSug');
+    function renderTagChips(){
+      const curVal=(document.getElementById('g').value||'').split(',').map(s=>s.trim()).filter(Boolean);
+      wrap.innerHTML = tagsAll
+        .filter(t=>!curVal.includes(t))
+        .slice(0,12)
+        .map(t=>`<span class="badge" data-add="${CT.escape(t)}">#${CT.escape(t)}</span>`).join('');
+      wrap.querySelectorAll('[data-add]').forEach(el=>{
+        el.onclick=()=>{
+          const v=document.getElementById('g').value.trim();
+          document.getElementById('g').value = v ? (v.replace(/\s*,\s*$/,'') + ', ' + el.dataset.add) : el.dataset.add;
+          renderTagChips();
+        };
+      });
+    }
+    document.getElementById('g').addEventListener('input', renderTagChips);
+    renderTagChips();
   }
 
+  /* ========== Toolbar actions ========== */
   document.getElementById('btnNew').onclick=()=>editDoc(null);
-  document.getElementById('btnFav').onclick=()=>{onlyFav=!onlyFav; render();};
-  document.getElementById('btnExport').onclick=()=>CT.exportJSON('ct_docs.json', CT.storage.read(CT_KEYS.DOCS,[]));
-  document.getElementById('btnImport').onclick=()=>CT.importJSON().then(data=>{ if(!Array.isArray(data)) return CT.toast('Falsches Format','err'); CT.openModal({title:'Import', html:'Ersetzen statt Mergen?', okText:'Ersetzen', cancelText:'Mergen', onOk:()=>{ CT.storage.write(CT_KEYS.DOCS, data); CT.toast('Importiert','ok'); render(); }, }); const cancel=document.querySelector('.modal .footer .cancel'); cancel.onclick=()=>{ const arr=CT.storage.read(CT_KEYS.DOCS,[]).concat(data); CT.storage.write(CT_KEYS.DOCS, arr); CT.closeModal(); CT.toast('Gemergt','ok'); render(); }; });
+
+  document.getElementById('btnFav').onclick=()=>{
+    onlyFav=!onlyFav;
+    document.getElementById('btnFav').classList.toggle('ok', onlyFav);
+    render();
+  };
+
+  document.getElementById('btnExportAll').onclick=()=>{
+    const data=CT.storage.read(CT_KEYS.DOCS,[]);
+    const stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    CT.exportJSON(`ct_docs_${stamp}.json`, data);
+  };
+
+  document.getElementById('btnImport').onclick=async ()=>{
+    const data = await CT.importJSON();
+    if(!Array.isArray(data)){ return CT.toast('Falsches Format','err'); }
+    CT.openModal({
+      title:'Import',
+      html:'Ersetzen statt Mergen?',
+      okText:'Ersetzen',
+      cancelText:'Mergen',
+      onOk:()=>{ CT.storage.write(CT_KEYS.DOCS, data); CT.toast('Importiert','ok'); render(); }
+    });
+    const cancel=document.querySelector('.modal .footer .cancel');
+    cancel.onclick=()=>{
+      const cur=CT.storage.read(CT_KEYS.DOCS,[]);
+      const map=new Map(cur.map(x=>[x.id,x]));
+      data.forEach(x=>map.set(x.id, {...map.get(x.id), ...x}));
+      CT.storage.write(CT_KEYS.DOCS, Array.from(map.values()));
+      CT.closeModal(); CT.toast('Gemergt','ok'); render();
+    };
+  };
+
+  document.getElementById('btnSelect').onclick=()=>{
+    selectMode=!selectMode;
+    selected.clear();
+    document.getElementById('btnSelect').classList.toggle('ok', selectMode);
+    render();
+  };
+
+  document.getElementById('bulkCancel').onclick=()=>{
+    selectMode=false; selected.clear();
+    document.getElementById('btnSelect').classList.remove('ok');
+    render();
+  };
+
+  document.getElementById('bulkDelete').onclick=()=>{
+    if(!selected.size) return;
+    const ids=[...selected];
+    const arr=CT.storage.read(CT_KEYS.DOCS,[]).filter(x=>!ids.includes(x.id));
+    CT.storage.write(CT_KEYS.DOCS, arr);
+    CT.toast(`Gelöscht: ${ids.length}`,'ok');
+    selected.clear(); selectMode=false; document.getElementById('btnSelect').classList.remove('ok'); render();
+  };
+
+  document.getElementById('bulkExport').onclick=()=>{
+    if(!selected.size) return CT.toast('Nichts gewählt','err');
+    const ids=[...selected];
+    const arr=CT.storage.read(CT_KEYS.DOCS,[]).filter(x=>ids.includes(x.id));
+    const stamp=new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    CT.exportJSON(`ct_docs_selected_${stamp}.json`, arr);
+  };
+
   document.getElementById('docSearch').addEventListener('input', render);
   CT.bindGlobalSearch(()=>render());
+
   render();
 });
 </script>
 </body>
 </html>
-
