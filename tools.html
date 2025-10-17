@@ -1,4 +1,4 @@
-
+===== FILE: /tools.html =====
 <!doctype html>
 <html lang="de">
 <head>
@@ -9,17 +9,25 @@
 <body data-active="tools">
 <header class="appbar">
   <div class="wrap">
-    <a class="logo" href="./index.html"><img src="./ui/brand.png" class="badge" alt=""><div class="tit"><div class="title">CitiTool</div><div class="subtitle">Werkzeuge</div></div></a>
+    <a class="logo" href="./index.html">
+      <span class="ct-badge" aria-hidden="true">CT</span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Werkzeugs­chrank</div></div>
+    </a>
     <div class="actions">
-      <button class="icon-btn" id="btnCat" title="Kategorien"><svg><use href="./ui/icons.svg#list"/></svg></button>
-      <button class="icon-btn" id="btnAdd" title="Neu"><svg><use href="./ui/icons.svg#plus"/></svg></button>
-      <button class="icon-btn" data-ct="search-toggle"><svg><use href="./ui/icons.svg#search"/></svg></button>
+      <button class="btn ghost sm" id="btnCats">Kategorien</button>
+      <button class="btn brand sm" id="btnNew">Neu</button>
+      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
     </div>
   </div>
 </header>
-<div class="searchbar collapsed"><input class="field" id="toolSearch" placeholder="Werkzeug suchen…"></div>
+<div class="searchbar collapsed"><input class="field" type="search" placeholder="Werkzeuge suchen…" id="toolSearch"></div>
 
-<main class="container" id="toolList"></main>
+<main class="container">
+  <section class="section">
+    <h2>Liste</h2>
+    <ul id="toolList" class="list-tools"></ul>
+  </section>
+</main>
 <nav class="dock" id="dock"></nav>
 
 <script src="./ui/core.js"></script>
@@ -29,138 +37,150 @@ CT.ready(()=>{
   CT.ensureSeeds();
   let tools = CT.storage.read(CT_KEYS.TOOLS, []);
   let cats  = CT.storage.read(CT_KEYS.CATS, []);
-  const list = document.getElementById('toolList');
+  let activeCat = 'ALL';
 
-  /* ---------- Rendering ---------- */
-  function render(filter=''){
-    list.innerHTML='';
-    const q = filter.toLowerCase();
-    tools.filter(t=>!q || t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q) || t.iso?.toLowerCase().includes(q))
-         .forEach(t=>{
-      const el=document.createElement('div'); el.className='card';
-      el.innerHTML=`
-        <div class="row between">
-          <div class="row gap">
-            ${t.imgData?`<img src="${t.imgData}" class="thumb" alt="">`:''}
-            <div>
-              <div class="name">${CT.escape(t.name)}</div>
-              <div class="muted">${CT.escape(t.code||'')}</div>
-            </div>
-          </div>
-          <button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
+  // robust: принимает id ИЛИ объект, возвращает название категории
+  function catTitle(ref){
+    const id = (ref && typeof ref==='object') ? ref.id : ref;
+    if(id==='ALL') return 'Alle';
+    const c = (cats||[]).find(x=>x.id===id);
+    return c ? c.title : '—';
+  }
+
+  function render(){
+    tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    cats  = CT.storage.read(CT_KEYS.CATS, []);
+    const ul = document.getElementById('toolList'); ul.innerHTML='';
+    const q = (document.getElementById('toolSearch').value||'').trim().toLowerCase();
+
+    const data = tools.filter(t => (activeCat==='ALL'||((t.catId&&t.catId.id)||t.catId)===activeCat) &&
+      (t.name.toLowerCase().includes(q)||t.code.toLowerCase().includes(q)||(t.iso||'').toLowerCase().includes(q)));
+
+    if(!data.length){ ul.innerHTML = '<li class="muted">Keine Werkzeuge</li>'; return; }
+
+    data.forEach(t=>{
+      const li = document.createElement('li');
+
+      // thumb: фиксированный размер, placeholder если нет фото
+      const thumbHTML = t.imgData
+        ? `<img class="thumb" src="${t.imgData}" alt="">`
+        : `<div class="thumb" style="display:grid;place-items:center;background:#eef3ff;color:#9cb1d9;font-weight:700">no foto</div>`;
+
+      li.innerHTML = `
+        ${thumbHTML}
+        <div class="meta">
+          <div class="name"><b>${CT.escape(t.name)}</b></div>
+          <div class="sub">${CT.escape(t.code)} • ${CT.escape(catTitle(t.catId))}</div>
+        </div>
+        <div class="tail">
+          <span class="badge">${Math.max(0, t.lifePct|0)}%</span>
+          <button class="icon-btn info" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
         </div>`;
-      el.querySelector('.icon-btn').onclick=()=>showInfo(t);
-      list.appendChild(el);
+
+      li.querySelector('button').onclick=()=>showInfo(t);
+      ul.appendChild(li);
     });
   }
-  render();
 
-  /* ---------- Suche ---------- */
-  document.getElementById('toolSearch').addEventListener('input', e=>render(e.target.value));
-
-  /* ---------- Drawer Kategorien ---------- */
-  function openCats(){
-    const body = cats.map(c=>{
-      const count = tools.filter(t=>t.cat===c).length;
-      return `<li><span>${c}</span><span class="muted">${count}</span></li>`;
-    }).join('') + '<li><button class="btn ghost full" id="addCat">+ Neue Kategorie</button></li>';
-    CT.openDrawer({title:'Kategorien', html:`<ul class="list">${body}</ul>`});
-    document.getElementById('addCat').onclick=()=>{
-      const html = `<label class="fld">Name<input id="newCat"></label>`;
-      CT.openModal({title:'Neue Kategorie', html, okText:'Speichern', onOk:()=>{
-        const v=document.getElementById('newCat').value.trim(); if(!v) return;
-        cats.push(v); CT.storage.write(CT_KEYS.CATS,cats); CT.toast('Kategorie hinzugefügt','ok'); CT.closeModal(); CT.closeDrawer();
-      }});
-    };
-  }
-  document.getElementById('btnCat').onclick=openCats;
-
-  /* ---------- Werkzeug-Editor ---------- */
-  function openEditor(tool){
-    const isNew=!tool;
-    const t = tool || {id:CT.uid(), name:'', code:'', cat:'', iso:'', herst:'', note:'', imgData:''};
-    const catOpts = cats.map(c=>`<option ${c===t.cat?'selected':''}>${c}</option>`).join('');
-    const html = `
-      <label class="fld">Name<input id="fName" value="${CT.escape(t.name)}"></label>
-      <label class="fld">Code<input id="fCode" value="${CT.escape(t.code)}"></label>
-      <label class="fld">Kategorie<select id="fCat">${catOpts}<option value="">+ Neue</option></select></label>
-      <label class="fld">ISO<input id="fIso" value="${CT.escape(t.iso)}"></label>
-      <label class="fld">Hersteller<input id="fHer" value="${CT.escape(t.herst)}"></label>
-      <label class="fld">Notiz<textarea id="fNote">${CT.escape(t.note||'')}</textarea></label>
-      <label class="fld">Foto<input type="file" id="fImg" accept="image/*"></label>
-      ${t.imgData?`<img src="${t.imgData}" style="width:80px;border-radius:8px;margin-top:4px">`:''}
-      ${!isNew?'<button class="btn warn" id="delTool">Löschen</button>':''}
-    `;
-    CT.openModal({title:isNew?'Neues Werkzeug':'Werkzeug', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
-      let newTool = {...t};
-      newTool.name=document.getElementById('fName').value.trim();
-      newTool.code=document.getElementById('fCode').value.trim();
-      let catSel=document.getElementById('fCat').value;
-      if(catSel==='+ Neue'){
-        const v=prompt('Neue Kategorie:'); if(v){ cats.push(v); CT.storage.write(CT_KEYS.CATS,cats); catSel=v; }
-      }
-      newTool.cat=catSel;
-      newTool.iso=document.getElementById('fIso').value.trim();
-      newTool.herst=document.getElementById('fHer').value.trim();
-      newTool.note=document.getElementById('fNote').value.trim();
-      if(newTool.imgData==='') newTool.imgData=t.imgData;
-      if(isNew) tools.push(newTool); else tools=tools.map(x=>x.id===newTool.id?newTool:x);
-      CT.storage.write(CT_KEYS.TOOLS,tools);
-      CT.toast('Gespeichert','ok'); render();
-    }});
-    const fImg=document.getElementById('fImg');
-    fImg.onchange=e=>{
-      const file=e.target.files[0]; if(!file) return;
-      const r=new FileReader(); r.onload=ev=>{t.imgData=ev.target.result;}; r.readAsDataURL(file);
-    };
-    const del=document.getElementById('delTool');
-    if(del) del.onclick=()=>{ tools=tools.filter(x=>x.id!==t.id); CT.storage.write(CT_KEYS.TOOLS,tools); CT.closeModal(); render(); CT.toast('Gelöscht','ok'); };
-  }
-  document.getElementById('btnAdd').onclick=()=>openEditor();
-
-  /* ---------- Info ---------- */
   function showInfo(t){
+    const cat = catTitle(t.catId);
+    // в модалке: если фото есть — ограничиваем по высоте; если нет — placeholder
+    const big = t.imgData
+      ? `<div class="imgwrap"><img src="${t.imgData}" alt="" style="max-height:40vh;object-fit:contain"></div>`
+      : `<div class="imgwrap"><div style="width:92vw;max-width:520px;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>`;
+
     const html = `
-      ${t.imgData?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
-      <b>${CT.escape(t.name)}</b>
-      <div>${CT.escape(t.code)} • ${CT.escape(t.iso||'')} • ${CT.escape(t.herst||'')}</div>
-      <div class="muted">${CT.escape(t.cat||'')}</div>
-      <p>${CT.escape(t.note||'')}</p>
+      ${big}
+      <div class="i-head"><b>${CT.escape(t.name)}</b></div>
+      <div class="i-row">${CT.escape(t.code)} • ${CT.escape(cat)} • ${CT.escape(t.maker||'')}</div>
+      <div class="i-grid">
+        <div><label>ISO</label><div>${CT.escape(t.iso||'—')}</div></div>
+        <div><label>Ressource</label><div>${Math.max(0,t.lifePct|0)}%</div></div>
+        <div class="full"><label>Notiz</label><div>${CT.escape(t.note||'')}</div></div>
+      </div>
       <div class="row">
-        <button class="btn ok" id="addSetup">+ Zu Setup</button>
+        <button class="btn" id="toSetup">+ Zu Setup</button>
         <button class="btn brand" id="edit">Bearbeiten</button>
       </div>`;
     CT.openModal({title:'Werkzeug', html, cancelText:'Schließen'});
-    document.getElementById('edit').onclick=()=>{ CT.closeModal(); openEditor(t); };
-    document.getElementById('addSetup').onclick=()=> addToSetup(t);
+    document.getElementById('edit').onclick=()=>editTool(t);
+    document.getElementById('toSetup').onclick=()=>assignToSetup(t);
   }
 
-  /* ---------- Zu Setup ---------- */
-  function addToSetup(tool){
+  function editTool(t){
+    const isNew = !t;
+    // нормализуем catId к строке id
+    const cur = t ? {...t, catId: (t.catId && typeof t.catId==='object')? t.catId.id : t.catId }
+                  : {id:CT.uid(), name:'', code:'', catId:cats[0]?.id, iso:'', maker:'', note:'', imgData:'', lifePct:100};
+    const catOptions = (cats||[]).map(c=>`<option value="${c.id}" ${c.id===cur.catId?'selected':''}>${CT.escape(c.title)}</option>`).join('');
+    const html = `
+      <label class="fld">Name<input id="f_name" value="${CT.escape(cur.name)}" placeholder="Bezeichnung"></label>
+      <label class="fld">Code<input id="f_code" value="${CT.escape(cur.code)}" placeholder="Artikel/Code"></label>
+      <label class="fld">Kategorie<select id="f_cat">${catOptions}</select></label>
+      <label class="fld">ISO<input id="f_iso" value="${CT.escape(cur.iso)}" placeholder="z.B. CNMG120408-PM"></label>
+      <label class="fld">Hersteller<input id="f_maker" value="${CT.escape(cur.maker)}"></label>
+      <label class="fld">Ressource (%)<input id="f_life" type="number" inputmode="numeric" value="${cur.lifePct}"></label>
+      <label class="fld">Notiz<textarea id="f_note" rows="3">${CT.escape(cur.note||'')}</textarea></label>
+      <label class="fld file">Foto<input id="f_img" type="file" accept="image/*"></label>
+      ${!isNew?'<div class="row"><button class="btn warn" id="del">Löschen</button></div>':''}
+    `;
+    CT.openModal({title:isNew?'Neues Werkzeug':'Werkzeug bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
+      const up = {...cur};
+      up.name=document.getElementById('f_name').value||'Werkzeug';
+      up.code=document.getElementById('f_code').value||'—';
+      up.catId=String(document.getElementById('f_cat').value||'');
+      up.iso=document.getElementById('f_iso').value;
+      up.maker=document.getElementById('f_maker').value;
+      up.lifePct=parseInt(document.getElementById('f_life').value||0,10);
+      up.note=document.getElementById('f_note').value;
+      const file=document.getElementById('f_img').files?.[0];
+      const commit=()=>{ const arr=CT.storage.read(CT_KEYS.TOOLS,[]); const idx=arr.findIndex(x=>x.id===up.id);
+        if(idx>-1) arr[idx]=up; else arr.push(up); CT.storage.write(CT_KEYS.TOOLS,arr); CT.toast('Gespeichert','ok'); render(); };
+      if(file){ CT.readFileAsDataURL(file).then(data=>{up.imgData=data; commit();}); } else commit();
+    }});
+    const delBtn=document.getElementById('del');
+    if(delBtn) delBtn.onclick=()=>{
+      const arr=CT.storage.read(CT_KEYS.TOOLS,[]).filter(x=>x.id!==cur.id);
+      CT.storage.write(CT_KEYS.TOOLS,arr); CT.closeModal(); render(); CT.toast('Gelöscht','ok');
+    };
+  }
+
+  function assignToSetup(tool){
     const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
-    const panels=['ro','ru'].map(side=>{
-      const label=side==='ro'?'RO (G54)':'RU (G55)';
-      const btns=live[side].map((v,i)=>{
-        const busy=!!v;
-        const txt=`${i+1}${busy?' • '+CT.getToolFromSlot(live,side,i)?.name||'' : ''}`;
-        return `<button class="btn ${busy?'ghost':''}" data-side="${side}" data-slot="${i}" ${busy?'disabled':''}>${txt}</button>`;
+    const options = ['ro','ru'].map(side=>{
+      const label = side==='ro'?'RO (G54)':'RU (G55)';
+      const slots = Array.from({length:12},(_,i)=> {
+        const busy = !!live[side][i];
+        return `<button class="btn ${busy?'ghost':''}" data-side="${side}" data-slot="${i}" ${busy?'disabled':''}>${i+1}</button>`;
       }).join('');
-      return `<div class="drawer-block"><div class="hdr">${label}</div><div class="row">${btns}</div></div>`;
+      return `<div class="drawer-block"><div class="hdr">${label}</div><div class="row">${slots}</div></div>`;
     }).join('');
-    CT.openDrawer({title:'+ Zu Setup', html:panels});
+    CT.openDrawer({title:'Zu Setup zuweisen', html:options});
     document.querySelectorAll('.drawer .btn').forEach(b=>{
       b.onclick=()=>{
-        const s=b.dataset.side, slot=+b.dataset.slot;
-        if(live[s][slot]){ CT.toast('Slot belegt','err'); return; }
-        live[s][slot]={toolId:tool.id, note:''};
-        CT.storage.write(CT_KEYS.SETUP,live);
-        CT.closeDrawer(); CT.toast(`In ${s.toUpperCase()} #${slot+1} hinzugefügt`,'ok');
+        const side=b.dataset.side, slot=+b.dataset.slot;
+        const data=CT.storage.read(CT_KEYS.SETUP,{ro:Array(12).fill(null), ru:Array(12).fill(null)});
+        data[side][slot]={toolId:tool.id, note:''}; CT.storage.write(CT_KEYS.SETUP,data);
+        CT.closeDrawer(); CT.toast(`Zugewiesen: ${side.toUpperCase()} #${slot+1}`,'ok');
       };
     });
   }
 
+  // Kategorien Drawer
+  document.getElementById('btnCats').onclick=()=>{
+    const counts = (id)=>CT.storage.read(CT_KEYS.TOOLS,[]).filter(t=>((t.catId&&t.catId.id)||t.catId)===id).length;
+    const items=[{id:'ALL', title:`Alle (${CT.storage.read(CT_KEYS.TOOLS,[]).length})`}].concat(
+      (cats||[]).map(c=>({id:c.id, title:`${c.title} (${counts(c.id)})`}))
+    );
+    CT.openDrawer({title:'Kategorien', items, onSelect:(id)=>{activeCat=id; render();}});
+  };
+  document.getElementById('btnNew').onclick=()=>editTool(null);
+
+  document.getElementById('toolSearch').addEventListener('input', render);
   CT.bindGlobalSearch(()=>render());
+  render();
 });
 </script>
 </body>
 </html>
+===== END FILE =====
