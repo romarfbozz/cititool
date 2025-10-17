@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>CitiTool • Dashboard</title>
+  <link rel="stylesheet" href="./ui/core.css">
+</head>
+<body data-active="dash">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html">
+      <img src="./ui/brand.png" alt="CT" class="badge">
+      <div class="tit">
+        <div class="title">CitiTool</div>
+        <div class="subtitle">Dashboard</div>
+      </div>
+    </a>
+    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
+      <svg><use href="./ui/icons.svg#search"/></svg>
+    </button>
+  </div>
+</header>
+<div class="searchbar collapsed">
+  <input class="field" type="search" placeholder="Suchen…" id="globalSearch">
+</div>
+
+<main class="container" id="dashRoot">
+  <section class="section">
+    <h2>Schnellaktionen</h2>
+    <div class="row">
+      <button class="btn brand" id="actNewSetup">Neues Setup</button>
+      <button class="btn" id="actNewTool">Neues Werkzeug</button>
+      <button class="btn" id="actFasen">Fasen-Assist</button>
+      <button class="btn" id="actMaterial">Material-Assist</button>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Setup-Überblick</h2>
+    <div class="row">
+      <button class="btn ok" onclick="location.href='./setup.html'">Zu Setup</button>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Produktion</h2>
+    <div id="prodList" class="stack"></div>
+    <div class="row mt">
+      <button class="btn brand" id="addJob">Neuer Auftrag</button>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Setup-Checkliste</h2>
+    <ul id="checklist" class="checklist"></ul>
+    <div class="row mt">
+      <button class="btn" id="addCheck">Neuer Punkt</button>
+      <button class="btn warn" id="clearDone">Abgehakte löschen</button>
+    </div>
+  </section>
+</main>
+
+<nav class="dock" id="dock"></nav>
+
+<script src="./ui/core.js"></script>
+<script src="./ui/dock.js"></script>
+<script>
+  CT.ready(() => {
+    CT.splash({logo:'./ui/brand.png', ms:600});
+    CT.ensureSeeds();
+
+    // Schnellaktionen
+    document.getElementById('actNewSetup').onclick = () =>
+      CT.toast('Gehe zu Setup…', 'info'), location.href='./setup.html';
+    document.getElementById('actNewTool').onclick = () =>
+      CT.openModal({title:'Neues Werkzeug', html:'Öffne Werkzeugs­chrank zum Anlegen?',
+        okText:'Öffnen', cancelText:'Abbrechen', onOk:()=>location.href='./tools.html'});
+    document.getElementById('actFasen').onclick = () =>
+      CT.openModal({title:'Fasen-Assist', html:'Öffnen?', okText:'Öffnen', onOk:()=>location.href='./assist.html'});
+    document.getElementById('actMaterial').onclick = () =>
+      CT.openModal({title:'Material-Assistent', html:'Öffnen?', okText:'Öffnen', onOk:()=>location.href='./assist.html'});
+
+    // Produktion
+    const prodList = document.getElementById('prodList');
+    function renderProd(){
+      prodList.innerHTML = '';
+      const arr = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] }).produktion;
+      if(!arr.length){ prodList.innerHTML = '<div class="muted">Keine Aufträge</div>'; return; }
+      arr.forEach(item=>{
+        const pct = Math.min(100, Math.round((item.madeQty / Math.max(1,item.targetQty))*100));
+        const el = document.createElement('div');
+        el.className='card job';
+        el.innerHTML = `
+          <div class="job-hdr">
+            <b>${item.title}</b>
+            <button class="icon-btn" aria-label="Info" data-id="${item.id}">
+              <svg><use href="./ui/icons.svg#info"/></svg>
+            </button>
+          </div>
+          <div class="bar"><div style="width:${pct}%"></div></div>
+          <div class="job-meta">${item.madeQty} / ${item.targetQty} • ${new Date(item.date).toLocaleDateString()}</div>`;
+        el.querySelector('button').onclick = () => editJob(item);
+        prodList.appendChild(el);
+      });
+    }
+    function editJob(item){
+      const html = `
+        <label class="fld">Titel<input id="j_t" value="${CT.escape(item.title)}"></label>
+        <label class="fld">Zielmenge<input id="j_q" type="number" inputmode="numeric" value="${item.targetQty}"></label>
+        <label class="fld">Bereits gefertigt<input id="j_m" type="number" inputmode="numeric" value="${item.madeQty}"></label>
+        <div class="row"><button class="btn warn" id="del">Löschen</button></div>`;
+      CT.openModal({title:'Auftrag', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
+        const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
+        const idx = data.produktion.findIndex(p=>p.id===item.id);
+        if(idx>-1){
+          data.produktion[idx].title = document.getElementById('j_t').value.trim()||'Ohne Titel';
+          data.produktion[idx].targetQty = parseInt(document.getElementById('j_q').value||0,10);
+          data.produktion[idx].madeQty = parseInt(document.getElementById('j_m').value||0,10);
+          CT.storage.write(CT_KEYS.DASH, data); CT.toast('Gespeichert','ok'); renderProd();
+        }
+      }});
+      document.getElementById('del').onclick = ()=>{
+        const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
+        data.produktion = data.produktion.filter(p=>p.id!==item.id);
+        CT.storage.write(CT_KEYS.DASH, data); CT.closeModal(); CT.toast('Gelöscht','ok'); renderProd();
+      };
+    }
+    document.getElementById('addJob').onclick=()=>{
+      const html = `
+        <label class="fld">Titel<input id="n_t" placeholder="Auftrag"></label>
+        <label class="fld">Zielmenge<input id="n_q" type="number" inputmode="numeric" placeholder="100"></label>`;
+      CT.openModal({title:'Neuer Auftrag', html, okText:'Anlegen', onOk:()=>{
+        const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
+        data.produktion.push({id:CT.uid(), title:document.getElementById('n_t').value||'Auftrag',
+          targetQty:parseInt(document.getElementById('n_q').value||0,10), madeQty:0, date:Date.now()});
+        CT.storage.write(CT_KEYS.DASH, data); CT.toast('Angelegt','ok'); renderProd();
+      }});
+    };
+    renderProd();
+
+    // Checklist
+    const list = document.getElementById('checklist');
+    function renderChecklist(){
+      const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
+      list.innerHTML = '';
+      if(!data.checklist.length){ list.innerHTML = '<li class="muted">Keine Punkte</li>'; return; }
+      data.checklist.forEach(it=>{
+        const li = document.createElement('li'); li.draggable=true; li.dataset.id=it.id;
+        li.innerHTML = `<span class="drag">≡</span>
+          <label><input type="checkbox" ${it.done?'checked':''}/> ${CT.escape(it.title)}</label>
+          <button class="icon-btn sm" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>`;
+        li.querySelector('input').onchange = ()=>{
+          const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
+          const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].done=!cur.checklist[idx].done; CT.storage.write(CT_KEYS.DASH,cur);}
+        };
+        li.querySelector('button').onclick = ()=>{
+          CT.openModal({title:'Punkt', html:`<input id="c_t" value="${CT.escape(it.title)}">`,
+            okText:'Speichern', cancelText:'Löschen', onOk:()=>{
+              const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
+              const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].title=document.getElementById('c_t').value||'Punkt'; CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); CT.toast('Gespeichert','ok');}
+            }});
+          const foot=document.querySelector('.modal .footer .cancel');
+          foot.onclick=()=>{
+            const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
+            cur.checklist = cur.checklist.filter(x=>x.id!==it.id); CT.storage.write(CT_KEYS.DASH,cur); CT.closeModal(); renderChecklist(); CT.toast('Gelöscht','ok');
+          };
+        };
+        // DnD
+        li.addEventListener('dragstart', e=>e.dataTransfer.setData('text', it.id));
+        li.addEventListener('dragover', e=>e.preventDefault());
+        li.addEventListener('drop', e=>{
+          e.preventDefault();
+          const from = e.dataTransfer.getData('text'); const to = it.id;
+          const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
+          const a=cur.checklist.findIndex(x=>x.id===from), b=cur.checklist.findIndex(x=>x.id===to);
+          if(a>-1 && b>-1){ const [m]=cur.checklist.splice(a,1); cur.checklist.splice(b,0,m); CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); }
+        });
+        list.appendChild(li);
+      });
+    }
+    document.getElementById('addCheck').onclick=()=>{
+      CT.openModal({title:'Neuer Punkt', html:`<input id="p_t" placeholder="Text">`, okText:'Hinzufügen', onOk:()=>{
+        const data=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
+        data.checklist.push({id:CT.uid(), title:document.getElementById('p_t').value||'Punkt', done:false});
+        CT.storage.write(CT_KEYS.DASH,data); CT.toast('Hinzugefügt','ok'); renderChecklist();
+      }});
+    };
+    document.getElementById('clearDone').onclick=()=>{
+      const data=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
+      data.checklist = data.checklist.filter(x=>!x.done); CT.storage.write(CT_KEYS.DASH,data); renderChecklist(); CT.toast('Aufgeräumt','ok');
+    };
+    renderChecklist();
+
+    // Поиск
+    CT.bindGlobalSearch((q)=>{
+      document.querySelectorAll('.section').forEach(sec=>{
+        if(!q){ sec.style.display=''; return; }
+        sec.style.display = sec.textContent.toLowerCase().includes(q) ? '' : 'none';
+      });
+    });
+  });
+</script>
+</body>
+</html>
+===== END FILE =====
