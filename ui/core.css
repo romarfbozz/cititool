@@ -123,3 +123,12 @@ body.noscroll{overflow:hidden;height:100%}
 
 /* доп. фикса для списка Tools */
 .list-tools .name{ font-weight:800; }
+
+/* Setup: слот с номером инструмента */
+.slot-tnum{
+  display:grid;
+  grid-template-columns:72px 56px 1fr auto; /* Txxxx + thumb + meta + actions */
+  gap:.6rem;
+  align-items:center;
+}
+.tnum-btn{ min-width:64px; } /* шире стандартной badge */
