@@ -1,4 +1,3 @@
-
 :root{
   --bg:#f7f8fc; --fg:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --ok:#1e9c57; --warn:#e5a100; --err:#d64545;
   --card:#fff; --br:18px; --btnr:14px; --shadow:0 6px 24px rgba(13,27,42,.08);
@@ -82,32 +81,23 @@ img{max-width:100%;display:block} .muted{color:var(--muted)} .mt{margin-top:.75r
 .toast .inner{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 body.noscroll{overflow:hidden;height:100%}
 @media (max-width:480px){ .grid2{grid-template-columns:1fr} }
+
 /* =======================================================
    INFO ICON (единый стиль вместо синей точки)
    ======================================================= */
-.icon-btn.info {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(45,108,223,0.08); /* лёгкий синий фон */
-  transition: background 0.2s, transform 0.1s;
-}
-..icon-btn.info svg{
-  width:20px;
-  height:20px;
-  stroke:currentColor;
-  fill:none;
-}
 .icon-btn.info{
-  background:none;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  background:transparent;
   color:var(--muted);
 }
-.icon-btn.info:active{
-  transform:translateY(1px);
+.icon-btn.info svg{
+  width:20px;
+  height:20px;
+  fill:currentColor;
 }
+.icon-btn.info:active{ transform:var(--tap); }
 
 /* ===== CitiTool Badge (кодовый логотип) ===== */
 .ct-badge{
@@ -121,30 +111,5 @@ body.noscroll{overflow:hidden;height:100%}
 }
 .ct-badge.lg{ width:64px; height:64px; border-radius:16px; font-size:24px; }
 
-// Splash (поддержка кодового бейджа)
-function splash({logo=':ct', ms=700}){
-  const badgeHTML = `<span class="ct-badge lg" aria-hidden="true">CT</span>`;
-  const logoHTML = (logo && logo !== ':ct')
-    ? `<img src="${logo}" alt="CitiTool" style="width:64px;height:64px;border-radius:16px;margin:10px auto 8px">`
-    : badgeHTML;
-
-  const el=document.createElement('div');
-  el.className='modal show splash';
-  el.innerHTML=`
-    <div class="overlay" style="backdrop-filter:blur(10px)"></div>
-    <div class="card splash-card" style="text-align:center;padding:24px">
-      ${logoHTML}
-      <div style="font-weight:800;font-size:18px">CitiTool</div>
-      <div class="muted">lädt…</div>
-    </div>`;
-  document.body.appendChild(el);
-  document.body.classList.add('noscroll');
-  setTimeout(()=>{ el.remove(); document.body.classList.remove('noscroll'); }, ms);
-}
-
 /* доп. фикса для списка Tools */
-.list-tools .thumb{
-  width:56px; height:56px; object-fit:cover; border-radius:10px; background:#f0f3fa;
-}
 .list-tools .name{ font-weight:800; }
-
