@@ -1,4 +1,4 @@
-
+===== FILE: /assist.html =====
 <!doctype html>
 <html lang="de">
 <head>
@@ -32,7 +32,11 @@
       <label class="fld">fn (mm/U)<input id="fn" type="number" inputmode="decimal" value="0.2"></label>
     </div>
     <div class="calc" id="calcOut">n = —, Vf = —</div>
-    <div class="row"><button class="btn brand" id="saveNote">In Notiz speichern</button></div>
+    <div class="row">
+      <button class="btn" id="prefill">Preset anwenden</button>
+      <button class="btn brand" id="saveNote">In Notiz speichern</button>
+      <button class="btn ok" id="exportSetupMat">Zu Setup notieren</button>
+    </div>
   </section>
 
   <!-- FASEN-ASSIST -->
@@ -52,6 +56,7 @@
       <button class="btn" id="faCalc">Berechnen</button>
       <button class="btn ok" id="faCopy">G-Code kopieren</button>
       <button class="btn brand" id="faSave">Als Notiz speichern</button>
+      <button class="btn ok" id="exportSetupFase">Zu Setup notieren</button>
     </div>
     <div class="calc" id="faOut">G-Code: —</div>
     <div class="muted" style="margin-top:.25rem">
@@ -107,6 +112,16 @@
 CT.ready(()=>{
   CT.ensureSeeds();
 
+  /* ---------- Presets für Schnittdaten ---------- */
+  // Демо-пресеты (оценочные): для первых прикидок. Правь по своему опыту.
+  const CUT_PRESETS = {
+    '1.4112': { Schruppen:{Vc:160, fn:0.25}, Schlichten:{Vc:220, fn:0.12} },
+    '1.4104': { Schruppen:{Vc:180, fn:0.28}, Schlichten:{Vc:240, fn:0.14} },
+    '1.4122': { Schruppen:{Vc:150, fn:0.24}, Schlichten:{Vc:200, fn:0.12} },
+    'F75'   : { Schruppen:{Vc:110, fn:0.22}, Schlichten:{Vc:150, fn:0.10} },
+    'Ms58'  : { Schruppen:{Vc:260, fn:0.30}, Schlichten:{Vc:320, fn:0.16} }
+  };
+
   /* ---------- Material-Assist ---------- */
   function calcMat(){
     const D=parseFloat(mmD.value||0), Vc=parseFloat(vc.value||0), fnv=parseFloat(fn.value||0);
@@ -116,13 +131,32 @@ CT.ready(()=>{
     calcOut.textContent = \`n = \${n} 1/min,  Vf = \${Vf} mm/min\`;
     if(n>6000) CT.toast('n sehr hoch — prüfen!', 'warn', 1500);
   }
-  [mmD,vc,fn].forEach(el=>el.addEventListener('input', calcMat)); calcMat();
+  function applyPreset(){
+    const M = mat.value; const modeVal = mode.value; const p = CUT_PRESETS[M]?.[modeVal];
+    if(!p){ CT.toast('Kein Preset gefunden', 'err'); return; }
+    vc.value = p.Vc; fn.value = p.fn; calcMat(); CT.toast('Preset gesetzt','ok');
+  }
+  [mmD,vc,fn].forEach(el=>el.addEventListener('input', calcMat));
+  [mat,mode].forEach(el=>el.addEventListener('change', applyPreset));
+  prefill.onclick = applyPreset;
+  calcMat(); applyPreset(); // стартовые значения
 
   saveNote.onclick=()=>{
     const txt = \`Material: \${mat.value}, Modus: \${mode.value}\\nØ=\${mmD.value}mm, Vc=\${vc.value}m/min, fn=\${fn.value}mm/U\\n\${calcOut.textContent}\`;
     const docs = CT.storage.read(CT_KEYS.DOCS, []);
     docs.push({id:CT.uid(), title:\`Schnittdaten \${mat.value}\`, category:'Material', tags:['calc','drehen'], body:txt, favorite:false});
     CT.storage.write(CT_KEYS.DOCS, docs); CT.toast('Als Notiz gespeichert','ok');
+  };
+
+  /* Экспорт в Setup как примечание к позиции (Material) */
+  exportSetupMat.onclick = ()=>{
+    const note = [
+      \`[Material-Assist]\`,
+      \`Mat: \${mat.value} | Modus: \${mode.value}\`,
+      \`Ø=\${mmD.value}mm, Vc=\${vc.value}m/min, fn=\${fn.value}mm/U\`,
+      calcOut.textContent
+    ].join('\\n');
+    pickSetupSlotAndAppend(note);
   };
 
   /* ---------- Fasen-Assist ---------- */
@@ -196,6 +230,19 @@ CT.ready(()=>{
     CT.storage.write(CT_KEYS.DOCS, docs); CT.toast('Notiz gespeichert','ok');
   };
 
+  /* Экспорт в Setup как примечание (Fase) */
+  exportSetupFase.onclick = ()=>{
+    const r = renderChamfer(); if(!r) return;
+    const {sol, g} = r;
+    const note = [
+      '[Fasen-Assist]',
+      \`A=\${sol.A}°, Xs=\${sol.Xs}, Xe=\${sol.Xe}\`,
+      \`Zs=\${sol.Zs}, Ze=\${sol.Ze}, L=\${sol.L}\`,
+      g
+    ].join('\\n');
+    pickSetupSlotAndAppend(note);
+  };
+
   /* ---------- Passmaß Quick ---------- */
   const passDB = {
     'd12 h6': 'Welle d12, Bohrung h6: Spiel 0…+X (Demo)',
@@ -206,50 +253,27 @@ CT.ready(()=>{
     const q=(passQ.value||'').trim(); passOut.textContent = passDB[q] || '—';
   });
 
-  /* ---------- Passmaß Erweitert (Demo-Daten 10–18 mm) ---------- */
-  // Значения отклонений в микрометрах (µm) для диапазона 10–18 мм.
-  // Упрощённая таблица: H7, h6, g6, p6.
-  // Источник не подключаем — ориентировочный демо-набор для офлайн-расчётов.
+  /* ---------- Passmaß Erweitert (Demo 10–18 mm) ---------- */
   const tol = {
-    hole: {
-      'H7': { lo: 0, up: 21 } // H7: 0…+21 µm
-    },
-    shaft: {
-      'h6': { lo: -10, up: 0 },   // h6: −10…0 µm
-      'g6': { lo: -14, up: -4 },  // g6: −14…−4 µm
-      'p6': { lo: +6,  up: +16 }  // p6: +6…+16 µm
-    }
+    hole: { 'H7': { lo: 0, up: 21 } },
+    shaft:{ 'h6': { lo: -10, up: 0 }, 'g6': { lo: -14, up: -4 }, 'p6': { lo: +6, up: +16 } }
   };
-
   function umToMm(u){ return u/1000; }
-  function fmt(v){ return (Math.round(v*1000)/1000).toFixed(3); } // 0.001 mm
+  function fmt(v){ return (Math.round(v*1000)/1000).toFixed(3); }
 
   function calcFit(){
     const D = parseFloat(fitD.value||0);
     const H = fitHole.value;
     const S = fitShaft.value;
     if(!(D>=10 && D<=18)){ CT.toast('Demo-Bereich: Ø 10–18 mm', 'warn'); }
-
     const h = tol.hole[H], s = tol.shaft[S];
     if(!h || !s){ CT.toast('Unbekannte Toleranz', 'err'); return; }
-
-    // Предельные размеры (мм)
-    const holeMin = D + umToMm(h.lo);
-    const holeMax = D + umToMm(h.up);
-    const shaftMin = D + umToMm(s.lo);
-    const shaftMax = D + umToMm(s.up);
-
-    // Зазор/натяг (мм)
-    const clearanceMin = holeMin - shaftMax; // min clearance (может быть отриц. = натяг)
-    const clearanceMax = holeMax - shaftMin; // max clearance
-
-    const type =
-      clearanceMax < 0 ? 'Übermaß (Presssitz)' :
-      clearanceMin > 0 ? 'Spiel (Losesitz)' :
-      'Übergang';
-
+    const holeMin = D + umToMm(h.lo), holeMax = D + umToMm(h.up);
+    const shaftMin = D + umToMm(s.lo), shaftMax = D + umToMm(s.up);
+    const clearanceMin = holeMin - shaftMax;
+    const clearanceMax = holeMax - shaftMin;
+    const type = clearanceMax < 0 ? 'Übermaß (Presssitz)' : (clearanceMin > 0 ? 'Spiel (Losesitz)' : 'Übergang');
     const badgeClass = type.includes('Spiel') ? '' : (type.includes('Übermaß') ? 'err' : '');
-
     fitOut.innerHTML = `
       <div class="i-grid">
         <div>
@@ -270,9 +294,7 @@ CT.ready(()=>{
       </div>
       <div class="row mt">
         <button class="btn brand" id="fitSave">Als Notiz speichern</button>
-      </div>
-    `;
-
+      </div>`;
     document.getElementById('fitSave').onclick = ()=>{
       const body = [
         \`Ø Nenn: \${fmt(D)} mm\`,
@@ -285,27 +307,50 @@ CT.ready(()=>{
       CT.storage.write(CT_KEYS.DOCS, docs); CT.toast('Notiz gespeichert','ok');
     };
   }
-
   fitCalc.onclick = calcFit;
   fitPreset.onclick = ()=>{
-    const v=(fitFast.value||'').replace(/\s+/g,'').toUpperCase();
-    const m = v.match(/^(H7)\/(H6|H7|[A-Z]6|[A-Z]7|[A-Z][0-9])$|^(H7)\/([GP]6|H6|G6|P6)$/i);
-    // Просто парсим H7/<shaft>
     const parts = (fitFast.value||'').split('/');
     if(parts.length===2){
       const hole=parts[0].trim().toUpperCase();
-      const shaft=parts[1].trim();
-      if(hole==='H7'){ fitHole.value='H7'; }
-      if(['h6','g6','p6'].includes(shaft.toLowerCase())) fitShaft.value=shaft.toLowerCase();
+      const shaft=parts[1].trim().toLowerCase();
+      if(hole==='H7') fitHole.value='H7';
+      if(['h6','g6','p6'].includes(shaft)) fitShaft.value=shaft;
     }
     calcFit();
   };
 
+  /* ---------- Helpers: запись примечания в Setup ---------- */
+  function pickSetupSlotAndAppend(noteText){
+    const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
+    const panel = ['ro','ru'].map(side=>{
+      const label = side==='ro'?'RO (G54)':'RU (G55)';
+      const slots = Array.from({length:12},(_,i)=>{
+        const v = live[side][i];
+        const busy = !!v;
+        return `<button class="btn ${busy?'':'ghost'}" data-side="${side}" data-slot="${i}" ${busy?'':'disabled'}>${i+1}</button>`;
+      }).join('');
+      return `<div class="drawer-block"><div class="hdr">${label}</div><div class="row">${slots}</div></div>`;
+    }).join('');
+    CT.openDrawer({title:'Zu Setup notieren (Slot wählen)', html:panel});
+    document.querySelectorAll('.drawer .btn').forEach(b=>{
+      b.onclick=()=>{
+        const side=b.dataset.side, slot=+b.dataset.slot;
+        const data=CT.storage.read(CT_KEYS.SETUP,{ro:Array(12).fill(null), ru:Array(12).fill(null)});
+        const cell=data[side][slot];
+        if(!cell){ CT.toast('Slot leer — zuerst Werkzeug zuweisen', 'err'); return; }
+        const prev = cell.note||'';
+        cell.note = (prev? prev+'\n': '') + noteText;
+        data[side][slot]=cell;
+        CT.storage.write(CT_KEYS.SETUP, data);
+        CT.closeDrawer(); CT.toast(`Hinzugefügt: ${side.toUpperCase()} #${slot+1}`,'ok');
+      };
+    });
+  }
+
   // init outputs
-  calcMat();
-  renderChamfer();
-  calcFit();
+  calcMat(); renderChamfer(); calcFit();
 });
 </script>
 </body>
 </html>
+===== END FILE =====
