@@ -108,4 +108,16 @@ body.noscroll{overflow:hidden;height:100%}
   background: rgba(45,108,223,0.12);
 }
 
+/* ===== CitiTool Badge (кодовый логотип) ===== */
+.ct-badge{
+  --g1:#9fbfe5; --g2:#4f8fda;
+  width:28px; height:28px; border-radius:9px;
+  display:grid; place-items:center;
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  color:#fff; font-weight:800; font-size:14px; letter-spacing:.4px;
+  box-shadow:inset 0 0 0 1px #dbe5ff;
+  user-select:none;
+}
+.ct-badge.lg{ width:64px; height:64px; border-radius:16px; font-size:24px; }
+
 
