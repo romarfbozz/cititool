@@ -82,4 +82,30 @@ img{max-width:100%;display:block} .muted{color:var(--muted)} .mt{margin-top:.75r
 .toast .inner{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 body.noscroll{overflow:hidden;height:100%}
 @media (max-width:480px){ .grid2{grid-template-columns:1fr} }
+/* =======================================================
+   INFO ICON (единый стиль вместо синей точки)
+   ======================================================= */
+.icon-btn.info {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(45,108,223,0.08); /* лёгкий синий фон */
+  transition: background 0.2s, transform 0.1s;
+}
+.icon-btn.info svg {
+  width: 18px;
+  height: 18px;
+  fill: var(--brand, #2d6cdf);
+}
+.icon-btn.info:active {
+  transform: translateY(1px);
+  background: rgba(45,108,223,0.15);
+}
+.icon-btn.info:hover {
+  background: rgba(45,108,223,0.12);
+}
+
 
