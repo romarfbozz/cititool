@@ -141,3 +141,9 @@ function splash({logo=':ct', ms=700}){
   setTimeout(()=>{ el.remove(); document.body.classList.remove('noscroll'); }, ms);
 }
 
+/* доп. фикса для списка Tools */
+.list-tools .thumb{
+  width:56px; height:56px; object-fit:cover; border-radius:10px; background:#f0f3fa;
+}
+.list-tools .name{ font-weight:800; }
+
