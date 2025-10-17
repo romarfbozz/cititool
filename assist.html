@@ -32,9 +32,7 @@
       <label class="fld">fn (mm/U)<input id="fn" type="number" inputmode="decimal" value="0.2"></label>
     </div>
     <div class="calc" id="calcOut">n = —, Vf = —</div>
-    <div class="row">
-      <button class="btn brand" id="saveNote">In Notiz speichern</button>
-    </div>
+    <div class="row"><button class="btn brand" id="saveNote">In Notiz speichern</button></div>
   </section>
 
   <!-- FASEN-ASSIST -->
@@ -66,6 +64,38 @@
     <h2>Passmassen (Schnellsuche)</h2>
     <input class="field" id="passQ" placeholder="z.B. d12 h6 oder H7/g6">
     <div id="passOut" class="muted">Gib einen Passmaß an…</div>
+  </section>
+
+  <!-- PASSMAß ERWEITERT -->
+  <section class="section">
+    <h2>Passmassen (Erweitert 10–18 mm)</h2>
+    <div class="row">
+      <label class="fld" style="flex:1;min-width:120px">Ø Nenn (mm)
+        <input id="fitD" type="number" inputmode="decimal" value="12">
+      </label>
+      <label class="fld" style="flex:1;min-width:160px">Loch
+        <select id="fitHole">
+          <option value="H7">H7</option>
+        </select>
+      </label>
+      <label class="fld" style="flex:1;min-width:160px">Welle
+        <select id="fitShaft">
+          <option value="h6">h6</option>
+          <option value="g6">g6</option>
+          <option value="p6">p6</option>
+        </select>
+      </label>
+      <button class="btn" id="fitCalc">Berechnen</button>
+    </div>
+
+    <div class="row">
+      <input class="field" id="fitFast" placeholder="Typ schnell setzen (z.B. H7/g6, H7/h6, H7/p6)">
+      <button class="btn ghost" id="fitPreset">Setzen</button>
+    </div>
+
+    <div class="card" id="fitOut" style="margin-top:.5rem">
+      <div class="muted">Wähle Ø und Toleranzen, dann «Berechnen».</div>
+    </div>
   </section>
 </main>
 
@@ -109,15 +139,11 @@ CT.ready(()=>{
 
     if(!A || !Xs){ CT.toast('A und Xstart sind Pflicht', 'err'); return null; }
 
-    // если есть Ze и нет L — L из Z
     if(Ze!==null && L===null) L = Math.abs(Ze - Zs);
-    // если есть L и нет Ze — Ze из L (в плюс по Z)
     if(L!==null && Ze===null) Ze = Zs + L;
 
     const tanA = Math.tan(deg2rad(A));
-    // если нет Xe — считаем из ΔX = 2*L*tan(A)
     if(Xe===null && L!==null) Xe = Xs - 2*L*tanA;
-    // если нет L — считаем из Xe
     if(L===null && Xe!==null){
       const dX = Xs - Xe;
       L = dX / (2*tanA);
@@ -134,8 +160,7 @@ CT.ready(()=>{
   }
 
   function buildGcode(sol){
-    // простая линейная фаска с подводом
-    const feed = 0.15; // демо-значение
+    const feed = 0.15; // Demo
     const lines = [
       '(Fase)',
       \`G1 X\${round3(sol.Xs)} Z\${round3(sol.Zs)}\`,
@@ -153,12 +178,10 @@ CT.ready(()=>{
 
   [faA,faXs,faZs,faZe,faL,faXe].forEach(el=>el.addEventListener('input', renderChamfer));
   faCalc.onclick = renderChamfer;
-
   faCopy.onclick = ()=>{
     const r = renderChamfer(); if(!r) return;
     navigator.clipboard?.writeText(r.g).then(()=>CT.toast('G-Code kopiert','ok')).catch(()=>CT.toast('Kopieren fehlgeschlagen','err'));
   };
-
   faSave.onclick = ()=>{
     const r = renderChamfer(); if(!r) return;
     const {sol, g} = r;
@@ -183,8 +206,105 @@ CT.ready(()=>{
     const q=(passQ.value||'').trim(); passOut.textContent = passDB[q] || '—';
   });
 
-  // initial outputs
-  calcMat(); renderChamfer();
+  /* ---------- Passmaß Erweitert (Demo-Daten 10–18 mm) ---------- */
+  // Значения отклонений в микрометрах (µm) для диапазона 10–18 мм.
+  // Упрощённая таблица: H7, h6, g6, p6.
+  // Источник не подключаем — ориентировочный демо-набор для офлайн-расчётов.
+  const tol = {
+    hole: {
+      'H7': { lo: 0, up: 21 } // H7: 0…+21 µm
+    },
+    shaft: {
+      'h6': { lo: -10, up: 0 },   // h6: −10…0 µm
+      'g6': { lo: -14, up: -4 },  // g6: −14…−4 µm
+      'p6': { lo: +6,  up: +16 }  // p6: +6…+16 µm
+    }
+  };
+
+  function umToMm(u){ return u/1000; }
+  function fmt(v){ return (Math.round(v*1000)/1000).toFixed(3); } // 0.001 mm
+
+  function calcFit(){
+    const D = parseFloat(fitD.value||0);
+    const H = fitHole.value;
+    const S = fitShaft.value;
+    if(!(D>=10 && D<=18)){ CT.toast('Demo-Bereich: Ø 10–18 mm', 'warn'); }
+
+    const h = tol.hole[H], s = tol.shaft[S];
+    if(!h || !s){ CT.toast('Unbekannte Toleranz', 'err'); return; }
+
+    // Предельные размеры (мм)
+    const holeMin = D + umToMm(h.lo);
+    const holeMax = D + umToMm(h.up);
+    const shaftMin = D + umToMm(s.lo);
+    const shaftMax = D + umToMm(s.up);
+
+    // Зазор/натяг (мм)
+    const clearanceMin = holeMin - shaftMax; // min clearance (может быть отриц. = натяг)
+    const clearanceMax = holeMax - shaftMin; // max clearance
+
+    const type =
+      clearanceMax < 0 ? 'Übermaß (Presssitz)' :
+      clearanceMin > 0 ? 'Spiel (Losesitz)' :
+      'Übergang';
+
+    const badgeClass = type.includes('Spiel') ? '' : (type.includes('Übermaß') ? 'err' : '');
+
+    fitOut.innerHTML = `
+      <div class="i-grid">
+        <div>
+          <label>Loch ${H}</label>
+          <div>Min: <b>${fmt(holeMin)}</b> mm</div>
+          <div>Max: <b>${fmt(holeMax)}</b> mm</div>
+        </div>
+        <div>
+          <label>Welle ${S}</label>
+          <div>Min: <b>${fmt(shaftMin)}</b> mm</div>
+          <div>Max: <b>${fmt(shaftMax)}</b> mm</div>
+        </div>
+        <div class="full">
+          <label>Sitz</label>
+          <div>Typ: <span class="badge ${badgeClass}">${type}</span></div>
+          <div>Spiel/Nat.: <b>${fmt(clearanceMin)}</b> … <b>${fmt(clearanceMax)}</b> mm</div>
+        </div>
+      </div>
+      <div class="row mt">
+        <button class="btn brand" id="fitSave">Als Notiz speichern</button>
+      </div>
+    `;
+
+    document.getElementById('fitSave').onclick = ()=>{
+      const body = [
+        \`Ø Nenn: \${fmt(D)} mm\`,
+        \`Loch: \${H}  → [\${fmt(holeMin)} ; \${fmt(holeMax)}] mm\`,
+        \`Welle: \${S} → [\${fmt(shaftMin)} ; \${fmt(shaftMax)}] mm\`,
+        \`Sitz: \${type}, Δ = [\${fmt(clearanceMin)} ; \${fmt(clearanceMax)}] mm\`
+      ].join('\\n');
+      const docs = CT.storage.read(CT_KEYS.DOCS, []);
+      docs.push({id:CT.uid(), title:\`Passmaß \${H}/\${S} Ø\${fmt(D)}\`, category:'Passung', tags:['iso','fit'], body});
+      CT.storage.write(CT_KEYS.DOCS, docs); CT.toast('Notiz gespeichert','ok');
+    };
+  }
+
+  fitCalc.onclick = calcFit;
+  fitPreset.onclick = ()=>{
+    const v=(fitFast.value||'').replace(/\s+/g,'').toUpperCase();
+    const m = v.match(/^(H7)\/(H6|H7|[A-Z]6|[A-Z]7|[A-Z][0-9])$|^(H7)\/([GP]6|H6|G6|P6)$/i);
+    // Просто парсим H7/<shaft>
+    const parts = (fitFast.value||'').split('/');
+    if(parts.length===2){
+      const hole=parts[0].trim().toUpperCase();
+      const shaft=parts[1].trim();
+      if(hole==='H7'){ fitHole.value='H7'; }
+      if(['h6','g6','p6'].includes(shaft.toLowerCase())) fitShaft.value=shaft.toLowerCase();
+    }
+    calcFit();
+  };
+
+  // init outputs
+  calcMat();
+  renderChamfer();
+  calcFit();
 });
 </script>
 </body>
