@@ -1,4 +1,4 @@
-===== FILE: /ui/core.css =====
+
 :root{
   --bg:#f7f8fc; --fg:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --ok:#1e9c57; --warn:#e5a100; --err:#d64545;
   --card:#fff; --br:18px; --btnr:14px; --shadow:0 6px 24px rgba(13,27,42,.08);
@@ -82,4 +82,4 @@ img{max-width:100%;display:block} .muted{color:var(--muted)} .mt{margin-top:.75r
 .toast .inner{position:absolute;left:50%;bottom:84px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
 body.noscroll{overflow:hidden;height:100%}
 @media (max-width:480px){ .grid2{grid-template-columns:1fr} }
-===== END FILE =====
+
