@@ -1,8 +1,9 @@
-
+===== FILE: /setup.html =====
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Setup + Programme</title>
   <link rel="stylesheet" href="./ui/core.css">
 </head>
@@ -11,26 +12,39 @@
   <div class="wrap">
     <a class="logo" href="./index.html">
       <span class="ct-badge" aria-hidden="true">CT</span>
-      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup + Programme</div></div>
+      <div class="tit">
+        <div class="title">CitiTool</div>
+        <div class="subtitle">Setup + Programme</div>
+      </div>
     </a>
-    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
+    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
+      <svg><use href="./ui/icons.svg#search"/></svg>
+    </button>
   </div>
 </header>
-<div class="searchbar collapsed"><input class="field" type="search" placeholder="Im Setup suchen…" id="setupSearch"></div>
+
+<div class="searchbar collapsed">
+  <input class="field" type="search" placeholder="Im Setup suchen…" id="setupSearch">
+</div>
 
 <main class="container">
   <section class="section">
     <div class="row between">
       <div class="select-like" id="progSelect">Programm wählen…</div>
-      <button class="icon-btn" id="progInfo" aria-label="Programm"><svg><use href="./ui/icons.svg#info"/></svg></button>
+      <button class="icon-btn info" id="progInfo" aria-label="Programm">
+        <svg><use href="./ui/icons.svg#info"/></svg>
+      </button>
     </div>
+
     <div class="tabs">
       <button class="tab active" data-side="ro">RO (G54)</button>
       <button class="tab" data-side="ru">RU (G55)</button>
     </div>
+
     <div id="slots" class="slots"></div>
   </section>
 </main>
+
 <nav class="dock" id="dock"></nav>
 
 <script src="./ui/core.js"></script>
@@ -38,29 +52,36 @@
 <script>
 CT.ready(()=>{
   CT.ensureSeeds();
+
   let progs = CT.storage.read(CT_KEYS.PROGS, []);
   let live  = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
   let side = 'ro';
-  let currentProgId = progs[0]?.id;
+  let currentProgId = progs[0]?.id || null;
 
-  function progTitle(p){ return \`#\${p.number} — \${p.title}\`; }
+  function progTitle(p){ return `#${p.number} — ${p.title}`; }
+
   function refreshProgSelect(){
     const cur = progs.find(p=>p.id===currentProgId);
-    document.getElementById('progSelect').textContent = cur? progTitle(cur) : 'Programm wählen…';
+    document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
   }
+
   function openProgMenu(){
     const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
     CT.openDrawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; CT.closeDrawer(); refreshProgSelect(); render(); }});
   }
+
   function applyToLive(){
     const p = progs.find(x=>x.id===currentProgId); if(!p) return;
-    live = {ro: p.ro||Array(12).fill(null), ru: p.ru||Array(12).fill(null)};
-    CT.storage.write(CT_KEYS.SETUP, live); CT.toast('In Live angewendet','ok'); render();
+    live = { ro: p.ro||Array(12).fill(null), ru: p.ru||Array(12).fill(null) };
+    CT.storage.write(CT_KEYS.SETUP, live);
+    CT.toast('In Live angewendet','ok');
+    render();
   }
+
   function editProg(){
     const p = progs.find(x=>x.id===currentProgId);
     const isNew = !p;
-    const cur = p || {id:CT.uid(), number: (1000+Math.floor(Math.random()*9000)), title:'Programm', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null)};
+    const cur = p || { id:CT.uid(), number:(1000+Math.floor(Math.random()*9000)), title:'Programm', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null) };
     const html = `
       <label class="fld">Nummer<input id="pr_n" value="${CT.escape(cur.number)}"></label>
       <label class="fld">Titel<input id="pr_t" value="${CT.escape(cur.title)}"></label>
@@ -68,38 +89,57 @@ CT.ready(()=>{
     `;
     CT.openModal({title:isNew?'Neues Programm':'Programm', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
       const up = {...cur};
-      up.number=document.getElementById('pr_n').value||cur.number;
-      up.title=document.getElementById('pr_t').value||cur.title;
+      up.number = document.getElementById('pr_n').value || cur.number;
+      up.title  = document.getElementById('pr_t').value || cur.title;
       if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
-      CT.storage.write(CT_KEYS.PROGS, progs); currentProgId=up.id; refreshProgSelect(); CT.toast('Gespeichert','ok');
+      CT.storage.write(CT_KEYS.PROGS, progs);
+      currentProgId = up.id;
+      refreshProgSelect();
+      CT.toast('Gespeichert','ok');
     }});
-    const del=document.getElementById('del'); if(del) del.onclick=()=>{ progs = progs.filter(x=>x.id!==cur.id); CT.storage.write(CT_KEYS.PROGS,progs); currentProgId=progs[0]?.id; CT.closeModal(); refreshProgSelect(); render(); CT.toast('Gelöscht','ok'); };
+    const del = document.getElementById('del');
+    if(del) del.onclick = ()=>{
+      progs = progs.filter(x=>x.id!==cur.id);
+      CT.storage.write(CT_KEYS.PROGS, progs);
+      currentProgId = progs[0]?.id || null;
+      CT.closeModal(); refreshProgSelect(); render(); CT.toast('Gelöscht','ok');
+    };
   }
 
+  // -------- render slots (12 позиций, не скрываем из-за поиска) ----------
   function render(){
-    const root=document.getElementById('slots'); root.innerHTML='';
-    const data = live[side];
+    const root = document.getElementById('slots');
+    root.innerHTML = '';
+    const data  = live[side];
     const tools = CT.storage.read(CT_KEYS.TOOLS, []);
-    const q = (document.getElementById('setupSearch').value||'').toLowerCase();
-    for(let i=0;i<12;i++){
-      const cell = document.createElement('div'); cell.className='slot';
-      const v = data[i];
-      if(!v){
-        cell.innerHTML = `<div class="slot-empty"><span class="muted">#${i+1} • Leer</span><button class="btn" data-i="${i}">Hinzufügen</button></div>`;
-        cell.querySelector('button').onclick=()=>selectToolFor(i);
-      }else{
-        const t = tools.find(x=>x.id===v.toolId);
-        const name = t? t.name : '—';
-        const code = t? t.code : '';
-        if(q && !(name.toLowerCase().includes(q)||code.toLowerCase().includes(q))) { continue; }
+    const q     = (document.getElementById('setupSearch').value||'').toLowerCase();
 
-        // мини-фото или placeholder "no foto"
+    for(let i=0;i<12;i++){
+      const cell = document.createElement('div');
+      cell.className = 'slot';
+      const v = data[i];
+
+      if(!v){
+        cell.innerHTML = `
+          <div class="slot-empty">
+            <span class="muted">#${i+1} • Leer</span>
+            <button class="btn" data-i="${i}">Hinzufügen</button>
+          </div>`;
+        cell.querySelector('button').onclick = ()=>selectToolFor(i);
+      } else {
+        const t = tools.find(x=>x.id===v.toolId);
+        const name = t ? t.name : '—';
+        const code = t ? t.code : '';
+
+        // фильтр поиска — только подсветка по желанию; список НЕ скрываем
+        const matches = q ? (name.toLowerCase().includes(q) || code.toLowerCase().includes(q)) : true;
+
         const thumb = t?.imgData
           ? `<img class="thumb" src="${t.imgData}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">`
           : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
 
         cell.innerHTML = `
-          <div class="slot-full">
+          <div class="slot-full" ${matches?'':'style="opacity:.45"'} >
             ${thumb}
             <div class="meta">
               <div class="name"><b>${CT.escape(name)}</b></div>
@@ -110,9 +150,10 @@ CT.ready(()=>{
               <button class="icon-btn" data-edit aria-label="Ändern"><svg><use href="./ui/icons.svg#edit"/></svg></button>
             </div>
           </div>`;
-        cell.querySelector('.icon-btn.info').onclick=()=> infoSlot(i);
-        cell.querySelector('[data-edit]').onclick=()=> selectToolFor(i);
+        cell.querySelector('.icon-btn.info').onclick = ()=>infoSlot(i);
+        cell.querySelector('[data-edit]').onclick    = ()=>selectToolFor(i);
       }
+
       root.appendChild(cell);
     }
   }
@@ -122,36 +163,57 @@ CT.ready(()=>{
     const items = tools.map(t=>({id:t.id, title:t.name, meta:t.code}));
     CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
       live[side][idx] = {toolId:id, note:''};
-      CT.storage.write(CT_KEYS.SETUP, live); CT.closeDrawer(); CT.toast('Aktualisiert','ok'); render();
+      CT.storage.write(CT_KEYS.SETUP, live);
+      CT.closeDrawer();
+      CT.toast('Aktualisiert','ok');
+      render();
     }});
   }
+
   function infoSlot(i){
     const t = CT.getToolFromSlot(live, side, i);
     if(!t){ CT.toast('Kein Werkzeug','err'); return; }
+    const big = t.imgData
+      ? `<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`
+      : `<div class="imgwrap"><div style="width:92vw;max-width:520px;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>`;
     const html = `
-      ${t.imgData?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
-      <b>${CT.escape(t.name)}</b><div class="i-row">${CT.escape(t.code)} • ${CT.escape(t.iso||'')}</div>
+      ${big}
+      <b>${CT.escape(t.name)}</b>
+      <div class="i-row">${CT.escape(t.code)} • ${CT.escape(t.iso||'')}</div>
       <div class="row">
         <button class="btn warn" id="rem">Entfernen aus Programm</button>
         <button class="btn brand" id="edt">Bearbeiten Tool</button>
       </div>`;
     CT.openModal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
-    document.getElementById('rem').onclick=()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
-    document.getElementById('edt').onclick=()=>{ CT.closeModal(); location.href='./tools.html'; };
+    rem.onclick = ()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
+    edt.onclick = ()=>{ CT.closeModal(); location.href='./tools.html'; };
   }
 
-  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; render();});
+  // tabs + toolbar
+  document.querySelectorAll('.tab').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); side=b.dataset.side; render();
+    };
+  });
   document.getElementById('progInfo').onclick=()=>{
-    const html = `<div class="row"><button class="btn" id="newP">Neues Programm</button><button class="btn ok" id="apply">In Live anwenden</button><button class="btn brand" id="editP">Bearbeiten</button></div>`;
+    const html = `
+      <div class="row">
+        <button class="btn" id="newP">Neues Programm</button>
+        <button class="btn ok" id="apply">In Live anwenden</button>
+        <button class="btn brand" id="editP">Bearbeiten</button>
+      </div>`;
     CT.openModal({title:'Programm', html, cancelText:'Schließen'});
-    document.getElementById('newP').onclick=()=>{ CT.closeModal(); currentProgId=null; editProg(); };
-    document.getElementById('apply').onclick=()=>{ CT.closeModal(); applyToLive(); };
-    document.getElementById('editP').onclick=()=>{ CT.closeModal(); editProg(); };
+    newP.onclick = ()=>{ CT.closeModal(); currentProgId=null; editProg(); };
+    apply.onclick = ()=>{ CT.closeModal(); applyToLive(); };
+    editP.onclick = ()=>{ CT.closeModal(); editProg(); };
   };
-  document.getElementById('progSelect').onclick=openProgMenu;
+  document.getElementById('progSelect').onclick = openProgMenu;
   document.getElementById('setupSearch').addEventListener('input', render);
 
-  refreshProgSelect(); render(); CT.bindGlobalSearch(()=>render());
+  refreshProgSelect();
+  render();
+  CT.bindGlobalSearch(()=>render());
 });
 </script>
 </body>
