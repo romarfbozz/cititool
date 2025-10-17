@@ -88,15 +88,21 @@ CT.ready(()=>{
         const t = tools.find(x=>x.id===v.toolId);
         const name = t? t.name : '—';
         const code = t? t.code : '';
-        if(q && !(name.toLowerCase().includes(q)||code.toLowerCase().includes(q))) { continue; }
+        const note = v.note||'';
+        if(q && !(name.toLowerCase().includes(q)||code.toLowerCase().includes(q)||note.toLowerCase().includes(q))) { continue; }
         cell.innerHTML = `
           <div class="slot-full">
             ${t?.imgData?`<img class="thumb" src="${t.imgData}" alt="">`:''}
-            <div class="meta"><div class="name">${CT.escape(name)}</div><div class="sub">${CT.escape(code)}</div></div>
-            <div class="tail">
-              <span class="badge ${ (t?.lifePct??100)<=0?'err':''}">${t?Math.max(0,t.lifePct|0):0}%</span>
-              <button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
-              <button class="btn ghost sm" data-i="${i}">Ändern</button>
+            <div class="meta">
+              <div class="name">${CT.escape(name)}</div>
+              <div class="sub">${CT.escape(code)}</div>
+            </div>
+            <div class="tail" style="display:grid;gap:.25rem;justify-items:end">
+              ${note?`<span class="badge" title="${CT.escape(note)}">Note</span>`:''}
+              <div class="row" style="gap:.25rem">
+                <button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
+                <button class="btn ghost sm" data-i="${i}">Ändern</button>
+              </div>
             </div>
           </div>`;
         cell.querySelector('.icon-btn').onclick=()=> infoSlot(i);
@@ -110,21 +116,30 @@ CT.ready(()=>{
     const tools = CT.storage.read(CT_KEYS.TOOLS, []);
     const items = tools.map(t=>({id:t.id, title:t.name, meta:t.code}));
     CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
-      live[side][idx] = {toolId:id, note:''};
+      const prev = live[side][idx] || {};
+      live[side][idx] = {toolId:id, note: prev.note || ''};
       CT.storage.write(CT_KEYS.SETUP, live); CT.closeDrawer(); CT.toast('Aktualisiert','ok'); render();
     }});
   }
+
   function infoSlot(i){
-    const t = CT.getToolFromSlot(live, side, i);
+    const cell = live[side][i];
+    const t = cell ? CT.getToolFromSlot(live, side, i) : null;
     if(!t){ CT.toast('Kein Werkzeug','err'); return; }
     const html = `
       ${t.imgData?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
-      <b>${CT.escape(t.name)}</b><div class="i-row">${CT.escape(t.code)} • ${CT.escape(t.iso||'')}</div>
+      <b>${CT.escape(t.name)}</b>
+      <div class="i-row">${CT.escape(t.code)} • ${CT.escape(t.iso||'')}</div>
+      <label class="fld">Notiz zur Position #${i+1}<textarea id="slot_note" rows="4" placeholder="Bemerkung, Schnittdaten, G-Code…">${CT.escape(cell.note||'')}</textarea></label>
       <div class="row">
         <button class="btn warn" id="rem">Entfernen aus Programm</button>
         <button class="btn brand" id="edt">Bearbeiten Tool</button>
       </div>`;
-    CT.openModal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
+    CT.openModal({title:`Position #${i+1}`, html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
+      const note = document.getElementById('slot_note').value||'';
+      const data=CT.storage.read(CT_KEYS.SETUP,{ro:Array(12).fill(null), ru:Array(12).fill(null)});
+      if(data[side][i]){ data[side][i].note = note; CT.storage.write(CT_KEYS.SETUP,data); CT.toast('Notiz gespeichert','ok'); render(); }
+    }});
     document.getElementById('rem').onclick=()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
     document.getElementById('edt').onclick=()=>{ CT.closeModal(); location.href='./tools.html'; };
   }
