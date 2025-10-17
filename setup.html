@@ -1,4 +1,4 @@
-===== FILE: /setup.html =====
+
 <!doctype html>
 <html lang="de">
 <head>
@@ -106,6 +106,29 @@ CT.ready(()=>{
     };
   }
 
+  // формат номера по умолчанию: T0101…T1212
+  function defaultTnum(idx){
+    const nn = String(idx+1).padStart(2,'0');
+    return `T${nn}${nn}`;
+  }
+
+  // редактирование номера слота
+  function editSlotNumber(idx){
+    const v = live[side][idx] || {};
+    const cur = v.tnum || defaultTnum(idx);
+    const html = `<label class="fld">Werkzeugnummer<input id="tnum_inp" value="${CT.escape(cur)}" placeholder="z.B. T0101"></label>`;
+    CT.openModal({title:`Nummer für #${idx+1}`, html, okText:'Speichern', cancelText:'Abbrechen', onOk:()=>{
+      const val = document.getElementById('tnum_inp').value.trim() || defaultTnum(idx);
+      const cell = live[side][idx] || {toolId:null, note:''};
+      cell.tnum = val;
+      live[side][idx] = cell;
+      CT.storage.write(CT_KEYS.SETUP, live);
+      CT.closeModal();
+      render();
+      CT.toast('Nummer gespeichert','ok');
+    }});
+  }
+
   // -------- render slots (12 позиций, не скрываем из-за поиска) ----------
   function render(){
     const root = document.getElementById('slots');
@@ -119,19 +142,24 @@ CT.ready(()=>{
       cell.className = 'slot';
       const v = data[i];
 
+      // текущий номер слота
+      const tnum = (v && v.tnum) ? v.tnum : defaultTnum(i);
+      const tnumBtn = `<button class="btn sm ghost" data-tnum="${i}" style="min-width:72px">${CT.escape(tnum)}</button>`;
+
       if(!v){
         cell.innerHTML = `
-          <div class="slot-empty">
+          <div class="slot-empty" style="gap:.5rem">
+            ${tnumBtn}
             <span class="muted">#${i+1} • Leer</span>
             <button class="btn" data-i="${i}">Hinzufügen</button>
           </div>`;
-        cell.querySelector('button').onclick = ()=>selectToolFor(i);
+        cell.querySelector('[data-i]').onclick=()=>selectToolFor(i);
+        cell.querySelector('[data-tnum]').onclick=()=>editSlotNumber(i);
       } else {
         const t = tools.find(x=>x.id===v.toolId);
         const name = t ? t.name : '—';
         const code = t ? t.code : '';
 
-        // фильтр поиска — только подсветка по желанию; список НЕ скрываем
         const matches = q ? (name.toLowerCase().includes(q) || code.toLowerCase().includes(q)) : true;
 
         const thumb = t?.imgData
@@ -140,6 +168,7 @@ CT.ready(()=>{
 
         cell.innerHTML = `
           <div class="slot-full" ${matches?'':'style="opacity:.45"'} >
+            ${tnumBtn}
             ${thumb}
             <div class="meta">
               <div class="name"><b>${CT.escape(name)}</b></div>
@@ -150,8 +179,9 @@ CT.ready(()=>{
               <button class="icon-btn" data-edit aria-label="Ändern"><svg><use href="./ui/icons.svg#edit"/></svg></button>
             </div>
           </div>`;
-        cell.querySelector('.icon-btn.info').onclick = ()=>infoSlot(i);
-        cell.querySelector('[data-edit]').onclick    = ()=>selectToolFor(i);
+        cell.querySelector('.icon-btn.info').onclick=()=> infoSlot(i);
+        cell.querySelector('[data-edit]').onclick=()=> selectToolFor(i);
+        cell.querySelector('[data-tnum]').onclick=()=> editSlotNumber(i);
       }
 
       root.appendChild(cell);
@@ -162,7 +192,12 @@ CT.ready(()=>{
     const tools = CT.storage.read(CT_KEYS.TOOLS, []);
     const items = tools.map(t=>({id:t.id, title:t.name, meta:t.code}));
     CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
-      live[side][idx] = {toolId:id, note:''};
+      const prev = live[side][idx] || {};
+      live[side][idx] = {
+        toolId:id,
+        note: prev.note || '',
+        tnum: prev.tnum || defaultTnum(idx)
+      };
       CT.storage.write(CT_KEYS.SETUP, live);
       CT.closeDrawer();
       CT.toast('Aktualisiert','ok');
@@ -171,7 +206,9 @@ CT.ready(()=>{
   }
 
   function infoSlot(i){
+    const cell = live[side][i];
     const t = CT.getToolFromSlot(live, side, i);
+    const tnum = (cell && cell.tnum) ? cell.tnum : defaultTnum(i);
     if(!t){ CT.toast('Kein Werkzeug','err'); return; }
     const big = t.imgData
       ? `<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`
@@ -181,12 +218,14 @@ CT.ready(()=>{
       <b>${CT.escape(t.name)}</b>
       <div class="i-row">${CT.escape(t.code)} • ${CT.escape(t.iso||'')}</div>
       <div class="row">
-        <button class="btn warn" id="rem">Entfernen aus Programm</button>
+        <button class="btn sm" id="editNum">${CT.escape(tnum)}</button>
         <button class="btn brand" id="edt">Bearbeiten Tool</button>
+        <button class="btn warn" id="rem">Entfernen aus Programm</button>
       </div>`;
     CT.openModal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
-    rem.onclick = ()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
-    edt.onclick = ()=>{ CT.closeModal(); location.href='./tools.html'; };
+    document.getElementById('editNum').onclick = ()=>{ CT.closeModal(); editSlotNumber(i); };
+    document.getElementById('edt').onclick     = ()=>{ CT.closeModal(); location.href='./tools.html'; };
+    document.getElementById('rem').onclick     = ()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
   }
 
   // tabs + toolbar
