@@ -1,4 +1,4 @@
-===== FILE: /ui/dock.js =====
+
 (function(){
   const root=document.getElementById('dock'); if(!root) return;
   root.innerHTML = `
@@ -12,4 +12,4 @@
   const active = document.body.getAttribute('data-active')||'dash';
   Array.from(root.querySelectorAll('a')).forEach(a=>{ if(a.dataset.k===active) a.classList.add('active'); });
 })();
-===== END FILE =====
+
