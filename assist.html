@@ -1,0 +1,78 @@
+===== FILE: /assist.html =====
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>CitiTool • Assistenten</title>
+  <link rel="stylesheet" href="./ui/core.css">
+</head>
+<body data-active="setup">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html"><img src="./ui/brand.png" class="badge" alt=""><div class="tit"><div class="title">CitiTool</div><div class="subtitle">Assistenten</div></div></a>
+    <button class="icon-btn" data-ct="search-toggle"><svg><use href="./ui/icons.svg#search"/></svg></button>
+  </div>
+</header>
+<div class="searchbar collapsed"><input class="field" type="search" placeholder="Suchen…" id="asSearch"></div>
+
+<main class="container">
+  <section class="section">
+    <h2>Material-Assistent (Drehen)</h2>
+    <div class="row">
+      <select id="mat">
+        <option>1.4112</option><option>1.4104</option><option>1.4122</option><option>F75</option><option>Ms58</option>
+      </select>
+      <select id="mode"><option>Schruppen</option><option>Schlichten</option></select>
+    </div>
+    <div class="grid2">
+      <label class="fld">Ø (mm)<input id="mmD" type="number" inputmode="decimal" placeholder="z.B. 20"></label>
+      <label class="fld">L (mm)<input id="mmL" type="number" inputmode="decimal" placeholder="optional"></label>
+      <label class="fld">Vc (m/min)<input id="vc" type="number" inputmode="decimal" value="180"></label>
+      <label class="fld">fn (mm/U)<input id="fn" type="number" inputmode="decimal" value="0.2"></label>
+    </div>
+    <div class="calc" id="calcOut">n = —, Vf = —</div>
+    <div class="row"><button class="btn brand" id="saveNote">In Notiz speichern</button></div>
+  </section>
+
+  <section class="section">
+    <h2>Passmassen (Schnellsuche)</h2>
+    <input class="field" id="passQ" placeholder="z.B. d12 h6">
+    <div id="passOut" class="muted">Gib einen Passmaß an…</div>
+  </section>
+</main>
+<nav class="dock" id="dock"></nav>
+
+<script src="./ui/core.js"></script>
+<script src="./ui/dock.js"></script>
+<script>
+CT.ready(()=>{
+  CT.ensureSeeds();
+  function calc(){
+    const D=parseFloat(mmD.value||0), Vc=parseFloat(vc.value||0), fnv=parseFloat(fn.value||0);
+    if(!D||!Vc||!fnv){ calcOut.textContent='n = —, Vf = —'; return; }
+    const n = Math.round((1000*Vc)/(Math.PI*D));
+    const Vf = Math.round(fnv * n);
+    calcOut.textContent = `n = ${n} 1/min,  Vf = ${Vf} mm/min`;
+    if(n>6000) CT.toast('n sehr hoch — prüfen!', 'warn', 1500);
+  }
+  [mmD,vc,fn].forEach(el=>el.addEventListener('input', calc)); calc();
+
+  saveNote.onclick=()=>{
+    const txt = `Material: ${mat.value}, Modus: ${mode.value}\nØ=${mmD.value}mm, Vc=${vc.value}m/min, fn=${fn.value}mm/U\n${calcOut.textContent}`;
+    const docs = CT.storage.read(CT_KEYS.DOCS, []);
+    docs.push({id:CT.uid(), title:`Schnittdaten ${mat.value}`, category:'Material', tags:['calc','drehen'], body:txt, favorite:false});
+    CT.storage.write(CT_KEYS.DOCS, docs); CT.toast('Als Notiz gespeichert','ok');
+  };
+
+  const passDB = {
+    'd12 h6': 'Welle d12, Bohrung h6: Spiel 0…+X (Demo)',
+    'H7/g6': 'Loch H7 mit Welle g6: Übergang/Spiel (Demo)'
+  };
+  passQ.addEventListener('input', ()=>{
+    const q=passQ.value.trim(); passOut.textContent = passDB[q] || '—';
+  });
+});
+</script>
+</body>
+</html>
+===== END FILE =====
