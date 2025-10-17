@@ -95,17 +95,18 @@ body.noscroll{overflow:hidden;height:100%}
   background: rgba(45,108,223,0.08); /* лёгкий синий фон */
   transition: background 0.2s, transform 0.1s;
 }
-.icon-btn.info svg {
-  width: 18px;
-  height: 18px;
-  fill: var(--brand, #2d6cdf);
+..icon-btn.info svg{
+  width:20px;
+  height:20px;
+  stroke:currentColor;
+  fill:none;
 }
-.icon-btn.info:active {
-  transform: translateY(1px);
-  background: rgba(45,108,223,0.15);
+.icon-btn.info{
+  background:none;
+  color:var(--muted);
 }
-.icon-btn.info:hover {
-  background: rgba(45,108,223,0.12);
+.icon-btn.info:active{
+  transform:translateY(1px);
 }
 
 /* ===== CitiTool Badge (кодовый логотип) ===== */
