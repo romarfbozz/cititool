@@ -16,6 +16,7 @@
 <div class="searchbar collapsed"><input class="field" type="search" placeholder="Suchen…" id="asSearch"></div>
 
 <main class="container">
+  <!-- MATERIAL-ASSIST -->
   <section class="section">
     <h2>Material-Assistent (Drehen)</h2>
     <div class="row">
@@ -31,15 +32,43 @@
       <label class="fld">fn (mm/U)<input id="fn" type="number" inputmode="decimal" value="0.2"></label>
     </div>
     <div class="calc" id="calcOut">n = —, Vf = —</div>
-    <div class="row"><button class="btn brand" id="saveNote">In Notiz speichern</button></div>
+    <div class="row">
+      <button class="btn brand" id="saveNote">In Notiz speichern</button>
+    </div>
   </section>
 
+  <!-- FASEN-ASSIST -->
+  <section class="section">
+    <h2>Fasen-Assistent (Drehen)</h2>
+    <div class="grid2">
+      <label class="fld">Winkel A (°)<input id="faA" type="number" inputmode="decimal" value="45"></label>
+      <label class="fld">Xstart (Ø mm)<input id="faXs" type="number" inputmode="decimal" placeholder="z.B. 20"></label>
+
+      <label class="fld">Zstart (mm)<input id="faZs" type="number" inputmode="decimal" value="0"></label>
+      <label class="fld">Zend (mm)<input id="faZe" type="number" inputmode="decimal" placeholder="leer = berechnen"></label>
+
+      <label class="fld">L axial (mm)<input id="faL" type="number" inputmode="decimal" placeholder="leer = berechnen"></label>
+      <label class="fld">Xend (Ø mm)<input id="faXe" type="number" inputmode="decimal" placeholder="leer = berechnen"></label>
+    </div>
+    <div class="row">
+      <button class="btn" id="faCalc">Berechnen</button>
+      <button class="btn ok" id="faCopy">G-Code kopieren</button>
+      <button class="btn brand" id="faSave">Als Notiz speichern</button>
+    </div>
+    <div class="calc" id="faOut">G-Code: —</div>
+    <div class="muted" style="margin-top:.25rem">
+      Hinweis: Beziehung <code>ΔX = 2 · L · tan(A)</code>, wobei <code>ΔX = Xstart − Xend</code>, <code>L = |Zend − Zstart|</code>.
+    </div>
+  </section>
+
+  <!-- PASSMAß QUICK -->
   <section class="section">
     <h2>Passmassen (Schnellsuche)</h2>
-    <input class="field" id="passQ" placeholder="z.B. d12 h6">
+    <input class="field" id="passQ" placeholder="z.B. d12 h6 oder H7/g6">
     <div id="passOut" class="muted">Gib einen Passmaß an…</div>
   </section>
 </main>
+
 <nav class="dock" id="dock"></nav>
 
 <script src="./ui/core.js"></script>
@@ -47,32 +76,116 @@
 <script>
 CT.ready(()=>{
   CT.ensureSeeds();
-  function calc(){
+
+  /* ---------- Material-Assist ---------- */
+  function calcMat(){
     const D=parseFloat(mmD.value||0), Vc=parseFloat(vc.value||0), fnv=parseFloat(fn.value||0);
     if(!D||!Vc||!fnv){ calcOut.textContent='n = —, Vf = —'; return; }
     const n = Math.round((1000*Vc)/(Math.PI*D));
     const Vf = Math.round(fnv * n);
-    calcOut.textContent = `n = ${n} 1/min,  Vf = ${Vf} mm/min`;
+    calcOut.textContent = \`n = \${n} 1/min,  Vf = \${Vf} mm/min\`;
     if(n>6000) CT.toast('n sehr hoch — prüfen!', 'warn', 1500);
   }
-  [mmD,vc,fn].forEach(el=>el.addEventListener('input', calc)); calc();
+  [mmD,vc,fn].forEach(el=>el.addEventListener('input', calcMat)); calcMat();
 
   saveNote.onclick=()=>{
-    const txt = `Material: ${mat.value}, Modus: ${mode.value}\nØ=${mmD.value}mm, Vc=${vc.value}m/min, fn=${fn.value}mm/U\n${calcOut.textContent}`;
+    const txt = \`Material: \${mat.value}, Modus: \${mode.value}\\nØ=\${mmD.value}mm, Vc=\${vc.value}m/min, fn=\${fn.value}mm/U\\n\${calcOut.textContent}\`;
     const docs = CT.storage.read(CT_KEYS.DOCS, []);
-    docs.push({id:CT.uid(), title:`Schnittdaten ${mat.value}`, category:'Material', tags:['calc','drehen'], body:txt, favorite:false});
+    docs.push({id:CT.uid(), title:\`Schnittdaten \${mat.value}\`, category:'Material', tags:['calc','drehen'], body:txt, favorite:false});
     CT.storage.write(CT_KEYS.DOCS, docs); CT.toast('Als Notiz gespeichert','ok');
   };
 
+  /* ---------- Fasen-Assist ---------- */
+  function deg2rad(a){ return a*Math.PI/180; }
+  function round3(v){ return Math.round((v + Number.EPSILON)*1000)/1000; }
+
+  function computeChamfer(){
+    const A = parseFloat(faA.value||0);
+    const Xs = parseFloat(faXs.value||0);
+    const Zs = parseFloat(faZs.value||0);
+    let Ze = faZe.value===''? null : parseFloat(faZe.value);
+    let L  = faL.value==='' ? null : parseFloat(faL.value);
+    let Xe = faXe.value===''? null : parseFloat(faXe.value);
+
+    if(!A || !Xs){ CT.toast('A und Xstart sind Pflicht', 'err'); return null; }
+
+    // если есть Ze и нет L — L из Z
+    if(Ze!==null && L===null) L = Math.abs(Ze - Zs);
+    // если есть L и нет Ze — Ze из L (в плюс по Z)
+    if(L!==null && Ze===null) Ze = Zs + L;
+
+    const tanA = Math.tan(deg2rad(A));
+    // если нет Xe — считаем из ΔX = 2*L*tan(A)
+    if(Xe===null && L!==null) Xe = Xs - 2*L*tanA;
+    // если нет L — считаем из Xe
+    if(L===null && Xe!==null){
+      const dX = Xs - Xe;
+      L = dX / (2*tanA);
+      Ze = Zs + L;
+    }
+
+    if([Xe,Ze,L].some(v=>v===null || !isFinite(v))){
+      CT.toast('Gib 3 von 4 an: (Xe | Ze | L) + Winkel', 'err');
+      return null;
+    }
+
+    Xe = round3(Xe); Ze = round3(Ze); L = round3(L);
+    return {A, Xs, Xe, Zs, Ze, L};
+  }
+
+  function buildGcode(sol){
+    // простая линейная фаска с подводом
+    const feed = 0.15; // демо-значение
+    const lines = [
+      '(Fase)',
+      \`G1 X\${round3(sol.Xs)} Z\${round3(sol.Zs)}\`,
+      \`G1 X\${round3(sol.Xe)} Z\${round3(sol.Ze)} F\${feed}\`,
+    ];
+    return lines.join('\\n');
+  }
+
+  function renderChamfer(){
+    const sol = computeChamfer(); if(!sol) { faOut.textContent='G-Code: —'; return; }
+    const g = buildGcode(sol);
+    faOut.textContent = 'G-Code:\\n' + g;
+    return {sol, g};
+  }
+
+  [faA,faXs,faZs,faZe,faL,faXe].forEach(el=>el.addEventListener('input', renderChamfer));
+  faCalc.onclick = renderChamfer;
+
+  faCopy.onclick = ()=>{
+    const r = renderChamfer(); if(!r) return;
+    navigator.clipboard?.writeText(r.g).then(()=>CT.toast('G-Code kopiert','ok')).catch(()=>CT.toast('Kopieren fehlgeschlagen','err'));
+  };
+
+  faSave.onclick = ()=>{
+    const r = renderChamfer(); if(!r) return;
+    const {sol, g} = r;
+    const body = [
+      \`A=\${sol.A}°, Xstart=\${sol.Xs}mm, Xend=\${sol.Xe}mm\`,
+      \`Zstart=\${sol.Zs}mm, Zend=\${sol.Ze}mm, L=\${sol.L}mm\`,
+      '',
+      g
+    ].join('\\n');
+    const docs = CT.storage.read(CT_KEYS.DOCS, []);
+    docs.push({id:CT.uid(), title:\`Fase \${sol.A}°\`, category:'Fasen', tags:['drehen','gcode'], body, favorite:false});
+    CT.storage.write(CT_KEYS.DOCS, docs); CT.toast('Notiz gespeichert','ok');
+  };
+
+  /* ---------- Passmaß Quick ---------- */
   const passDB = {
     'd12 h6': 'Welle d12, Bohrung h6: Spiel 0…+X (Demo)',
-    'H7/g6': 'Loch H7 mit Welle g6: Übergang/Spiel (Demo)'
+    'H7/g6': 'Loch H7 mit Welle g6: Übergang/Spiel (Demo)',
+    'H7/h6': 'Typisch: leichtes Spiel (Demo)'
   };
   passQ.addEventListener('input', ()=>{
-    const q=passQ.value.trim(); passOut.textContent = passDB[q] || '—';
+    const q=(passQ.value||'').trim(); passOut.textContent = passDB[q] || '—';
   });
+
+  // initial outputs
+  calcMat(); renderChamfer();
 });
 </script>
 </body>
 </html>
-
