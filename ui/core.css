@@ -85,20 +85,30 @@ body.noscroll{overflow:hidden;height:100%}
 /* =======================================================
    INFO ICON (единый стиль вместо синей точки)
    ======================================================= */
-.icon-btn.info{
-  width:32px;
-  height:32px;
-  border-radius:50%;
-  background:transparent;
-  color:var(--muted);
+/* =======================================================
+   INFO ICON — тонкая i-иконка (без точки)
+   ======================================================= */
+.icon-btn.info {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: transparent !important;   /* убираем фон */
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  border: none;
 }
-.icon-btn.info svg{
-  width:20px;
-  height:20px;
-  fill:currentColor;
+.icon-btn.info svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;                 /* теперь тонкая линия, как у iOS */
+  stroke-width: 2;
 }
-.icon-btn.info:active{ transform:var(--tap); }
-
+.icon-btn.info:active {
+  transform: var(--tap);
+  opacity: 0.6;
+}
 /* ===== CitiTool Badge (кодовый логотип) ===== */
 .ct-badge{
   --g1:#9fbfe5; --g2:#4f8fda;
