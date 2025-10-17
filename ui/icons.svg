@@ -1,4 +1,4 @@
-===== FILE: /ui/icons.svg =====
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
   <symbol id="search" viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.293 14.293l4.707 4.707 1.414-1.414-4.707-4.707A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></symbol>
   <symbol id="info" viewBox="0 0 24 24"><path d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6z"/><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/></symbol>
@@ -10,4 +10,4 @@
   <symbol id="program" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></symbol>
   <symbol id="docs" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></symbol>
 </svg>
-===== END FILE =====
+
