@@ -1,4 +1,4 @@
-===== FILE: /ui/core.js =====
+
 /* CitiTool Core — единый API */
 window.CT = (function(){
   const $ = (sel, root=document)=>root.querySelector(sel);
@@ -149,4 +149,4 @@ window.CT = (function(){
   };
 })();
 window.CT_KEYS = CT.CT_KEYS || { TOOLS:'ct_tools_v2', CATS:'ct_cats_v1', SETUP:'ct_setup_live', PROGS:'ct_programs_v1', DASH:'ct_dash_v1', DOCS:'ct_docs_v3' };
-===== END FILE =====
+
