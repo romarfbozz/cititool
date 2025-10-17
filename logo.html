@@ -1,0 +1,90 @@
+
+<!doctype html>
+<meta charset="utf-8">
+<title>CitiTool • brand.png Maker</title>
+<style>
+  body{font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif;
+       display:grid;place-items:center;min-height:100vh;margin:0;background:#f7f8fc;color:#0d1b2a}
+  .card{background:#fff;border:1px solid #e8ecf4;border-radius:14px;box-shadow:0 6px 24px rgba(13,27,42,.08);padding:16px 18px;max-width:560px}
+  .row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+  .btn{height:40px;padding:0 12px;border-radius:12px;border:1px solid #dbe5ff;background:#2d6cdf;color:#fff;font-weight:600}
+  canvas{background:#fff;border:1px solid #e8ecf4;border-radius:12px}
+  .muted{color:#6b7a90;font-size:13px}
+</style>
+<div class="card">
+  <h2 style="margin:0 0 8px">CitiTool • brand.png</h2>
+  <p class="muted" style="margin-top:0">Генератор PNG (flat, серо-голубой). Нажми на нужный размер.</p>
+  <div class="row" style="margin:8px 0 12px">
+    <button class="btn" onclick="downloadPNG(64)">Download 64</button>
+    <button class="btn" onclick="downloadPNG(128)">Download 128</button>
+    <button class="btn" onclick="downloadPNG(256)">Download 256</button>
+  </div>
+  <canvas id="c" width="256" height="64"></canvas>
+  <div class="muted" style="margin-top:8px">iPhone: если файл открывается во вкладке — зажми изображение и «Сохранить изображение». Потом переименуй в <b>brand.png</b> и залей в <code>/ui/</code>.</div>
+</div>
+
+<script>
+const colors={ start:'#9fb4c9', end:'#6e93b8', text:'#2f3a47', accent:'#5f87b6' };
+
+function draw(ctx, W, H){
+  ctx.clearRect(0,0,W,H);
+  // капсула
+  const grad=ctx.createLinearGradient(0,H, W,0);
+  grad.addColorStop(0, colors.start); grad.addColorStop(1, colors.end);
+  roundRect(ctx, 4,4,56,56,16); ctx.fillStyle=grad; ctx.fill();
+
+  // CT (простая геом.)
+  ctx.fillStyle='#fff';
+  // C
+  drawC(ctx, 28, 32, 10, 4);
+  // T
+  ctx.fillRect(36.5,20,4.5,24);
+
+  // текст "Citi" + "Tool"
+  ctx.textBaseline='alphabetic';
+  ctx.font='700 24px -apple-system, BlinkMacSystemFont, Segoe UI, Inter, Roboto, system-ui, sans-serif';
+  ctx.fillStyle=colors.text; ctx.fillText('Citi', 72, 41);
+  ctx.fillStyle=colors.accent; ctx.fillText('Tool', 118, 41);
+}
+
+function drawC(ctx, cx, cy, r, w){
+  // буква C как кольцевой сектор
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, Math.PI*0.15, Math.PI*1.85, true);
+  ctx.arc(cx, cy, r-w, Math.PI*1.85, Math.PI*0.15);
+  ctx.closePath(); ctx.fill();
+}
+
+function roundRect(ctx, x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y,   x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x,   y+h, r);
+  ctx.arcTo(x,   y+h, x,   y,   r);
+  ctx.arcTo(x,   y,   x+w, y,   r);
+  ctx.closePath();
+}
+
+function downloadPNG(width){
+  // отрисуем в нужном масштабе (высота = 0.25*ширины для этого логотипа)
+  const W=width, H=Math.round(width/4);
+  const c=document.createElement('canvas'); c.width=W; c.height=H;
+  const ctx=c.getContext('2d'); draw(ctx,W,H);
+  const link=document.createElement('a');
+  link.download = 'brand.png';
+  link.href = c.toDataURL('image/png');
+  // iOS Safari иногда не скачивает — откроем в новой вкладке
+  if(/iPad|iPhone|iPod/.test(navigator.userAgent)){
+    window.open(link.href, '_blank');
+  }else{
+    link.click();
+  }
+  // также обновим превью
+  const prev=document.getElementById('c'); const pctx=prev.getContext('2d');
+  pctx.imageSmoothingEnabled=true; pctx.clearRect(0,0,prev.width,prev.height);
+  pctx.drawImage(c, 0,0, prev.width, prev.height);
+}
+
+// начальная превью 256×64
+draw(document.getElementById('c').getContext('2d'), 256, 64);
+</script>
