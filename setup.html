@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Setup + Programme</title>
   <!-- cache-bust -->
-  <link rel="stylesheet" href="./ui/core.css?v=7">
+  <link rel="stylesheet" href="./ui/core.css?v=8">
 </head>
 <body data-active="programme">
 <header class="appbar">
@@ -48,14 +48,11 @@
 <nav class="dock" id="dock"></nav>
 
 <!-- cache-bust -->
-<script src="./ui/core.js?v=7"></script>
-<script src="./ui/dock.js?v=7"></script>
+<script src="./ui/core.js?v=8"></script>
+<script src="./ui/dock.js?v=8"></script>
 <script>
 CT.ready(()=>{
-  // Быстрый маркер сборки (виден в тосте и в консоли)
-  console.log('SETUP v7');
-  CT.toast('SETUP v7 geladen','ok', 1200);
-
+  console.log('SETUP v8');
   CT.ensureSeeds();
 
   let progs = CT.storage.read(CT_KEYS.PROGS, []);
@@ -65,13 +62,14 @@ CT.ready(()=>{
 
   const pad2 = n => String(n).padStart(2,'0');
   const defaultTnum = i => `T${pad2(i+1)}${pad2(i+1)}`;
+  const progTitle = p => `#${p.number} — ${p.title}`;
 
-  function progTitle(p){ return `#${p.number} — ${p.title}`; }
   function refreshProgSelect(){
     const cur = progs.find(p=>p.id===currentProgId);
     document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
   }
 
+  // Создать новую программу и сразу открыть редактор
   function createNewProg(){
     const p = {
       id: CT.uid(),
@@ -89,9 +87,10 @@ CT.ready(()=>{
     refreshProgSelect();
     render();
     CT.toast('Programm angelegt','ok');
-    setTimeout(editProg, 0);
+    setTimeout(editProg, 0); // сразу открыть форму ввода
   }
 
+  // Меню программ (Drawer)
   function openProgMenu(){
     progs = CT.storage.read(CT_KEYS.PROGS, []);
     const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
@@ -123,6 +122,7 @@ CT.ready(()=>{
     render();
   }
 
+  // Редактор программы: Nummer, Titel, Zeichnung (image/pdf)
   function editProg(){
     progs = CT.storage.read(CT_KEYS.PROGS, []);
     const p = progs.find(x=>x.id===currentProgId);
@@ -142,15 +142,17 @@ CT.ready(()=>{
       ? `<div class="muted" id="dr_info">Angehängt: ${CT.escape(cur.drawingName)}</div>`
       : `<div class="muted" id="dr_info">Keine Zeichnung</div>`;
 
+    // важно: флаг удаления объявлен заранее, чтобы onOk видел его (Safari)
     let removeFlag = false;
 
     const html = `
       <label class="fld">Nummer
-        <input id="pr_n" inputmode="numeric" pattern="[0-9]*"
+        <input id="pr_n" inputmode="numeric" pattern="[0-9]*" autocomplete="off" autocorrect="off" spellcheck="false"
                value="${CT.escape(cur.number)}" placeholder="z.B. 1234">
       </label>
       <label class="fld">Titel
-        <input id="pr_t" value="${CT.escape(cur.title)}" placeholder="Programmname">
+        <input id="pr_t" autocomplete="off" autocorrect="off" spellcheck="false"
+               value="${CT.escape(cur.title)}" placeholder="Programmname">
       </label>
 
       <div class="row" style="margin:.4rem 0">
@@ -194,8 +196,12 @@ CT.ready(()=>{
       }
     });
 
+    // ——— поведение внутри модалки ———
     const modal = document.querySelector('.modal .card');
-    const tInput = modal.querySelector('#pr_t'); setTimeout(()=>{ tInput && tInput.focus(); }, 0);
+
+    // автофокус в Titel (iPhone Safari)
+    const tInput = modal.querySelector('#pr_t');
+    setTimeout(()=>{ tInput && tInput.focus(); }, 0);
 
     const fileInput = modal.querySelector('#pr_drawing');
     if (fileInput) {
@@ -233,6 +239,7 @@ CT.ready(()=>{
     };
   }
 
+  // Редактирование номера слота (T0101…)
   function editSlotNumber(idx){
     const v = live[side][idx] || {};
     const cur = v.tnum || defaultTnum(idx);
@@ -249,6 +256,7 @@ CT.ready(()=>{
     }});
   }
 
+  // Рендер 12 слотов
   function render(){
     const root = document.getElementById('slots');
     root.innerHTML = '';
@@ -346,6 +354,7 @@ CT.ready(()=>{
     modal.querySelector('#rem').onclick     = ()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
   }
 
+  // вкладки + обработчики
   document.querySelectorAll('.tab').forEach(b=>{
     b.onclick=()=>{
       document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -353,6 +362,7 @@ CT.ready(()=>{
     };
   });
 
+  // Меню «i» (Programm)
   document.getElementById('progInfo').onclick = () => {
     const html = `
       <div class="row">
