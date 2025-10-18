@@ -4,10 +4,16 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Setup + Programme</title>
-  <link rel="stylesheet" href="./ui/core.css?v=12">
+  <link rel="stylesheet" href="./ui/core.css?v=13">
   <style>
     .slot-tnum{display:grid;grid-template-columns:72px 56px 1fr auto;gap:.6rem;align-items:center}
     .tnum-btn{min-width:64px}
+    /* Fallback-модалка (если вдруг CT.openModal недоступен) */
+    ._fx-modal{position:fixed;inset:0;z-index:9999;display:grid;place-items:center}
+    ._fx-modal::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.25)}
+    ._fx-card{position:relative;z-index:1;width:min(92vw,640px);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 6px 24px rgba(13,27,42,.18);padding:12px}
+    ._fx-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+    ._fx-footer{display:flex;justify-content:flex-end;gap:.5rem;margin-top:.5rem}
   </style>
 </head>
 <body data-active="programme">
@@ -20,15 +26,20 @@
         <div class="subtitle">Setup + Programme</div>
       </div>
     </a>
-    <button class="icon-btn" data-ct="search-toggle"><svg><use href="./ui/icons.svg#search"/></svg></button>
+    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
+      <svg><use href="./ui/icons.svg#search"/></svg>
+    </button>
   </div>
 </header>
 
 <main class="container">
   <section class="section">
-    <div class="row between">
-      <div class="select-like" id="progSelect">Programm wählen…</div>
-      <button class="icon-btn info" id="progInfo"><svg><use href="./ui/icons.svg#info"/></svg></button>
+    <!-- ВИДИМЫЕ КНОПКИ СРАЗУ -->
+    <div class="row" style="margin-bottom:.5rem">
+      <button class="btn brand" id="btnNewProg">Neues Programm</button>
+      <button class="btn" id="btnEditProg">Programm bearbeiten</button>
+      <button class="btn ok" id="btnApply">In Live anwenden</button>
+      <div class="select-like" id="progDisplay" style="margin-left:auto">Programm wählen…</div>
     </div>
 
     <div class="tabs">
@@ -42,165 +53,306 @@
 
 <nav class="dock" id="dock"></nav>
 
-<script src="./ui/core.js?v=12"></script>
-<script src="./ui/dock.js?v=12"></script>
+<script src="./ui/core.js?v=13"></script>
+<script src="./ui/dock.js?v=13"></script>
 <script>
-CT.ready(()=>{
-  console.log("Setup clean v12");
-  CT.ensureSeeds();
+(function(){
+  // ====== УТИЛЫ: надёжная модалка с fallback ======
+  function FX_openModal(opts){
+    // Если есть CT.openModal — используем его
+    if (window.CT && typeof CT.openModal === 'function') {
+      CT.openModal(opts);
+      return {type:'ct'};
+    }
+    // Иначе — наша лёгкая модалка
+    const {title='', html='', okText='OK', cancelText='Schließen', onOk} = opts||{};
+    const wrap = document.createElement('div');
+    wrap.className = '_fx-modal';
+    wrap.innerHTML = `
+      <div class="_fx-card">
+        <div class="_fx-hdr">
+          <b>${(title||'')}</b>
+          <button class="icon-btn" id="_fxClose"><svg><use href="./ui/icons.svg#close"/></svg></button>
+        </div>
+        <div class="_fx-body">${html||''}</div>
+        <div class="_fx-footer">
+          ${cancelText?`<button class="btn" id="_fxCancel">${cancelText}</button>`:''}
+          ${okText?`<button class="btn brand" id="_fxOk">${okText}</button>`:''}
+        </div>
+      </div>`;
+    document.body.appendChild(wrap);
+    document.body.classList.add('noscroll');
+    function close(){ wrap.remove(); document.body.classList.remove('noscroll'); }
+    wrap.addEventListener('click', (e)=>{ if(e.target===wrap) close(); });
+    const btnC = wrap.querySelector('#_fxClose');
+    const btnX = wrap.querySelector('#_fxCancel');
+    const btnO = wrap.querySelector('#_fxOk');
+    if(btnC) btnC.onclick=close;
+    if(btnX) btnX.onclick=close;
+    if(btnO) btnO.onclick=()=>{ try{ onOk && onOk(); }finally{ close(); } };
+    return {type:'fx', close};
+  }
 
-  let progs = CT.storage.read(CT_KEYS.PROGS, []);
-  let live  = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
+  function FX_toast(msg){
+    if (window.CT && typeof CT.toast === 'function') { CT.toast(msg,'ok',1400); return; }
+    alert(msg);
+  }
+
+  function FX_lsRead(key, def){
+    try{ const v = JSON.parse(localStorage.getItem(key)); return (v===null||v===undefined)?def:v; }catch(e){ return def; }
+  }
+  function FX_lsWrite(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
+
+  // ====== ДАННЫЕ ======
+  const CT_KEYS_SAFE = window.CT_KEYS || { PROGS:'ct_programs_v1', SETUP:'ct_setup_live', TOOLS:'ct_tools_v2' };
+  if (window.CT && CT.ensureSeeds) CT.ensureSeeds();
+
+  let progs = (window.CT ? CT.storage.read(CT_KEYS_SAFE.PROGS, []) : FX_lsRead(CT_KEYS_SAFE.PROGS, []));
+  let live  = (window.CT ? CT.storage.read(CT_KEYS_SAFE.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) })
+                         : FX_lsRead(CT_KEYS_SAFE.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) }));
   let side = 'ro';
   let currentProgId = progs[0]?.id || null;
 
   const pad2 = n => String(n).padStart(2,'0');
   const defaultTnum = i => `T${pad2(i+1)}${pad2(i+1)}`;
-  const progTitle = p => `#${p.number} — ${p.title}`;
+  const esc = (window.CT && CT.escape) ? CT.escape : (s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])));
 
-  function refreshProgSelect(){
+  function progTitle(p){ return `#${p.number} — ${p.title}`; }
+  function saveProgs(){ window.CT ? CT.storage.write(CT_KEYS_SAFE.PROGS, progs) : FX_lsWrite(CT_KEYS_SAFE.PROGS, progs); }
+  function saveLive(){  window.CT ? CT.storage.write(CT_KEYS_SAFE.SETUP, live)  : FX_lsWrite(CT_KEYS_SAFE.SETUP, live); }
+  function readTools(){ return window.CT ? CT.storage.read(CT_KEYS_SAFE.TOOLS, []) : FX_lsRead(CT_KEYS_SAFE.TOOLS, []); }
+
+  // ====== UI ======
+  const progDisplay = document.getElementById('progDisplay');
+  function refreshProgDisplay(){
     const cur = progs.find(p=>p.id===currentProgId);
-    document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
+    progDisplay.textContent = cur ? progTitle(cur) : 'Programm wählen…';
   }
 
-  // === Создать / редактировать программу ===
-  function editProgram(p, isNew=false){
-    let removeFlag = false;
+  function openProgramEditor(p, isNew){
+    let removeFlag=false;
     const html = `
       <label class="fld">Nummer
-        <input id="pr_n" type="text" inputmode="numeric" pattern="[0-9]*" value="${CT.escape(p.number)}" placeholder="z.B. 1234">
+        <input id="pr_n" type="text" inputmode="numeric" pattern="[0-9]*" value="${esc(p.number)}" placeholder="z.B. 1234">
       </label>
       <label class="fld">Titel
-        <input id="pr_t" type="text" value="${CT.escape(p.title)}" placeholder="Programmname">
+        <input id="pr_t" type="text" value="${esc(p.title)}" placeholder="Programmname">
       </label>
       <div class="row" style="margin:.4rem 0">
-        <label class="btn sm ghost" for="pr_file">Zeichnung anhängen</label>
-        ${p.drawingData ? '<button class="btn sm" id="view">Ansehen</button>' : ''}
-        ${p.drawingData ? '<button class="btn sm warn" id="remove">Entfernen</button>' : ''}
+        <label class="btn sm ghost" for="pr_file" style="cursor:pointer">Zeichnung anhängen</label>
+        ${p.drawingData?'<button class="btn sm" id="v">Ansehen</button>':''}
+        ${p.drawingData?'<button class="btn sm warn" id="r">Entfernen</button>':''}
       </div>
       <input id="pr_file" type="file" accept="image/*,application/pdf" style="display:none">
-      <div class="muted" id="fileInfo">${p.drawingName?('Angehängt: '+CT.escape(p.drawingName)):'Keine Zeichnung'}</div>
+      <div class="muted" id="fi">${p.drawingName?('Angehängt: '+esc(p.drawingName)):'Keine Zeichnung'}</div>
       ${!isNew?'<div class="row"><button class="btn warn" id="del">Löschen</button></div>':''}
     `;
-    CT.openModal({
-      title:isNew?'Neues Programm':'Programm',
-      html, okText:'Speichern', cancelText:'Schließen',
-      onOk:async()=>{
+    const m = FX_openModal({
+      title: isNew?'Neues Programm':'Programm',
+      html,
+      okText:'Speichern',
+      cancelText:'Schließen',
+      onOk: async ()=>{
         const up={...p};
-        up.number=document.getElementById('pr_n').value.trim()||p.number;
-        up.title=document.getElementById('pr_t').value.trim()||p.title;
-        const f=document.getElementById('pr_file').files?.[0];
-        if(f){ up.drawingName=f.name; up.drawingData=await CT.readFileAsDataURL(f); }
-        else if(removeFlag){ up.drawingName=''; up.drawingData=''; }
-        if(isNew) progs.push(up); else progs=progs.map(x=>x.id===up.id?up:x);
-        CT.storage.write(CT_KEYS.PROGS,progs);
-        currentProgId=up.id; refreshProgSelect(); CT.toast('Gespeichert','ok');
+        const n = document.getElementById('pr_n').value.trim();
+        const t = document.getElementById('pr_t').value.trim();
+        up.number = n || p.number;
+        up.title  = t || p.title;
+        const f = document.getElementById('pr_file').files?.[0];
+        if(f){
+          if(window.CT && CT.readFileAsDataURL){
+            up.drawingName=f.name; up.drawingData=await CT.readFileAsDataURL(f);
+          }else{
+            const reader = new FileReader(); up.drawingName=f.name;
+            await new Promise((res,rej)=>{ reader.onload=()=>{ up.drawingData=reader.result; res(); }; reader.onerror=rej; reader.readAsDataURL(f); });
+          }
+        }else if(removeFlag){ up.drawingName=''; up.drawingData=''; }
+        if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
+        saveProgs();
+        currentProgId = up.id;
+        refreshProgDisplay();
+        FX_toast('Gespeichert');
       }
     });
 
-    const modal=document.querySelector('.modal .card');
-    const file=document.getElementById('pr_file');
-    file.onchange=()=>{const f=file.files?.[0]; if(f)document.getElementById('fileInfo').textContent='Ausgewählt: '+f.name; removeFlag=false;};
-    const vBtn=document.getElementById('view'); if(vBtn)vBtn.onclick=()=>{const d=p.drawingData;if(!d)return;const pdf=d.startsWith('data:application/pdf');CT.openModal({title:'Zeichnung',html:pdf?'<iframe src="'+d+'" style="width:92vw;height:70vh;border:0;border-radius:12px"></iframe>':'<div class=imgwrap><img src="'+d+'" style=max-height:70vh></div>',cancelText:'Schließen'});}
-    const rBtn=document.getElementById('remove'); if(rBtn)rBtn.onclick=()=>{removeFlag=true;document.getElementById('fileInfo').textContent='Keine Zeichnung';CT.toast('Entfernt','ok');};
-    const dBtn=document.getElementById('del'); if(dBtn)dBtn.onclick=()=>{progs=progs.filter(x=>x.id!==p.id);CT.storage.write(CT_KEYS.PROGS,progs);currentProgId=progs[0]?.id||null;CT.closeModal();refreshProgSelect();render();CT.toast('Gelöscht','ok');};
+    // навесить хэндлеры (работает и для CT, и для fallback)
+    setTimeout(()=>{
+      const file = document.getElementById('pr_file');
+      if(file) file.onchange = ()=>{ const f=file.files?.[0]; if(f) document.getElementById('fi').textContent='Ausgewählt: '+f.name; removeFlag=false; };
+
+      const vb = document.getElementById('v');
+      if(vb) vb.onclick = ()=>{
+        if(!p.drawingData) return;
+        const isPDF = p.drawingData.startsWith('data:application/pdf');
+        const content = isPDF
+          ? `<iframe src="${p.drawingData}" style="width:92vw;height:70vh;border:0;border-radius:12px"></iframe>`
+          : `<div class="imgwrap"><img src="${p.drawingData}" alt="" style="max-height:70vh"></div>`;
+        FX_openModal({title:'Zeichnung', html:content, cancelText:'Schließen'});
+      };
+
+      const rb = document.getElementById('r');
+      if(rb) rb.onclick = ()=>{ removeFlag=true; document.getElementById('fi').textContent='Keine Zeichnung'; FX_toast('Entfernt'); };
+
+      const db = document.getElementById('del');
+      if(db) db.onclick = ()=>{
+        progs = progs.filter(x=>x.id!==p.id);
+        saveProgs();
+        currentProgId = progs[0]?.id || null;
+        if(window.CT && CT.closeModal) CT.closeModal();
+        refreshProgDisplay(); renderSlots(); FX_toast('Gelöscht');
+      };
+
+      // автофокус в Titel
+      const ti = document.getElementById('pr_t'); if(ti) ti.focus();
+    },0);
   }
 
   function createNewProgram(){
-    const p={id:CT.uid(),number:1000+Math.floor(Math.random()*9000),title:'Neues Programm',date:Date.now(),ro:Array(12).fill(null),ru:Array(12).fill(null),drawingName:'',drawingData:''};
-    editProgram(p,true);
-  }
-
-  function openProgramMenu(){
-    progs=CT.storage.read(CT_KEYS.PROGS,[]);
-    const html=`<div class=row style="margin-bottom:.5rem"><button class="btn sm" id="newProg">+ Neues Programm</button></div>
-      <ul class=list>${progs.map(p=>`<li data-id="${p.id}">
-        <div><b>${CT.escape(progTitle(p))}</b></div>
-        <div class=row><button class="btn sm sel">Wählen</button><button class="btn sm" data-edit>Bearbeiten</button></div>
-      </li>`).join('')||'<li class=muted>Keine Programme</li>'}</ul>`;
-    CT.openDrawer({title:'Programme',html});
-    const dr=document.querySelector('.drawer');
-    dr.querySelector('#newProg').onclick=()=>{CT.closeDrawer();createNewProgram();};
-    dr.querySelectorAll('li').forEach(li=>{
-      const id=li.dataset.id;
-      li.querySelector('.sel').onclick=()=>{currentProgId=id;CT.closeDrawer();refreshProgSelect();render();};
-      li.querySelector('[data-edit]').onclick=()=>{CT.closeDrawer();const cur=progs.find(x=>x.id===id);if(cur)editProgram(cur,false);};
-    });
+    const p = { id:(window.CT?CT.uid():Math.random().toString(36).slice(2,9)),
+      number: 1000 + Math.floor(Math.random()*9000),
+      title: 'Neues Programm',
+      date: Date.now(),
+      ro: Array(12).fill(null), ru: Array(12).fill(null),
+      drawingName:'', drawingData:'' };
+    openProgramEditor(p, true);
   }
 
   function applyToLive(){
-    const p=progs.find(x=>x.id===currentProgId);if(!p)return;
-    live={ro:p.ro||Array(12).fill(null),ru:p.ru||Array(12).fill(null)};
-    CT.storage.write(CT_KEYS.SETUP,live);
-    CT.toast('In Live angewendet','ok');
-    render();
+    const p = progs.find(x=>x.id===currentProgId); if(!p) return;
+    live = { ro: p.ro||Array(12).fill(null), ru: p.ru||Array(12).fill(null) };
+    saveLive(); FX_toast('In Live angewendet'); renderSlots();
   }
 
-  // ==== Слоты ====
-  function render(){
-    const root=document.getElementById('slots');root.innerHTML='';
-    const data=live[side];const tools=CT.storage.read(CT_KEYS.TOOLS,[]);
+  // ====== СЛОТЫ ======
+  function renderSlots(){
+    const root = document.getElementById('slots'); root.innerHTML='';
+    const data = live[side];
+    const tools = readTools();
     for(let i=0;i<12;i++){
-      const cell=document.createElement('div');cell.className='slot';
-      const v=data[i];const tnum=(v&&v.tnum)?v.tnum:defaultTnum(i);
-      const tnumBtn=`<button class="badge tnum-btn" data-tnum="${i}">${CT.escape(tnum)}</button>`;
+      const cell = document.createElement('div'); cell.className='slot';
+      const v = data[i];
+      const tnum = (v && v.tnum) ? v.tnum : defaultTnum(i);
+      const tnumBtn = `<button class="badge tnum-btn" data-tnum="${i}">${esc(tnum)}</button>`;
+
       if(!v){
-        cell.innerHTML=`<div class="slot-full slot-tnum">${tnumBtn}<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div><div class=meta><b>#${i+1} • Leer</b></div><div class=tail><button class="btn" data-i="${i}">Hinzufügen</button></div></div>`;
-        cell.querySelector('[data-i]').onclick=()=>selectToolFor(i);
-        cell.querySelector('[data-tnum]').onclick=()=>editSlotNumber(i);
+        cell.innerHTML = `
+          <div class="slot-full slot-tnum">
+            ${tnumBtn}
+            <div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>
+            <div class="meta"><div class="name"><b>#${i+1} • Leer</b></div><div class="sub">—</div></div>
+            <div class="tail"><button class="btn" data-add="${i}">Hinzufügen</button></div>
+          </div>`;
       }else{
-        const t=tools.find(x=>x.id===v.toolId);
-        const name=t?t.name:'—';const code=t?t.code:'';
-        const thumb=t?.imgData?`<img class=thumb src="${t.imgData}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">`:`<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
-        cell.innerHTML=`<div class="slot-full slot-tnum">${tnumBtn}${thumb}<div class=meta><b>${CT.escape(name)}</b><div>${CT.escape(code)}</div></div><div class=tail><button class="icon-btn info"><svg><use href="./ui/icons.svg#info"/></svg></button><button class="icon-btn" data-edit><svg><use href="./ui/icons.svg#edit"/></svg></button></div></div>`;
-        cell.querySelector('.icon-btn.info').onclick=()=>infoSlot(i);
-        cell.querySelector('[data-edit]').onclick=()=>selectToolFor(i);
-        cell.querySelector('[data-tnum]').onclick=()=>editSlotNumber(i);
+        const t = tools.find(x=>x.id===v.toolId);
+        const name = t ? t.name : '—';
+        const code = t ? t.code : '';
+        const thumb = t?.imgData
+          ? `<img class="thumb" src="${t.imgData}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">`
+          : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
+        cell.innerHTML = `
+          <div class="slot-full slot-tnum">
+            ${tnumBtn}
+            ${thumb}
+            <div class="meta"><div class="name"><b>${esc(name)}</b></div><div class="sub">${esc(code)}</div></div>
+            <div class="tail" style="display:flex;gap:.25rem">
+              <button class="icon-btn info" data-info="${i}"><svg><use href="./ui/icons.svg#info"/></svg></button>
+              <button class="icon-btn" data-change="${i}"><svg><use href="./ui/icons.svg#edit"/></svg></button>
+            </div>
+          </div>`;
       }
       root.appendChild(cell);
     }
+
+    // handlers
+    root.querySelectorAll('[data-add]').forEach(btn=>{
+      btn.onclick=()=>{
+        const idx=+btn.dataset.add;
+        // очень простой выбор: первый инструмент из списка
+        const tools = readTools();
+        if(!tools.length){ FX_toast('Keine Werkzeuge'); return; }
+        const items = tools.map(t=>({id:t.id,title:t.name,meta:t.code}));
+        // если есть CT.openDrawer — используем, иначе возьмём первый
+        if(window.CT && CT.openDrawer){
+          CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
+            const prev = live[side][idx] || {};
+            live[side][idx] = { toolId:id, tnum: prev.tnum || defaultTnum(idx) };
+            saveLive(); if(CT.closeDrawer) CT.closeDrawer(); renderSlots();
+          }});
+        }else{
+          const id = tools[0].id;
+          const prev = live[side][idx] || {};
+          live[side][idx] = { toolId:id, tnum: prev.tnum || defaultTnum(idx) };
+          saveLive(); renderSlots();
+        }
+      };
+    });
+    root.querySelectorAll('[data-info]').forEach(btn=>{
+      btn.onclick=()=>{
+        const i=+btn.dataset.info;
+        const cell = live[side][i];
+        const t = (window.CT && CT.getToolFromSlot) ? CT.getToolFromSlot(live, side, i) : readTools().find(x=>x.id===cell?.toolId);
+        if(!t) return FX_toast('Kein Werkzeug');
+        const big = t.imgData ? `<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`
+                              : `<div class="imgwrap"><div style="width:92vw;max-width:520px;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>`;
+        FX_openModal({title:`Position #${i+1}`, html: `${big}<b>${esc(t.name)}</b><div class="i-row">${esc(t.code)}</div><div class="row"><button class="btn warn" id="_rem">Entfernen</button></div>`, cancelText:'Schließen'});
+        setTimeout(()=>{
+          const r=document.getElementById('_rem');
+          if(r) r.onclick=()=>{ live[side][i]=null; saveLive(); if(window.CT && CT.closeModal) CT.closeModal(); renderSlots(); };
+        },0);
+      };
+    });
+    root.querySelectorAll('[data-change]').forEach(btn=>{
+      btn.onclick=()=>{
+        const idx=+btn.dataset.change;
+        const tools = readTools();
+        if(!tools.length){ FX_toast('Keine Werkzeuge'); return; }
+        if(window.CT && CT.openDrawer){
+          CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items: tools.map(t=>({id:t.id,title:t.name,meta:t.code})), onSelect:(id)=>{
+            const prev = live[side][idx] || {};
+            live[side][idx] = { toolId:id, tnum: prev.tnum || defaultTnum(idx) };
+            saveLive(); if(CT.closeDrawer) CT.closeDrawer(); renderSlots();
+          }});
+        }else{
+          // без drawer — просто циклическая замена на следующий инструмент
+          const curId = live[side][idx]?.toolId;
+          let next = 0;
+          const ci = tools.findIndex(t=>t.id===curId);
+          next = (ci>=0 && ci<tools.length-1) ? ci+1 : 0;
+          const prev = live[side][idx] || {};
+          live[side][idx] = { toolId:tools[next].id, tnum: prev.tnum || defaultTnum(idx) };
+          saveLive(); renderSlots();
+        }
+      };
+    });
+    root.querySelectorAll('[data-tnum]').forEach(btn=>{
+      btn.onclick=()=>{
+        const i=+btn.dataset.tnum;
+        const v = live[side][i] || {};
+        const cur = v.tnum || defaultTnum(i);
+        FX_openModal({title:`Nummer #${i+1}`, html:`<label class="fld">Nummer<input id="_tn" value="${esc(cur)}"></label>`, okText:'OK', onOk:()=>{
+          const val = (document.getElementById('_tn').value||'').trim() || cur;
+          const cell = live[side][i] || {}; cell.tnum = val; live[side][i] = cell; saveLive(); renderSlots();
+        }});
+      };
+    });
   }
 
-  function selectToolFor(i){
-    const tools=CT.storage.read(CT_KEYS.TOOLS,[]);
-    CT.openDrawer({title:`Werkzeug wählen (#${i+1})`,items:tools.map(t=>({id:t.id,title:t.name,meta:t.code})),onSelect:id=>{
-      const prev=live[side][i]||{};live[side][i]={toolId:id,tnum:prev.tnum||defaultTnum(i)};
-      CT.storage.write(CT_KEYS.SETUP,live);CT.closeDrawer();render();
-    }});
-  }
-
-  function infoSlot(i){
-    const cell=live[side][i];const t=CT.getToolFromSlot(live,side,i);const tnum=(cell&&cell.tnum)?cell.tnum:defaultTnum(i);
-    if(!t)return CT.toast('Kein Werkzeug','err');
-    const html=`${t.imgData?`<div class=imgwrap><img src="${t.imgData}" style=max-height:70vh></div>`:`<div class=imgwrap><div style="width:92vw;max-width:520px;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>`}
-    <b>${CT.escape(t.name)}</b><div>${CT.escape(t.code)}</div><div class=row><button class="btn sm" id="rem">Entfernen</button></div>`;
-    CT.openModal({title:`Position #${i+1}`,html,cancelText:'Schließen'});
-    const m=document.querySelector('.modal .card');m.querySelector('#rem').onclick=()=>{live[side][i]=null;CT.storage.write(CT_KEYS.SETUP,live);CT.closeModal();render();};
-  }
-
-  function editSlotNumber(i){
-    const v=live[side][i]||{};const cur=v.tnum||defaultTnum(i);
-    CT.openModal({title:`Nummer #${i+1}`,html:`<label class=fld>Nummer<input id=tin value="${CT.escape(cur)}"></label>`,okText:'OK',onOk:()=>{const val=document.getElementById('tin').value||cur;const cell=live[side][i]||{};cell.tnum=val;live[side][i]=cell;CT.storage.write(CT_KEYS.SETUP,live);render();}});
-  }
-
-  // Tabs
-  document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');side=t.dataset.side;render();});
-
-  // i меню
-  document.getElementById('progInfo').onclick=()=>{
-    const html=`<div class=row><button class=btn id=new>Neues Programm</button><button class="btn ok" id=apply>In Live anwenden</button><button class="btn brand" id=edit>Bearbeiten</button></div>`;
-    CT.openModal({title:'Programm',html,cancelText:'Schließen'});
-    const m=document.querySelector('.modal .card');
-    m.querySelector('#new').onclick=()=>{CT.closeModal();createNewProgram();};
-    m.querySelector('#apply').onclick=()=>{CT.closeModal();applyToLive();};
-    m.querySelector('#edit').onclick=()=>{CT.closeModal();const cur=progs.find(x=>x.id===currentProgId);if(cur)editProgram(cur,false);};
+  // ====== Слушатели верхних кнопок ======
+  document.getElementById('btnNewProg').onclick = createNewProgram;
+  document.getElementById('btnEditProg').onclick = ()=>{
+    const cur = progs.find(p=>p.id===currentProgId);
+    if(!cur){ FX_toast('Kein Programm'); return; }
+    openProgramEditor(cur,false);
   };
+  document.getElementById('btnApply').onclick = applyToLive;
 
-  document.getElementById('progSelect').onclick=openProgramMenu;
+  document.querySelectorAll('.tab').forEach(b=>{
+    b.onclick = ()=>{ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; renderSlots(); };
+  });
 
-  refreshProgSelect();
-  render();
-});
+  refreshProgDisplay();
+  renderSlots();
+})();
 </script>
 </body>
 </html>
