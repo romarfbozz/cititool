@@ -4,13 +4,11 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Setup + Programme</title>
-  <link rel="stylesheet" href="./ui/core.css?v=9">
+  <link rel="stylesheet" href="./ui/core.css?v=10">
   <style>
-    /* слот с T-номером (как обсуждали) */
+    /* слот с T-номером */
     .slot-tnum{display:grid;grid-template-columns:72px 56px 1fr auto;gap:.6rem;align-items:center}
     .tnum-btn{min-width:64px}
-    /* мелкий фикс прокрутки в модалке iOS (если где-то откроется) */
-    .modal .card{ -webkit-overflow-scrolling: touch; }
     /* форма в drawer */
     .drawer .form-grid{display:grid;gap:.6rem}
     .drawer .form-actions{display:flex;gap:.5rem;justify-content:flex-end;margin-top:.5rem}
@@ -49,11 +47,11 @@
 
 <nav class="dock" id="dock"></nav>
 
-<script src="./ui/core.js?v=9"></script>
-<script src="./ui/dock.js?v=9"></script>
+<script src="./ui/core.js?v=10"></script>
+<script src="./ui/dock.js?v=10"></script>
 <script>
 CT.ready(()=>{
-  console.log('SETUP v9');
+  console.log('SETUP v10');
   CT.ensureSeeds();
 
   let progs = CT.storage.read(CT_KEYS.PROGS, []);
@@ -70,65 +68,9 @@ CT.ready(()=>{
     document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
   }
 
-  function createNewProg(){
-    const p = {
-      id: CT.uid(),
-      number: 1000 + Math.floor(Math.random()*9000),
-      title: 'Neues Programm',
-      date: Date.now(),
-      ro: Array(12).fill(null),
-      ru: Array(12).fill(null),
-      drawingName: '',
-      drawingData: ''
-    };
-    progs.push(p);
-    CT.storage.write(CT_KEYS.PROGS, progs);
-    currentProgId = p.id;
-    refreshProgSelect();
-    render();
-    CT.toast('Programm angelegt','ok');
-    setTimeout(()=>editProgDrawer(p.id),0);
-  }
-
-  function openProgMenu(){
-    progs = CT.storage.read(CT_KEYS.PROGS, []);
-    const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
-    const htmlTop = `
-      <div class="row" style="margin-bottom:.5rem">
-        <button class="btn sm" id="newProg">+ Neues Programm</button>
-      </div>`;
-    CT.openDrawer({title:'Programme', html: htmlTop + `<ul class="list">${
-      items.map(it=>`<li data-id="${it.id}">
-        <div><b>${CT.escape(it.title)}</b><div class="muted">${CT.escape(it.meta||'')}</div></div>
-        <button class="btn sm sel">Wählen</button>
-      </li>`).join('') || '<li class="muted">Keine Programme</li>'}</ul>`});
-
-    const drawer = document.querySelector('.drawer');
-    const btnNew = drawer.querySelector('#newProg');
-    if(btnNew) btnNew.onclick = ()=>{ CT.closeDrawer(); createNewProg(); };
-
-    drawer.querySelectorAll('.list li .sel').forEach(btn=>{
-      btn.onclick = (e)=>{
-        const id = e.currentTarget.closest('li').dataset.id;
-        currentProgId=id; CT.closeDrawer(); refreshProgSelect(); render();
-      };
-    });
-  }
-
-  function applyToLive(){
-    const p = progs.find(x=>x.id===currentProgId); if(!p) return;
-    live = { ro: p.ro||Array(12).fill(null), ru: p.ru||Array(12).fill(null) };
-    CT.storage.write(CT_KEYS.SETUP, live);
-    CT.toast('In Live angewendet','ok');
-    render();
-  }
-
-  // === РЕДАКТОР ПРОГРАММЫ В DRAWER ===
-  function editProgDrawer(id){
-    progs = CT.storage.read(CT_KEYS.PROGS, []);
-    const p = progs.find(x=>x.id===id) || progs.find(x=>x.id===currentProgId);
-    if(!p) return;
-
+  // ---- универсальный редактор: Drawer + fallback в Modal ----
+  async function openProgramEditor(p){
+    // 1) Drawer
     const html = `
       <div class="form-grid">
         <label class="fld">Nummer
@@ -153,74 +95,166 @@ CT.ready(()=>{
       </div>`;
 
     CT.openDrawer({title:'Programm bearbeiten', html});
+    let drawerOK = false;
 
-    const pan = document.querySelector('.drawer .panel');
+    // Дождёмся появления панели
+    const wait = ms => new Promise(r=>setTimeout(r,ms));
+    for (let i=0;i<4;i++){ // до ~200мс
+      const pan = document.querySelector('.drawer .panel');
+      if (pan){ drawerOK = true; break; }
+      await wait(50);
+    }
 
-    // autofocus на Titel
+    if (drawerOK){
+      bindDrawerHandlers(p);
+      return;
+    }
+
+    // 2) Fallback: Modal (если Drawer не появился)
+    const mhtml = `
+      <label class="fld">Nummer
+        <input id="pr_n" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="${CT.escape(p.number)}" placeholder="z.B. 1234">
+      </label>
+      <label class="fld">Titel
+        <input id="pr_t" autocomplete="off" value="${CT.escape(p.title)}" placeholder="Programmname">
+      </label>
+
+      <div class="row" style="margin:.4rem 0">
+        <label class="btn sm ghost" for="pr_drawing" style="cursor:pointer">Zeichnung anhängen</label>
+        ${p.drawingData ? '<button class="btn sm" id="view_drawing">Ansehen</button>' : ''}
+        ${p.drawingData ? '<button class="btn sm warn" id="remove_drawing">Entfernen</button>' : ''}
+      </div>
+      <input id="pr_drawing" type="file" accept="image/*,application/pdf" style="display:none">
+      <div class="muted" id="dr_info">${p.drawingName?('Angehängt: '+CT.escape(p.drawingName)):'Keine Zeichnung'}</div>
+      ${'<div class="row"><button class="btn warn" id="del">Löschen</button></div>'}
+    `;
+    let removeFlag=false;
+    CT.openModal({
+      title:'Programm',
+      html:mhtml,
+      okText:'Speichern',
+      cancelText:'Schließen',
+      onOk: async ()=>{
+        const up = {...p};
+        up.number = (document.getElementById('pr_n').value||'').trim() || p.number;
+        up.title  = (document.getElementById('pr_t').value||'').trim() || p.title;
+        const f = document.getElementById('pr_drawing').files?.[0];
+        if (f){ try{ up.drawingData = await CT.readFileAsDataURL(f); up.drawingName=f.name; }catch(e){} }
+        else if(removeFlag){ up.drawingData=''; up.drawingName=''; }
+        progs = progs.map(x=>x.id===up.id?up:x);
+        CT.storage.write(CT_KEYS.PROGS, progs);
+        currentProgId = up.id; refreshProgSelect(); CT.toast('Gespeichert','ok');
+      }
+    });
+    const modal = document.querySelector('.modal .card');
+    const tInput = modal.querySelector('#pr_t'); setTimeout(()=>{ tInput && tInput.focus(); }, 0);
+    const fileInput = modal.querySelector('#pr_drawing');
+    if(fileInput) fileInput.onchange=()=>{ const f=fileInput.files?.[0]; const info=modal.querySelector('#dr_info'); if(f&&info) info.textContent='Ausgewählt: '+f.name; removeFlag=false; };
+    const viewBtn = modal.querySelector('#view_drawing'); if(viewBtn) viewBtn.onclick=()=>previewDrawing(p);
+    const rmBtn = modal.querySelector('#remove_drawing'); if(rmBtn) rmBtn.onclick=()=>{ removeFlag=true; modal.querySelector('#dr_info').textContent='Keine Zeichnung'; CT.toast('Zeichnung entfernt','ok'); };
+    const del = modal.querySelector('#del'); if(del) del.onclick=()=>deleteProgram(p.id, true);
+  }
+
+  function bindDrawerHandlers(p){
+    const pan = document.querySelector('.drawer .panel'); if(!pan) return;
     const tInput = pan.querySelector('#pr_t'); setTimeout(()=>{ tInput && tInput.focus(); }, 0);
 
     let removeFlag=false;
-
-    // Datei auswählen
     const fileInput = pan.querySelector('#pr_drawing');
-    if(fileInput){
-      fileInput.onchange=()=>{
-        const f=fileInput.files?.[0];
-        const info=pan.querySelector('#dr_info');
-        if(f&&info) info.textContent='Ausgewählt: '+f.name;
-        removeFlag=false;
-      };
-    }
-    // ansehen
-    const viewBtn = pan.querySelector('#view_drawing');
-    if(viewBtn) viewBtn.onclick=()=>{
-      if(!p.drawingData) return;
-      const isPDF = p.drawingData.startsWith('data:application/pdf');
-      const content = isPDF
-        ? `<iframe src="${p.drawingData}" style="width:92vw;height:70vh;border:0;border-radius:12px"></iframe>`
-        : `<div class="imgwrap"><img src="${p.drawingData}" alt="" style="max-height:70vh"></div>`;
-      CT.openModal({title:'Zeichnung', html:content, cancelText:'Schließen'});
-    };
-    // entfernen
-    const rmBtn = pan.querySelector('#remove_drawing');
-    if(rmBtn) rmBtn.onclick=()=>{
-      removeFlag=true;
-      const info=pan.querySelector('#dr_info'); if(info) info.textContent='Keine Zeichnung';
-      CT.toast('Zeichnung entfernt','ok');
-    };
+    if(fileInput) fileInput.onchange=()=>{ const f=fileInput.files?.[0]; const info=pan.querySelector('#dr_info'); if(f&&info) info.textContent='Ausgewählt: '+f.name; removeFlag=false; };
+    const viewBtn = pan.querySelector('#view_drawing'); if(viewBtn) viewBtn.onclick=()=>previewDrawing(p);
+    const rmBtn = pan.querySelector('#remove_drawing'); if(rmBtn) rmBtn.onclick=()=>{ removeFlag=true; pan.querySelector('#dr_info').textContent='Keine Zeichnung'; CT.toast('Zeichnung entfernt','ok'); };
 
-    // speichern
     pan.querySelector('#save').onclick = async ()=>{
       const up = {...p};
       up.number = (pan.querySelector('#pr_n').value||'').trim() || p.number;
       up.title  = (pan.querySelector('#pr_t').value||'').trim() || p.title;
-
       const f = fileInput?.files?.[0];
-      if(f){
-        try{ up.drawingData = await CT.readFileAsDataURL(f); up.drawingName = f.name; }catch(e){}
-      } else if(removeFlag){
-        up.drawingData=''; up.drawingName='';
-      }
-
+      if(f){ try{ up.drawingData = await CT.readFileAsDataURL(f); up.drawingName=f.name; }catch(e){} }
+      else if(removeFlag){ up.drawingData=''; up.drawingName=''; }
       progs = progs.map(x=>x.id===up.id?up:x);
       CT.storage.write(CT_KEYS.PROGS, progs);
-      currentProgId = up.id;
-      refreshProgSelect();
-      CT.toast('Gespeichert','ok');
-      CT.closeDrawer();
+      currentProgId = up.id; refreshProgSelect(); CT.toast('Gespeichert','ok'); CT.closeDrawer();
     };
-
-    // löschen
-    pan.querySelector('#del').onclick = ()=>{
-      progs = progs.filter(x=>x.id!==p.id);
-      CT.storage.write(CT_KEYS.PROGS, progs);
-      currentProgId = progs[0]?.id || null;
-      CT.toast('Gelöscht','ok');
-      CT.closeDrawer();
-      refreshProgSelect(); render();
-    };
+    pan.querySelector('#del').onclick = ()=> deleteProgram(p.id, false);
   }
 
+  function previewDrawing(p){
+    if(!p.drawingData) return;
+    const isPDF = p.drawingData.startsWith('data:application/pdf');
+    const content = isPDF
+      ? `<iframe src="${p.drawingData}" style="width:92vw;height:70vh;border:0;border-radius:12px"></iframe>`
+      : `<div class="imgwrap"><img src="${p.drawingData}" alt="" style="max-height:70vh"></div>`;
+    CT.openModal({title:'Zeichnung', html:content, cancelText:'Schließen'});
+  }
+
+  function deleteProgram(id, closeModalToo){
+    progs = progs.filter(x=>x.id!==id);
+    CT.storage.write(CT_KEYS.PROGS, progs);
+    currentProgId = progs[0]?.id || null;
+    if(closeModalToo) CT.closeModal(); else CT.closeDrawer();
+    refreshProgSelect(); render(); CT.toast('Gelöscht','ok');
+  }
+
+  // ---- создание новой программы + моментальный редактор ----
+  function createNewProg(){
+    const p = {
+      id: CT.uid(),
+      number: 1000 + Math.floor(Math.random()*9000),
+      title: 'Neues Programm',
+      date: Date.now(),
+      ro: Array(12).fill(null),
+      ru: Array(12).fill(null),
+      drawingName: '',
+      drawingData: ''
+    };
+    progs.push(p);
+    CT.storage.write(CT_KEYS.PROGS, progs);
+    currentProgId = p.id;
+    refreshProgSelect();
+    render();
+    // Сразу открываем редактор (Drawer → fallback)
+    openProgramEditor(p);
+  }
+
+  // ---- меню программ ----
+  function openProgMenu(){
+    progs = CT.storage.read(CT_KEYS.PROGS, []);
+    const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
+    const htmlTop = `
+      <div class="row" style="margin-bottom:.5rem">
+        <button class="btn sm" id="newProg">+ Neues Programm</button>
+      </div>`;
+    CT.openDrawer({title:'Programme', html: htmlTop + `<ul class="list">${
+      items.map(it=>`<li data-id="${it.id}">
+        <div><b>${CT.escape(it.title)}</b><div class="muted">${CT.escape(it.meta||'')}</div></div>
+        <div class="row">
+          <button class="btn sm sel">Wählen</button>
+          <button class="btn sm" data-edit>Bearbeiten</button>
+        </div>
+      </li>`).join('') || '<li class="muted">Keine Programme</li>'}</ul>`});
+
+    const drawer = document.querySelector('.drawer');
+    drawer.querySelector('#newProg').onclick = ()=>{ CT.closeDrawer(); createNewProg(); };
+    drawer.querySelectorAll('.list li').forEach(li=>{
+      const id = li.dataset.id;
+      li.querySelector('.sel').onclick = ()=>{ currentProgId=id; CT.closeDrawer(); refreshProgSelect(); render(); };
+      li.querySelector('[data-edit]').onclick = ()=>{
+        currentProgId=id;
+        const cur = progs.find(x=>x.id===id);
+        openProgramEditor(cur);
+      };
+    });
+  }
+
+  function applyToLive(){
+    const p = progs.find(x=>x.id===currentProgId); if(!p) return;
+    live = { ro: p.ro||Array(12).fill(null), ru: p.ru||Array(12).fill(null) };
+    CT.storage.write(CT_KEYS.SETUP, live);
+    CT.toast('In Live angewendet','ok'); render();
+  }
+
+  // ---- редактирование T-номера слота ----
   function editSlotNumber(idx){
     const v = live[side][idx] || {};
     const cur = v.tnum || defaultTnum(idx);
@@ -235,6 +269,7 @@ CT.ready(()=>{
     }});
   }
 
+  // ---- рендер слотов ----
   function render(){
     const root = document.getElementById('slots');
     root.innerHTML = '';
@@ -290,7 +325,6 @@ CT.ready(()=>{
         cell.querySelector('[data-edit]').onclick=()=> selectToolFor(i);
         cell.querySelector('[data-tnum]').onclick=()=> editSlotNumber(i);
       }
-
       root.appendChild(cell);
     }
   }
@@ -350,7 +384,10 @@ CT.ready(()=>{
     const modal = document.querySelector('.modal .card');
     modal.querySelector('#newP').addEventListener('click',  ()=>{ CT.closeModal(); createNewProg(); });
     modal.querySelector('#apply').addEventListener('click', ()=>{ CT.closeModal(); applyToLive();    });
-    modal.querySelector('#editP').addEventListener('click',  ()=>{ CT.closeModal(); editProgDrawer(currentProgId); });
+    modal.querySelector('#editP').addEventListener('click',  ()=>{
+      CT.closeModal();
+      const cur = progs.find(x=>x.id===currentProgId); if(cur) openProgramEditor(cur);
+    });
   };
 
   document.getElementById('progSelect').onclick = openProgMenu;
