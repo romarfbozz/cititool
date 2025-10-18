@@ -57,6 +57,9 @@ CT.ready(()=>{
   let side = 'ro';
   let currentProgId = progs[0]?.id || null;
 
+  const pad2 = n => String(n).padStart(2,'0');
+  const defaultTnum = i => `T${pad2(i+1)}${pad2(i+1)}`;
+
   function progTitle(p){ return `#${p.number} — ${p.title}`; }
 
   function refreshProgSelect(){
@@ -64,8 +67,29 @@ CT.ready(()=>{
     document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
   }
 
+  // мгновенное создание новой программы
+  function createNewProg(){
+    const p = {
+      id: CT.uid(),
+      number: 1000 + Math.floor(Math.random()*9000),
+      title: 'Neues Programm',
+      date: Date.now(),
+      ro: Array(12).fill(null),
+      ru: Array(12).fill(null)
+    };
+    progs.push(p);
+    CT.storage.write(CT_KEYS.PROGS, progs);
+    currentProgId = p.id;
+    refreshProgSelect();
+    render();
+    CT.toast('Programm angelegt','ok');
+    // сразу открыть редактор для переименования
+    setTimeout(editProg, 0);
+  }
+
   // Drawer программ: список + кнопка "Neues Programm"
   function openProgMenu(){
+    progs = CT.storage.read(CT_KEYS.PROGS, []);
     const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
     const htmlTop = `
       <div class="row" style="margin-bottom:.5rem">
@@ -77,11 +101,12 @@ CT.ready(()=>{
 
     const drawer = document.querySelector('.drawer');
     const btnNew = drawer.querySelector('#newProg');
-    if(btnNew) btnNew.onclick = ()=>{ CT.closeDrawer(); currentProgId=null; editProg(); };
+    if(btnNew) btnNew.onclick = ()=>{ CT.closeDrawer(); createNewProg(); };
 
     drawer.querySelectorAll('.list li').forEach(li=>{
       const id = li.dataset.id;
-      li.querySelector('button').onclick = ()=>{ currentProgId=id; CT.closeDrawer(); refreshProgSelect(); render(); };
+      const btn = li.querySelector('button');
+      if(btn) btn.onclick = ()=>{ currentProgId=id; CT.closeDrawer(); refreshProgSelect(); render(); };
     });
   }
 
@@ -106,8 +131,7 @@ CT.ready(()=>{
       const up = {...cur};
       up.number = document.getElementById('pr_n').value || cur.number;
       up.title  = document.getElementById('pr_t').value || cur.title;
-      if(isNew) { progs.push(up); }
-      else      { progs = progs.map(x=>x.id===up.id?up:x); }
+      if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
       CT.storage.write(CT_KEYS.PROGS, progs);
       currentProgId = up.id;
       refreshProgSelect();
@@ -122,13 +146,6 @@ CT.ready(()=>{
     };
   }
 
-  // формат номера по умолчанию: T0101…T1212
-  function defaultTnum(idx){
-    const nn = String(idx+1).padStart(2,'0');
-    return `T${nn}${nn}`;
-  }
-
-  // редактирование номера слота
   function editSlotNumber(idx){
     const v = live[side][idx] || {};
     const cur = v.tnum || defaultTnum(idx);
@@ -145,7 +162,6 @@ CT.ready(()=>{
     }});
   }
 
-  // -------- render slots (12 позиций, сетка slot-tnum) ----------
   function render(){
     const root = document.getElementById('slots');
     root.innerHTML = '';
@@ -157,8 +173,6 @@ CT.ready(()=>{
       const cell = document.createElement('div');
       cell.className = 'slot';
       const v = data[i];
-
-      // текущий номер слота
       const tnum = (v && v.tnum) ? v.tnum : defaultTnum(i);
       const tnumBtn = `<button class="badge tnum-btn" data-tnum="${i}">${CT.escape(tnum)}</button>`;
 
@@ -181,13 +195,10 @@ CT.ready(()=>{
         const t = tools.find(x=>x.id===v.toolId);
         const name = t ? t.name : '—';
         const code = t ? t.code : '';
-
         const matches = q ? (name.toLowerCase().includes(q) || code.toLowerCase().includes(q)) : true;
-
         const thumb = t?.imgData
           ? `<img class="thumb" src="${t.imgData}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">`
           : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
-
         cell.innerHTML = `
           <div class="slot-full slot-tnum" ${matches?'':'style="opacity:.45"'} >
             ${tnumBtn}
@@ -241,30 +252,40 @@ CT.ready(()=>{
         <button class="btn warn" id="rem">Entfernen aus Programm</button>
       </div>`;
     CT.openModal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
-    document.getElementById('editNum').onclick = ()=>{ CT.closeModal(); editSlotNumber(i); };
-    document.getElementById('edt').onclick     = ()=>{ CT.closeModal(); location.href='./tools.html'; };
-    document.getElementById('rem').onclick     = ()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
+    const modal = document.querySelector('.modal .card');
+    modal.querySelector('#editNum').onclick = ()=>{ CT.closeModal(); editSlotNumber(i); };
+    modal.querySelector('#edt').onclick     = ()=>{ CT.closeModal(); location.href='./tools.html'; };
+    modal.querySelector('#rem').onclick     = ()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
   }
 
-  // tabs + toolbar
+  // вкладки + обработчики
   document.querySelectorAll('.tab').forEach(b=>{
     b.onclick=()=>{
       document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
       b.classList.add('active'); side=b.dataset.side; render();
     };
   });
-  document.getElementById('progInfo').onclick=()=>{
+
+  // ✅ исправленный обработчик "i" (Programm)
+  document.getElementById('progInfo').onclick = () => {
     const html = `
       <div class="row">
         <button class="btn" id="newP">Neues Programm</button>
         <button class="btn ok" id="apply">In Live anwenden</button>
         <button class="btn brand" id="editP">Bearbeiten</button>
       </div>`;
-    CT.openModal({title:'Programm', html, cancelText:'Schließen'});
-    newP.onclick = ()=>{ CT.closeModal(); currentProgId=null; editProg(); };
-    apply.onclick = ()=>{ CT.closeModal(); applyToLive(); };
-    editP.onclick = ()=>{ CT.closeModal(); editProg(); };
+    CT.openModal({ title:'Programm', html, cancelText:'Schließen' });
+
+    const modal = document.querySelector('.modal .card');
+    const btnNew   = modal.querySelector('#newP');
+    const btnApply = modal.querySelector('#apply');
+    const btnEdit  = modal.querySelector('#editP');
+
+    if (btnNew)   btnNew.addEventListener('click',  () => { CT.closeModal(); createNewProg(); });
+    if (btnApply) btnApply.addEventListener('click',() => { CT.closeModal(); applyToLive();    });
+    if (btnEdit)  btnEdit.addEventListener('click', () => { CT.closeModal(); editProg();       });
   };
+
   document.getElementById('progSelect').onclick = openProgMenu;
   document.getElementById('setupSearch').addEventListener('input', render);
 
