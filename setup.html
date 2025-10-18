@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>CitiTool • Setup + Programme</title>
+  <!-- cache-bust -->
+  <link rel="stylesheet" href="./ui/core.css?v=11">
+  <style>
+    /* слот с T-номером (фикс сетки) */
+    .slot-tnum{display:grid;grid-template-columns:72px 56px 1fr auto;gap:.6rem;align-items:center}
+    .tnum-btn{min-width:64px}
+  </style>
+</head>
+<body data-active="programme">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html">
+      <span class="ct-badge" aria-hidden="true">CT</span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup + Programme</div></div>
+    </a>
+    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
+  </div>
+</header>
+
+<div class="searchbar collapsed">
+  <input class="field" type="search" placeholder="Im Setup suchen…" id="setupSearch">
+</div>
+
+<main class="container">
+  <section class="section">
+    <div class="row between">
+      <div class="select-like" id="progSelect">Programm wählen…</div>
+      <button class="icon-btn info" id="progInfo" aria-label="Programm"><svg><use href="./ui/icons.svg#info"/></svg></button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-side="ro">RO (G54)</button>
+      <button class="tab" data-side="ru">RU (G55)</button>
+    </div>
+
+    <div id="slots" class="slots"></div>
+  </section>
+</main>
+
+<nav class="dock" id="dock"></nav>
+
+<!-- cache-bust -->
+<script src="./ui/core.js?v=11"></script>
+<script src="./ui/dock.js?v=11"></script>
+<script>
+CT.ready(()=>{
+  console.log('SETUP v11');
+  CT.ensureSeeds();
+
+  let progs = CT.storage.read(CT_KEYS.PROGS, []);
+  let live  = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
+  let side = 'ro';
+  let currentProgId = progs[0]?.id || null;
+
+  const pad2 = n => String(n).padStart(2,'0');
+  const defaultTnum = i => `T${pad2(i+1)}${pad2(i+1)}`;
+  const progTitle = p => `#${p.number} — ${p.title}`;
+
+  function refreshProgSelect(){
+    const cur = progs.find(p=>p.id===currentProgId);
+    document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
+  }
+
+  // ====== РЕДАКТОР ПРОГРАММЫ В МОДАЛКЕ (Просто и стабильно) ======
+  function openProgramEditor(p, isNew=false){
+    let removeFlag = false; // удалить Zeichnung
+
+    const drawingInfo = p.drawingName
+      ? `<div class="muted" id="dr_info">Angehängt: ${CT.escape(p.drawingName)}</div>`
+      : `<div class="muted" id="dr_info">Keine Zeichnung</div>`;
+
+    const html = `
+      <label class="fld">Nummer
+        <input id="pr_n" inputmode="numeric" pattern="[0-9]*" autocomplete="off" value="${CT.escape(p.number)}" placeholder="z.B. 1234">
+      </label>
+      <label class="fld">Titel
+        <input id="pr_t" autocomplete="off" value="${CT.escape(p.title)}" placeholder="Programmname">
+      </label>
+
+      <div class="row" style="margin:.4rem 0">
+        <label class="btn sm ghost" for="pr_drawing" style="cursor:pointer">Zeichnung anhängen</label>
+        ${p.drawingData ? '<button class="btn sm" id="view_drawing">Ansehen</button>' : ''}
+        ${p.drawingData ? '<button class="btn sm warn" id="remove_drawing">Entfernen</button>' : ''}
+      </div>
+      <input id="pr_drawing" type="file" accept="image/*,application/pdf" style="display:none">
+      ${drawingInfo}
+
+      ${!isNew?'<div class="row"><button class="btn warn" id="del">Löschen</button></div>':''}
+    `;
+
+    CT.openModal({
+      title: isNew ? 'Neues Programm' : 'Programm',
+      html,
+      okText:'Speichern',
+      cancelText:'Schließen',
+      onOk: async ()=>{
+        const up = {...p};
+        up.number = (document.getElementById('pr_n').value || '').trim() || p.number;
+        up.title  = (document.getElementById('pr_t').value || '').trim() || p.title;
+
+        const f = document.getElementById('pr_drawing').files?.[0];
+        if (f) {
+          try {
+            const data = await CT.readFileAsDataURL(f);
+            up.drawingName = f.name;
+            up.drawingData = data;
+          } catch(e){}
+        } else if (removeFlag) {
+          up.drawingName = '';
+          up.drawingData = '';
+        }
+
+        if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
+        CT.storage.write(CT_KEYS.PROGS, progs);
+        currentProgId = up.id;
+        refreshProgSelect();
+        CT.toast('Gespeichert','ok');
+      }
+    });
+
+    // навешиваем хэндлеры ПОСЛЕ открытия
+    const modal = document.querySelector('.modal .card');
+    const tInput = modal.querySelector('#pr_t'); setTimeout(()=>{ tInput && tInput.focus(); }, 0);
+
+    const fileInput = modal.querySelector('#pr_drawing');
+    if (fileInput) {
+      fileInput.onchange = ()=>{
+        const f = fileInput.files?.[0];
+        const info = modal.querySelector('#dr_info');
+        if (f && info) info.textContent = 'Ausgewählt: ' + f.name;
+        removeFlag = false;
+      };
+    }
+
+    const viewBtn = modal.querySelector('#view_drawing');
+    if (viewBtn) viewBtn.onclick = ()=>{
+      if (!p.drawingData) return;
+      const isPDF = p.drawingData.startsWith('data:application/pdf');
+      const content = isPDF
+        ? `<iframe src="${p.drawingData}" style="width:92vw;height:70vh;border:0;border-radius:12px"></iframe>`
+        : `<div class="imgwrap"><img src="${p.drawingData}" alt="" style="max-height:70vh"></div>`;
+      CT.openModal({title:'Zeichnung', html: content, cancelText:'Schließen'});
+    };
+
+    const rmBtn = modal.querySelector('#remove_drawing');
+    if (rmBtn) rmBtn.onclick = ()=>{
+      removeFlag = true;
+      const info = modal.querySelector('#dr_info');
+      if (info) info.textContent = 'Keine Zeichnung';
+      CT.toast('Zeichnung entfernt','ok');
+    };
+
+    const del = modal.querySelector('#del');
+    if(del) del.onclick = ()=>{
+      progs = progs.filter(x=>x.id!==p.id);
+      CT.storage.write(CT_KEYS.PROGS, progs);
+      currentProgId = progs[0]?.id || null;
+      CT.closeModal(); refreshProgSelect(); render(); CT.toast('Gelöscht','ok');
+    };
+  }
+
+  // Создать и сразу открыть модалку-редактор
+  function createNewProg(){
+    const p = {
+      id: CT.uid(),
+      number: 1000 + Math.floor(Math.random()*9000),
+      title: 'Neues Programm',
+      date: Date.now(),
+      ro: Array(12).fill(null),
+      ru: Array(12).fill(null),
+      drawingName: '',
+      drawingData: ''
+    };
+    // Важно: ещё не пишем в storage — сначала редактируем → сохраняем в onOk
+    openProgramEditor(p, true);
+  }
+
+  // Меню выбора программ (с кнопкой редактирования)
+  function openProgMenu(){
+    progs = CT.storage.read(CT_KEYS.PROGS, []);
+    const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
+    CT.openDrawer({title:'Programme', html: `
+      <div class="row" style="margin-bottom:.5rem"><button class="btn sm" id="newProg">+ Neues Programm</button></div>
+      <ul class="list">${
+        items.map(it=>`<li data-id="${it.id}">
+          <div><b>${CT.escape(it.title)}</b><div class="muted">${CT.escape(it.meta||'')}</div></div>
+          <div class="row"><button class="btn sm sel">Wählen</button><button class="btn sm" data-edit>Bearbeiten</button></div>
+        </li>`).join('') || '<li class="muted">Keine Programme</li>'
+      }</ul>`});
+
+    const pan = document.querySelector('.drawer .panel');
+    pan.querySelector('#newProg').onclick = ()=>{ CT.closeDrawer(); createNewProg(); };
+    pan.querySelectorAll('.list li').forEach(li=>{
+      const id = li.dataset.id;
+      li.querySelector('.sel').onclick = ()=>{ currentProgId=id; CT.closeDrawer(); refreshProgSelect(); render(); };
+      li.querySelector('[data-edit]').onclick = ()=>{ CT.closeDrawer(); const cur=progs.find(x=>x.id===id); if(cur) openProgramEditor(cur,false); };
+    });
+  }
+
+  function applyToLive(){
+    const p = progs.find(x=>x.id===currentProgId); if(!p) return;
+    live = { ro: p.ro||Array(12).fill(null), ru: p.ru||Array(12).fill(null) };
+    CT.storage.write(CT_KEYS.SETUP, live);
+    CT.toast('In Live angewendet','ok');
+    render();
+  }
+
+  // Редактирование T-номера слота
+  function editSlotNumber(idx){
+    const v = live[side][idx] || {};
+    const cur = v.tnum || defaultTnum(idx);
+    const html = `<label class="fld">Werkzeugnummer<input id="tnum_inp" value="${CT.escape(cur)}" placeholder="z.B. T0101"></label>`;
+    CT.openModal({title:`Nummer für #${idx+1}`, html, okText:'Speichern', cancelText:'Abbrechen', onOk:()=>{
+      const val = document.getElementById('tnum_inp').value.trim() || defaultTnum(idx);
+      const cell = live[side][idx] || {toolId:null, note:''};
+      cell.tnum = val;
+      live[side][idx] = cell;
+      CT.storage.write(CT_KEYS.SETUP, live);
+      CT.closeModal();
+      render();
+      CT.toast('Nummer gespeichert','ok');
+    }});
+  }
+
+  // Рендер слотов
+  function render(){
+    const root = document.getElementById('slots');
+    root.innerHTML = '';
+    const data  = live[side];
+    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    const q     = (document.getElementById('setupSearch').value||'').toLowerCase();
+
+    for(let i=0;i<12;i++){
+      const cell = document.createElement('div');
+      cell.className = 'slot';
+      const v = data[i];
+
+      const tnum = (v && v.tnum) ? v.tnum : defaultTnum(i);
+      const tnumBtn = `<button class="badge tnum-btn" data-tnum="${i}">${CT.escape(tnum)}</button>`;
+
+      if(!v){
+        cell.innerHTML = `
+          <div class="slot-full slot-tnum">
+            ${tnumBtn}
+            <div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>
+            <div class="meta">
+              <div class="name"><b>#${i+1} • Leer</b></div>
+              <div class="sub">—</div>
+            </div>
+            <div class="tail" style="display:flex;gap:.25rem;align-items:center">
+              <button class="btn" data-i="${i}">Hinzufügen</button>
+            </div>
+          </div>`;
+        cell.querySelector('[data-i]').onclick=()=>selectToolFor(i);
+        cell.querySelector('[data-tnum]').onclick=()=>editSlotNumber(i);
+      } else {
+        const t = tools.find(x=>x.id===v.toolId);
+        const name = t ? t.name : '—';
+        const code = t ? t.code : '';
+        const matches = q ? (name.toLowerCase().includes(q) || code.toLowerCase().includes(q)) : true;
+        const thumb = t?.imgData
+          ? `<img class="thumb" src="${t.imgData}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">`
+          : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
+        cell.innerHTML = `
+          <div class="slot-full slot-tnum" ${matches?'':'style="opacity:.45"'} >
+            ${tnumBtn}
+            ${thumb}
+            <div class="meta">
+              <div class="name"><b>${CT.escape(name)}</b></div>
+              <div class="sub">${CT.escape(code)}</div>
+            </div>
+            <div class="tail" style="display:flex;gap:.25rem;align-items:center">
+              <button class="icon-btn info" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
+              <button class="icon-btn" data-edit aria-label="Ändern"><svg><use href="./ui/icons.svg#edit"/></svg></button>
+            </div>
+          </div>`;
+        cell.querySelector('.icon-btn.info').onclick=()=> infoSlot(i);
+        cell.querySelector('[data-edit]').onclick=()=> selectToolFor(i);
+        cell.querySelector('[data-tnum]').onclick=()=> editSlotNumber(i);
+      }
+
+      root.appendChild(cell);
+    }
+  }
+
+  function selectToolFor(idx){
+    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    const items = tools.map(t=>({id:t.id, title:t.name, meta:t.code}));
+    CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
+      const prev = live[side][idx] || {};
+      live[side][idx] = { toolId:id, note:prev.note||'', tnum: prev.tnum || defaultTnum(idx) };
+      CT.storage.write(CT_KEYS.SETUP, live);
+      CT.closeDrawer();
+      CT.toast('Aktualisiert','ok');
+      render();
+    }});
+  }
+
+  function infoSlot(i){
+    const cell = live[side][i];
+    const t = CT.getToolFromSlot(live, side, i);
+    const tnum = (cell && cell.tnum) ? cell.tnum : defaultTnum(i);
+    if(!t){ CT.toast('Kein Werkzeug','err'); return; }
+    const big = t.imgData
+      ? `<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`
+      : `<div class="imgwrap"><div style="width:92vw;max-width:520px;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>`;
+    const html = `
+      ${big}
+      <b>${CT.escape(t.name)}</b>
+      <div class="i-row">${CT.escape(t.code)} • ${CT.escape(t.iso||'')}</div>
+      <div class="row">
+        <button class="btn sm" id="editNum">${CT.escape(tnum)}</button>
+        <button class="btn brand" id="edt">Bearbeiten Tool</button>
+        <button class="btn warn" id="rem">Entfernen aus Programm</button>
+      </div>`;
+    CT.openModal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
+    const modal = document.querySelector('.modal .card');
+    modal.querySelector('#editNum').onclick = ()=>{ CT.closeModal(); editSlotNumber(i); };
+    modal.querySelector('#edt').onclick     = ()=>{ CT.closeModal(); location.href='./tools.html'; };
+    modal.querySelector('#rem').onclick     = ()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
+  }
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active'); side=b.dataset.side; render();
+    };
+  });
+
+  // Меню «i»
+  document.getElementById('progInfo').onclick = () => {
+    const html = `
+      <div class="row">
+        <button class="btn" id="newP">Neues Programm</button>
+        <button class="btn ok" id="apply">In Live anwenden</button>
+        <button class="btn brand" id="editP">Bearbeiten</button>
+      </div>`;
+    CT.openModal({ title:'Programm', html, cancelText:'Schließen' });
+    const modal = document.querySelector('.modal .card');
+    modal.querySelector('#newP').addEventListener('click',  ()=>{ CT.closeModal(); createNewProg(); });
+    modal.querySelector('#apply').addEventListener('click', ()=>{ CT.closeModal(); applyToLive();    });
+    modal.querySelector('#editP').addEventListener('click',  ()=>{
+      CT.closeModal();
+      const cur = progs.find(x=>x.id===currentProgId);
+      if(cur) openProgramEditor(cur,false);
+    });
+  };
+
+  document.getElementById('progSelect').onclick = openProgMenu;
+  document.getElementById('setupSearch').addEventListener('input', render);
+
+  refreshProgSelect();
+  render();
+  CT.bindGlobalSearch(()=>render());
+});
+</script>
+</body>
+</html>
