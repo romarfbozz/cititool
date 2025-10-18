@@ -4,7 +4,8 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Setup + Programme</title>
-  <link rel="stylesheet" href="./ui/core.css">
+  <!-- cache-bust -->
+  <link rel="stylesheet" href="./ui/core.css?v=7">
 </head>
 <body data-active="programme">
 <header class="appbar">
@@ -46,10 +47,15 @@
 
 <nav class="dock" id="dock"></nav>
 
-<script src="./ui/core.js"></script>
-<script src="./ui/dock.js"></script>
+<!-- cache-bust -->
+<script src="./ui/core.js?v=7"></script>
+<script src="./ui/dock.js?v=7"></script>
 <script>
 CT.ready(()=>{
+  // Быстрый маркер сборки (виден в тосте и в консоли)
+  console.log('SETUP v7');
+  CT.toast('SETUP v7 geladen','ok', 1200);
+
   CT.ensureSeeds();
 
   let progs = CT.storage.read(CT_KEYS.PROGS, []);
@@ -61,13 +67,11 @@ CT.ready(()=>{
   const defaultTnum = i => `T${pad2(i+1)}${pad2(i+1)}`;
 
   function progTitle(p){ return `#${p.number} — ${p.title}`; }
-
   function refreshProgSelect(){
     const cur = progs.find(p=>p.id===currentProgId);
     document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
   }
 
-  // Мгновенное создание новой программы (с полями для Zeichnung)
   function createNewProg(){
     const p = {
       id: CT.uid(),
@@ -85,11 +89,9 @@ CT.ready(()=>{
     refreshProgSelect();
     render();
     CT.toast('Programm angelegt','ok');
-    // сразу открыть редактор для ввода номера/названия и Zeichnung
     setTimeout(editProg, 0);
   }
 
-  // Drawer программ: список + кнопка "Neues Programm"
   function openProgMenu(){
     progs = CT.storage.read(CT_KEYS.PROGS, []);
     const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
@@ -98,13 +100,14 @@ CT.ready(()=>{
         <button class="btn sm" id="newProg">+ Neues Programm</button>
       </div>`;
     CT.openDrawer({title:'Programme', html: htmlTop + `<ul class="list">${
-      items.map(it=>`<li data-id="${it.id}"><div><b>${CT.escape(it.title)}</b><div class="muted">${CT.escape(it.meta||'')}</div></div><button class="btn sm">Wählen</button></li>`).join('') || '<li class="muted">Keine Programme</li>'
-    }</ul>`});
+      items.map(it=>`<li data-id="${it.id}">
+        <div><b>${CT.escape(it.title)}</b><div class="muted">${CT.escape(it.meta||'')}</div></div>
+        <button class="btn sm">Wählen</button>
+      </li>`).join('') || '<li class="muted">Keine Programme</li>'}</ul>`});
 
     const drawer = document.querySelector('.drawer');
     const btnNew = drawer.querySelector('#newProg');
     if(btnNew) btnNew.onclick = ()=>{ CT.closeDrawer(); createNewProg(); };
-
     drawer.querySelectorAll('.list li').forEach(li=>{
       const id = li.dataset.id;
       const btn = li.querySelector('button');
@@ -120,9 +123,7 @@ CT.ready(()=>{
     render();
   }
 
-  // Редактор программы (номер/название + Zeichnung)
   function editProg(){
-    // перечитать актуальный список
     progs = CT.storage.read(CT_KEYS.PROGS, []);
     const p = progs.find(x=>x.id===currentProgId);
     const isNew = !p;
@@ -141,7 +142,6 @@ CT.ready(()=>{
       ? `<div class="muted" id="dr_info">Angehängt: ${CT.escape(cur.drawingName)}</div>`
       : `<div class="muted" id="dr_info">Keine Zeichnung</div>`;
 
-    // флаг удаления Zeichnung (виден в onOk)
     let removeFlag = false;
 
     const html = `
@@ -174,7 +174,6 @@ CT.ready(()=>{
         up.number = (document.getElementById('pr_n').value || '').trim() || cur.number;
         up.title  = (document.getElementById('pr_t').value || '').trim() || cur.title;
 
-        // сохранить Zeichnung (если выбрана) или удалить, если removeFlag=true
         const f = document.getElementById('pr_drawing').files?.[0];
         if (f) {
           try {
@@ -195,12 +194,8 @@ CT.ready(()=>{
       }
     });
 
-    // ——— поведение внутри модалки ———
     const modal = document.querySelector('.modal .card');
-
-    // автофокус в название (iPhone Safari-friendly)
-    const tInput = modal.querySelector('#pr_t');
-    setTimeout(()=>{ tInput && tInput.focus(); }, 0);
+    const tInput = modal.querySelector('#pr_t'); setTimeout(()=>{ tInput && tInput.focus(); }, 0);
 
     const fileInput = modal.querySelector('#pr_drawing');
     if (fileInput) {
@@ -238,7 +233,6 @@ CT.ready(()=>{
     };
   }
 
-  // редактирование номера слота
   function editSlotNumber(idx){
     const v = live[side][idx] || {};
     const cur = v.tnum || defaultTnum(idx);
@@ -255,7 +249,6 @@ CT.ready(()=>{
     }});
   }
 
-  // Рендер слотов (12 позиций, сетка slot-tnum)
   function render(){
     const root = document.getElementById('slots');
     root.innerHTML = '';
@@ -353,7 +346,6 @@ CT.ready(()=>{
     modal.querySelector('#rem').onclick     = ()=>{ live[side][i]=null; CT.storage.write(CT_KEYS.SETUP,live); CT.closeModal(); render(); };
   }
 
-  // вкладки + обработчики
   document.querySelectorAll('.tab').forEach(b=>{
     b.onclick=()=>{
       document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
@@ -361,7 +353,6 @@ CT.ready(()=>{
     };
   });
 
-  // исправленный обработчик "i" (Programm)
   document.getElementById('progInfo').onclick = () => {
     const html = `
       <div class="row">
@@ -370,15 +361,10 @@ CT.ready(()=>{
         <button class="btn brand" id="editP">Bearbeiten</button>
       </div>`;
     CT.openModal({ title:'Programm', html, cancelText:'Schließen' });
-
     const modal = document.querySelector('.modal .card');
-    const btnNew   = modal.querySelector('#newP');
-    const btnApply = modal.querySelector('#apply');
-    const btnEdit  = modal.querySelector('#editP');
-
-    if (btnNew)   btnNew.addEventListener('click',  () => { CT.closeModal(); createNewProg(); });
-    if (btnApply) btnApply.addEventListener('click',() => { CT.closeModal(); applyToLive();    });
-    if (btnEdit)  btnEdit.addEventListener('click', () => { CT.closeModal(); editProg();       });
+    modal.querySelector('#newP').addEventListener('click',  ()=>{ CT.closeModal(); createNewProg(); });
+    modal.querySelector('#apply').addEventListener('click', ()=>{ CT.closeModal(); applyToLive();    });
+    modal.querySelector('#editP').addEventListener('click',  ()=>{ CT.closeModal(); editProg();       });
   };
 
   document.getElementById('progSelect').onclick = openProgMenu;
