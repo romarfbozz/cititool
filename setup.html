@@ -67,7 +67,7 @@ CT.ready(()=>{
     document.getElementById('progSelect').textContent = cur ? progTitle(cur) : 'Programm wählen…';
   }
 
-  // мгновенное создание новой программы
+  // Мгновенное создание новой программы (с полями для Zeichnung)
   function createNewProg(){
     const p = {
       id: CT.uid(),
@@ -75,7 +75,9 @@ CT.ready(()=>{
       title: 'Neues Programm',
       date: Date.now(),
       ro: Array(12).fill(null),
-      ru: Array(12).fill(null)
+      ru: Array(12).fill(null),
+      drawingName: '',
+      drawingData: ''
     };
     progs.push(p);
     CT.storage.write(CT_KEYS.PROGS, progs);
@@ -83,7 +85,7 @@ CT.ready(()=>{
     refreshProgSelect();
     render();
     CT.toast('Programm angelegt','ok');
-    // сразу открыть редактор для переименования
+    // сразу открыть редактор для ввода номера/названия и Zeichnung
     setTimeout(editProg, 0);
   }
 
@@ -118,26 +120,116 @@ CT.ready(()=>{
     render();
   }
 
+  // Редактор программы (номер/название + Zeichnung)
   function editProg(){
+    // перечитать актуальный список
+    progs = CT.storage.read(CT_KEYS.PROGS, []);
     const p = progs.find(x=>x.id===currentProgId);
     const isNew = !p;
-    const cur = p || { id:CT.uid(), number:(1000+Math.floor(Math.random()*9000)), title:'Programm', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null) };
+    const cur = p || {
+      id: CT.uid(),
+      number: (1000+Math.floor(Math.random()*9000)),
+      title: 'Programm',
+      date: Date.now(),
+      ro: Array(12).fill(null),
+      ru: Array(12).fill(null),
+      drawingName: '',
+      drawingData: ''
+    };
+
+    const drawingInfo = cur.drawingName
+      ? `<div class="muted" id="dr_info">Angehängt: ${CT.escape(cur.drawingName)}</div>`
+      : `<div class="muted" id="dr_info">Keine Zeichnung</div>`;
+
+    // флаг удаления Zeichnung (виден в onOk)
+    let removeFlag = false;
+
     const html = `
-      <label class="fld">Nummer<input id="pr_n" value="${CT.escape(cur.number)}"></label>
-      <label class="fld">Titel<input id="pr_t" value="${CT.escape(cur.title)}"></label>
+      <label class="fld">Nummer
+        <input id="pr_n" inputmode="numeric" pattern="[0-9]*"
+               value="${CT.escape(cur.number)}" placeholder="z.B. 1234">
+      </label>
+      <label class="fld">Titel
+        <input id="pr_t" value="${CT.escape(cur.title)}" placeholder="Programmname">
+      </label>
+
+      <div class="row" style="margin:.4rem 0">
+        <label class="btn sm ghost" for="pr_drawing" style="cursor:pointer">Zeichnung anhängen</label>
+        ${cur.drawingData ? '<button class="btn sm" id="view_drawing">Ansehen</button>' : ''}
+        ${cur.drawingData ? '<button class="btn sm warn" id="remove_drawing">Entfernen</button>' : ''}
+      </div>
+      <input id="pr_drawing" type="file" accept="image/*,application/pdf" style="display:none">
+      ${drawingInfo}
+
       ${!isNew?'<div class="row"><button class="btn warn" id="del">Löschen</button></div>':''}
     `;
-    CT.openModal({title:isNew?'Neues Programm':'Programm', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
-      const up = {...cur};
-      up.number = document.getElementById('pr_n').value || cur.number;
-      up.title  = document.getElementById('pr_t').value || cur.title;
-      if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
-      CT.storage.write(CT_KEYS.PROGS, progs);
-      currentProgId = up.id;
-      refreshProgSelect();
-      CT.toast('Gespeichert','ok');
-    }});
-    const del = document.getElementById('del');
+
+    CT.openModal({
+      title: isNew ? 'Neues Programm' : 'Programm',
+      html,
+      okText:'Speichern',
+      cancelText:'Schließen',
+      onOk: async ()=>{
+        const up = {...cur};
+        up.number = (document.getElementById('pr_n').value || '').trim() || cur.number;
+        up.title  = (document.getElementById('pr_t').value || '').trim() || cur.title;
+
+        // сохранить Zeichnung (если выбрана) или удалить, если removeFlag=true
+        const f = document.getElementById('pr_drawing').files?.[0];
+        if (f) {
+          try {
+            const data = await CT.readFileAsDataURL(f);
+            up.drawingName = f.name;
+            up.drawingData = data;
+          } catch(e){}
+        } else if (removeFlag) {
+          up.drawingName = '';
+          up.drawingData = '';
+        }
+
+        if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
+        CT.storage.write(CT_KEYS.PROGS, progs);
+        currentProgId = up.id;
+        refreshProgSelect();
+        CT.toast('Gespeichert','ok');
+      }
+    });
+
+    // ——— поведение внутри модалки ———
+    const modal = document.querySelector('.modal .card');
+
+    // автофокус в название (iPhone Safari-friendly)
+    const tInput = modal.querySelector('#pr_t');
+    setTimeout(()=>{ tInput && tInput.focus(); }, 0);
+
+    const fileInput = modal.querySelector('#pr_drawing');
+    if (fileInput) {
+      fileInput.onchange = ()=>{
+        const f = fileInput.files?.[0];
+        const info = modal.querySelector('#dr_info');
+        if (f && info) info.textContent = 'Ausgewählt: ' + f.name;
+      };
+    }
+
+    const viewBtn = modal.querySelector('#view_drawing');
+    if (viewBtn) viewBtn.onclick = ()=>{
+      if (!cur.drawingData) return;
+      const isPDF = cur.drawingData.startsWith('data:application/pdf');
+      const content = isPDF
+        ? `<iframe src="${cur.drawingData}" style="width:92vw;height:70vh;border:0;border-radius:12px"></iframe>`
+        : `<div class="imgwrap"><img src="${cur.drawingData}" alt="" style="max-height:70vh"></div>`;
+      CT.openModal({title:'Zeichnung', html: content, cancelText:'Schließen'});
+    };
+
+    const rmBtn = modal.querySelector('#remove_drawing');
+    if (rmBtn) rmBtn.onclick = ()=>{
+      removeFlag = true;
+      const info = modal.querySelector('#dr_info');
+      if (info) info.textContent = 'Keine Zeichnung';
+      CT.toast('Zeichnung entfernt','ok');
+    };
+
+    const del = modal.querySelector('#del');
     if(del) del.onclick = ()=>{
       progs = progs.filter(x=>x.id!==cur.id);
       CT.storage.write(CT_KEYS.PROGS, progs);
@@ -146,6 +238,7 @@ CT.ready(()=>{
     };
   }
 
+  // редактирование номера слота
   function editSlotNumber(idx){
     const v = live[side][idx] || {};
     const cur = v.tnum || defaultTnum(idx);
@@ -162,6 +255,7 @@ CT.ready(()=>{
     }});
   }
 
+  // Рендер слотов (12 позиций, сетка slot-tnum)
   function render(){
     const root = document.getElementById('slots');
     root.innerHTML = '';
@@ -173,6 +267,7 @@ CT.ready(()=>{
       const cell = document.createElement('div');
       cell.className = 'slot';
       const v = data[i];
+
       const tnum = (v && v.tnum) ? v.tnum : defaultTnum(i);
       const tnumBtn = `<button class="badge tnum-btn" data-tnum="${i}">${CT.escape(tnum)}</button>`;
 
@@ -266,7 +361,7 @@ CT.ready(()=>{
     };
   });
 
-  // ✅ исправленный обработчик "i" (Programm)
+  // исправленный обработчик "i" (Programm)
   document.getElementById('progInfo').onclick = () => {
     const html = `
       <div class="row">
