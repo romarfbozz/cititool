@@ -4,11 +4,23 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Setup + Programme</title>
-  <link rel="stylesheet" href="./ui/core.css?v=13">
+  <link rel="stylesheet" href="./ui/core.css?v=14">
   <style>
+    /* Верхний инфоблок */
+    .prog-head{display:grid;grid-template-columns:1fr 120px;gap:.75rem;align-items:center}
+    .prog-left .title-line{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+    .prog-left .title-line .select-like{cursor:pointer}
+    .prog-left .subtitle{font-size:12px;color:var(--muted);margin-top:4px}
+    .prog-right .thumb{
+      width:120px;height:90px;border-radius:12px;background:#eef3ff;
+      display:grid;place-items:center;color:#9cb1d9;font-weight:700;
+      overflow:hidden;cursor:pointer;border:1px solid #e5ebf7;
+    }
+    .prog-right .thumb img{width:100%;height:100%;object-fit:cover}
+    /* Слотная строка с T-номером */
     .slot-tnum{display:grid;grid-template-columns:72px 56px 1fr auto;gap:.6rem;align-items:center}
     .tnum-btn{min-width:64px}
-    /* Fallback-модалка (если вдруг CT.openModal недоступен) */
+    /* Встроенный fallback-модалки на случай, если CT.openModal недоступен */
     ._fx-modal{position:fixed;inset:0;z-index:9999;display:grid;place-items:center}
     ._fx-modal::before{content:"";position:absolute;inset:0;background:rgba(0,0,0,.25)}
     ._fx-card{position:relative;z-index:1;width:min(92vw,640px);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:0 6px 24px rgba(13,27,42,.18);padding:12px}
@@ -20,31 +32,34 @@
 <header class="appbar">
   <div class="wrap">
     <a class="logo" href="./index.html">
-      <span class="ct-badge">CT</span>
-      <div class="tit">
-        <div class="title">CitiTool</div>
-        <div class="subtitle">Setup + Programme</div>
-      </div>
+      <span class="ct-badge" aria-hidden="true">CT</span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup + Programme</div></div>
     </a>
-    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
-      <svg><use href="./ui/icons.svg#search"/></svg>
-    </button>
+    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
   </div>
 </header>
 
 <main class="container">
   <section class="section">
-    <!-- ВИДИМЫЕ КНОПКИ СРАЗУ -->
-    <div class="row" style="margin-bottom:.5rem">
-      <button class="btn brand" id="btnNewProg">Neues Programm</button>
-      <button class="btn" id="btnEditProg">Programm bearbeiten</button>
-      <button class="btn ok" id="btnApply">In Live anwenden</button>
-      <div class="select-like" id="progDisplay" style="margin-left:auto">Programm wählen…</div>
+    <!-- ВЕРХНИЙ БЛОК ПРОГРАММЫ -->
+    <div class="prog-head">
+      <div class="prog-left">
+        <div class="title-line">
+          <div class="select-like" id="progTitle">Programm wählen…</div>
+          <button class="btn sm" id="chooseProg">Wechseln</button>
+          <button class="btn brand sm" id="newProg">Neues Programm</button>
+        </div>
+        <div class="subtitle" id="progNumber">—</div>
+      </div>
+      <div class="prog-right">
+        <div class="thumb" id="drawingThumb" title="Zeichnung ansehen / bearbeiten">no foto</div>
+      </div>
     </div>
 
-    <div class="tabs">
+    <div class="tabs" style="margin-top:.75rem">
       <button class="tab active" data-side="ro">RO (G54)</button>
       <button class="tab" data-side="ru">RU (G55)</button>
+      <button class="btn ok sm" id="applyLive" style="margin-left:auto">In Live anwenden</button>
     </div>
 
     <div id="slots" class="slots"></div>
@@ -53,205 +68,194 @@
 
 <nav class="dock" id="dock"></nav>
 
-<script src="./ui/core.js?v=13"></script>
-<script src="./ui/dock.js?v=13"></script>
+<script src="./ui/core.js?v=14"></script>
+<script src="./ui/dock.js?v=14"></script>
 <script>
 (function(){
-  // ====== УТИЛЫ: надёжная модалка с fallback ======
+  // ====== Fallback-модалка (если CT.openModal вдруг не сработает) ======
   function FX_openModal(opts){
-    // Если есть CT.openModal — используем его
-    if (window.CT && typeof CT.openModal === 'function') {
-      CT.openModal(opts);
-      return {type:'ct'};
+    if (window.CT && typeof CT.openModal === 'function'){
+      CT.openModal(opts); return {close: CT.closeModal};
     }
-    // Иначе — наша лёгкая модалка
     const {title='', html='', okText='OK', cancelText='Schließen', onOk} = opts||{};
     const wrap = document.createElement('div');
     wrap.className = '_fx-modal';
     wrap.innerHTML = `
       <div class="_fx-card">
         <div class="_fx-hdr">
-          <b>${(title||'')}</b>
+          <b>${title}</b>
           <button class="icon-btn" id="_fxClose"><svg><use href="./ui/icons.svg#close"/></svg></button>
         </div>
-        <div class="_fx-body">${html||''}</div>
+        <div class="_fx-body">${html}</div>
         <div class="_fx-footer">
           ${cancelText?`<button class="btn" id="_fxCancel">${cancelText}</button>`:''}
           ${okText?`<button class="btn brand" id="_fxOk">${okText}</button>`:''}
         </div>
       </div>`;
-    document.body.appendChild(wrap);
-    document.body.classList.add('noscroll');
+    document.body.appendChild(wrap); document.body.classList.add('noscroll');
     function close(){ wrap.remove(); document.body.classList.remove('noscroll'); }
-    wrap.addEventListener('click', (e)=>{ if(e.target===wrap) close(); });
-    const btnC = wrap.querySelector('#_fxClose');
-    const btnX = wrap.querySelector('#_fxCancel');
-    const btnO = wrap.querySelector('#_fxOk');
-    if(btnC) btnC.onclick=close;
-    if(btnX) btnX.onclick=close;
-    if(btnO) btnO.onclick=()=>{ try{ onOk && onOk(); }finally{ close(); } };
-    return {type:'fx', close};
+    wrap.addEventListener('click',(e)=>{ if(e.target===wrap) close(); });
+    const C=wrap.querySelector('#_fxClose'), X=wrap.querySelector('#_fxCancel'), O=wrap.querySelector('#_fxOk');
+    if(C) C.onclick=close; if(X) X.onclick=close; if(O) O.onclick=()=>{ try{onOk&&onOk();}finally{close();} };
+    return {close};
   }
+  function FX_toast(msg){ if(window.CT && CT.toast) CT.toast(msg,'ok',1400); else console.log('[toast]', msg); }
+  function S_read(k,def){ return window.CT? CT.storage.read(k,def) : (JSON.parse(localStorage.getItem(k)) ?? def); }
+  function S_write(k,v){ if(window.CT) CT.storage.write(k,v); else localStorage.setItem(k, JSON.stringify(v)); }
+  const KEYS = window.CT_KEYS || { PROGS:'ct_programs_v1', SETUP:'ct_setup_live', TOOLS:'ct_tools_v2' };
+  if(window.CT && CT.ensureSeeds) CT.ensureSeeds();
+  const esc = (window.CT && CT.escape) ? CT.escape : (s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])));
 
-  function FX_toast(msg){
-    if (window.CT && typeof CT.toast === 'function') { CT.toast(msg,'ok',1400); return; }
-    alert(msg);
-  }
-
-  function FX_lsRead(key, def){
-    try{ const v = JSON.parse(localStorage.getItem(key)); return (v===null||v===undefined)?def:v; }catch(e){ return def; }
-  }
-  function FX_lsWrite(key, val){ localStorage.setItem(key, JSON.stringify(val)); }
-
-  // ====== ДАННЫЕ ======
-  const CT_KEYS_SAFE = window.CT_KEYS || { PROGS:'ct_programs_v1', SETUP:'ct_setup_live', TOOLS:'ct_tools_v2' };
-  if (window.CT && CT.ensureSeeds) CT.ensureSeeds();
-
-  let progs = (window.CT ? CT.storage.read(CT_KEYS_SAFE.PROGS, []) : FX_lsRead(CT_KEYS_SAFE.PROGS, []));
-  let live  = (window.CT ? CT.storage.read(CT_KEYS_SAFE.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) })
-                         : FX_lsRead(CT_KEYS_SAFE.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) }));
+  let progs = S_read(KEYS.PROGS, []);
+  let live  = S_read(KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
   let side = 'ro';
   let currentProgId = progs[0]?.id || null;
 
   const pad2 = n => String(n).padStart(2,'0');
-  const defaultTnum = i => `T${pad2(i+1)}${pad2(i+1)}`;
-  const esc = (window.CT && CT.escape) ? CT.escape : (s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])));
+  const defaultT = i => `T${pad2(i+1)}${pad2(i+1)}`;
 
-  function progTitle(p){ return `#${p.number} — ${p.title}`; }
-  function saveProgs(){ window.CT ? CT.storage.write(CT_KEYS_SAFE.PROGS, progs) : FX_lsWrite(CT_KEYS_SAFE.PROGS, progs); }
-  function saveLive(){  window.CT ? CT.storage.write(CT_KEYS_SAFE.SETUP, live)  : FX_lsWrite(CT_KEYS_SAFE.SETUP, live); }
-  function readTools(){ return window.CT ? CT.storage.read(CT_KEYS_SAFE.TOOLS, []) : FX_lsRead(CT_KEYS_SAFE.TOOLS, []); }
+  // ===== Верхний блок: отрисовка =====
+  const elTitle  = document.getElementById('progTitle');
+  const elNumber = document.getElementById('progNumber');
+  const elThumb  = document.getElementById('drawingThumb');
 
-  // ====== UI ======
-  const progDisplay = document.getElementById('progDisplay');
-  function refreshProgDisplay(){
-    const cur = progs.find(p=>p.id===currentProgId);
-    progDisplay.textContent = cur ? progTitle(cur) : 'Programm wählen…';
+  function progLabel(p){ return `#${p.number} — ${p.title}`; }
+  function refreshHeader(){
+    const p = progs.find(x=>x.id===currentProgId);
+    if(!p){
+      elTitle.textContent = 'Programm wählen…';
+      elNumber.textContent = '—';
+      elThumb.textContent = 'no foto'; elThumb.innerHTML = 'no foto';
+      return;
+    }
+    elTitle.textContent = p.title || 'Programm';
+    elNumber.textContent = `Nummer: ${p.number || '—'}`;
+    if(p.drawingData){
+      elThumb.innerHTML = `<img src="${p.drawingData}" alt="">`;
+    }else{
+      elThumb.innerHTML = 'no foto';
+    }
   }
 
-  function openProgramEditor(p, isNew){
+  // ===== Модалка редактирования (Zeichnung + поля) =====
+  function openEditModal(p, isNew=false){
     let removeFlag=false;
     const html = `
-      <label class="fld">Nummer
-        <input id="pr_n" type="text" inputmode="numeric" pattern="[0-9]*" value="${esc(p.number)}" placeholder="z.B. 1234">
-      </label>
-      <label class="fld">Titel
-        <input id="pr_t" type="text" value="${esc(p.title)}" placeholder="Programmname">
-      </label>
-      <div class="row" style="margin:.4rem 0">
+      ${p.drawingData?`<div class="imgwrap" style="margin-top:.25rem"><img src="${p.drawingData}" alt="" style="max-height:55vh;border-radius:12px"></div>`:
+        `<div class="imgwrap" style="margin-top:.25rem"><div style="width:92vw;max-width:520px;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>`}
+      <div class="row" style="margin:.25rem 0">
         <label class="btn sm ghost" for="pr_file" style="cursor:pointer">Zeichnung anhängen</label>
-        ${p.drawingData?'<button class="btn sm" id="v">Ansehen</button>':''}
-        ${p.drawingData?'<button class="btn sm warn" id="r">Entfernen</button>':''}
+        ${p.drawingData?'<button class="btn sm" id="view">Ansehen</button>':''}
+        ${p.drawingData?'<button class="btn sm warn" id="remove">Entfernen</button>':''}
       </div>
       <input id="pr_file" type="file" accept="image/*,application/pdf" style="display:none">
-      <div class="muted" id="fi">${p.drawingName?('Angehängt: '+esc(p.drawingName)):'Keine Zeichnung'}</div>
-      ${!isNew?'<div class="row"><button class="btn warn" id="del">Löschen</button></div>':''}
+      <div class="muted" id="fileInfo">${p.drawingName?('Angehängt: '+esc(p.drawingName)):'Keine Zeichnung'}</div>
+      <label class="fld" style="margin-top:.5rem">Titel<input id="pr_t" value="${esc(p.title||'')}" placeholder="Programmname"></label>
+      <label class="fld">Nummer<input id="pr_n" inputmode="numeric" pattern="[0-9]*" value="${esc(p.number||'')}" placeholder="z.B. 1234"></label>
+      <div class="row" style="margin-top:.5rem">
+        ${!isNew?'<button class="btn warn" id="del">Löschen</button>':''}
+        <button class="btn brand" id="save" style="margin-left:auto">Speichern</button>
+      </div>
     `;
-    const m = FX_openModal({
-      title: isNew?'Neues Programm':'Programm',
-      html,
-      okText:'Speichern',
-      cancelText:'Schließen',
-      onOk: async ()=>{
-        const up={...p};
-        const n = document.getElementById('pr_n').value.trim();
-        const t = document.getElementById('pr_t').value.trim();
-        up.number = n || p.number;
-        up.title  = t || p.title;
-        const f = document.getElementById('pr_file').files?.[0];
-        if(f){
-          if(window.CT && CT.readFileAsDataURL){
-            up.drawingName=f.name; up.drawingData=await CT.readFileAsDataURL(f);
-          }else{
-            const reader = new FileReader(); up.drawingName=f.name;
-            await new Promise((res,rej)=>{ reader.onload=()=>{ up.drawingData=reader.result; res(); }; reader.onerror=rej; reader.readAsDataURL(f); });
-          }
-        }else if(removeFlag){ up.drawingName=''; up.drawingData=''; }
-        if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
-        saveProgs();
-        currentProgId = up.id;
-        refreshProgDisplay();
-        FX_toast('Gespeichert');
-      }
-    });
-
-    // навесить хэндлеры (работает и для CT, и для fallback)
+    const modal = FX_openModal({title: isNew?'Neues Programm':'Programm', html, cancelText:'Schließen'});
+    // Навешиваем обработчики
     setTimeout(()=>{
       const file = document.getElementById('pr_file');
-      if(file) file.onchange = ()=>{ const f=file.files?.[0]; if(f) document.getElementById('fi').textContent='Ausgewählt: '+f.name; removeFlag=false; };
-
-      const vb = document.getElementById('v');
-      if(vb) vb.onclick = ()=>{
+      if(file) file.onchange = ()=>{
+        const f = file.files?.[0]; if(!f) return;
+        document.getElementById('fileInfo').textContent = 'Ausgewählt: '+f.name;
+        removeFlag=false;
+      };
+      const vBtn = document.getElementById('view');
+      if(vBtn) vBtn.onclick = ()=>{
         if(!p.drawingData) return;
         const isPDF = p.drawingData.startsWith('data:application/pdf');
-        const content = isPDF
-          ? `<iframe src="${p.drawingData}" style="width:92vw;height:70vh;border:0;border-radius:12px"></iframe>`
-          : `<div class="imgwrap"><img src="${p.drawingData}" alt="" style="max-height:70vh"></div>`;
-        FX_openModal({title:'Zeichnung', html:content, cancelText:'Schließen'});
+        const c = isPDF ? `<iframe src="${p.drawingData}" style="width:92vw;height:70vh;border:0;border-radius:12px"></iframe>`
+                        : `<div class="imgwrap"><img src="${p.drawingData}" alt="" style="max-height:70vh"></div>`;
+        FX_openModal({title:'Zeichnung', html:c, cancelText:'Schließen'});
       };
+      const rBtn = document.getElementById('remove'); if(rBtn) rBtn.onclick=()=>{ removeFlag=true; document.getElementById('fileInfo').textContent='Keine Zeichnung'; FX_toast('Entfernt'); };
 
-      const rb = document.getElementById('r');
-      if(rb) rb.onclick = ()=>{ removeFlag=true; document.getElementById('fi').textContent='Keine Zeichnung'; FX_toast('Entfernt'); };
-
-      const db = document.getElementById('del');
-      if(db) db.onclick = ()=>{
-        progs = progs.filter(x=>x.id!==p.id);
-        saveProgs();
-        currentProgId = progs[0]?.id || null;
+      const save = document.getElementById('save'); if(save) save.onclick = async ()=>{
+        const up = {...p};
+        up.title  = (document.getElementById('pr_t').value||'').trim() || 'Programm';
+        up.number = (document.getElementById('pr_n').value||'').trim() || up.number || 1000;
+        const f = document.getElementById('pr_file').files?.[0];
+        if(f){
+          if(window.CT && CT.readFileAsDataURL){ up.drawingName=f.name; up.drawingData=await CT.readFileAsDataURL(f); }
+          else {
+            const reader = new FileReader();
+            await new Promise((res,rej)=>{ reader.onload=()=>{ up.drawingData=reader.result; up.drawingName=f.name; res(); }; reader.onerror=rej; reader.readAsDataURL(f); });
+          }
+        } else if(removeFlag){ up.drawingName=''; up.drawingData=''; }
+        if(isNew) progs.push(up); else progs = progs.map(x=>x.id===up.id?up:x);
+        S_write(KEYS.PROGS, progs);
+        currentProgId = up.id;
+        refreshHeader();
+        FX_toast('Gespeichert');
         if(window.CT && CT.closeModal) CT.closeModal();
-        refreshProgDisplay(); renderSlots(); FX_toast('Gelöscht');
       };
 
-      // автофокус в Titel
-      const ti = document.getElementById('pr_t'); if(ti) ti.focus();
+      const del = document.getElementById('del'); if(del) del.onclick = ()=>{
+        progs = progs.filter(x=>x.id!==p.id);
+        S_write(KEYS.PROGS, progs);
+        currentProgId = progs[0]?.id || null;
+        refreshHeader(); renderSlots(); FX_toast('Gelöscht');
+        if(window.CT && CT.closeModal) CT.closeModal();
+      };
+      // автофокус
+      const fTitle = document.getElementById('pr_t'); if(fTitle) fTitle.focus();
     },0);
   }
 
-  function createNewProgram(){
-    const p = { id:(window.CT?CT.uid():Math.random().toString(36).slice(2,9)),
-      number: 1000 + Math.floor(Math.random()*9000),
-      title: 'Neues Programm',
-      date: Date.now(),
-      ro: Array(12).fill(null), ru: Array(12).fill(null),
-      drawingName:'', drawingData:'' };
-    openProgramEditor(p, true);
+  // ===== Выбор программы (простая модалка-список) =====
+  function openChooseProgram(){
+    if(!progs.length){ FX_toast('Keine Programme'); return; }
+    const html = `<ul class="list" id="prList" style="list-style:none;margin:0;padding:0;display:grid;gap:.5rem">
+      ${progs.map(p=>`<li data-id="${p.id}" class="card" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+        <div><b>${esc(p.title)}</b><div class="muted">#${esc(p.number)}</div></div>
+        <button class="btn sm">Wählen</button>
+      </li>`).join('')}
+    </ul>`;
+    FX_openModal({title:'Programme', html, cancelText:'Schließen'});
+    setTimeout(()=>{
+      document.querySelectorAll('#prList li .btn').forEach(btn=>{
+        btn.onclick = (e)=>{
+          const id = e.currentTarget.closest('li').dataset.id;
+          currentProgId = id;
+          if(window.CT && CT.closeModal) CT.closeModal();
+          refreshHeader(); renderSlots();
+        };
+      });
+    },0);
   }
 
-  function applyToLive(){
-    const p = progs.find(x=>x.id===currentProgId); if(!p) return;
-    live = { ro: p.ro||Array(12).fill(null), ru: p.ru||Array(12).fill(null) };
-    saveLive(); FX_toast('In Live angewendet'); renderSlots();
-  }
-
-  // ====== СЛОТЫ ======
+  // ===== Слоты =====
   function renderSlots(){
     const root = document.getElementById('slots'); root.innerHTML='';
     const data = live[side];
-    const tools = readTools();
+    const tools = S_read(KEYS.TOOLS, []);
     for(let i=0;i<12;i++){
-      const cell = document.createElement('div'); cell.className='slot';
-      const v = data[i];
-      const tnum = (v && v.tnum) ? v.tnum : defaultTnum(i);
-      const tnumBtn = `<button class="badge tnum-btn" data-tnum="${i}">${esc(tnum)}</button>`;
-
+      const cell=document.createElement('div'); cell.className='slot';
+      const v=data[i];
+      const tnum=(v&&v.tnum)?v.tnum:defaultT(i);
+      const tbtn=`<button class="badge tnum-btn" data-tnum="${i}">${esc(tnum)}</button>`;
       if(!v){
         cell.innerHTML = `
           <div class="slot-full slot-tnum">
-            ${tnumBtn}
+            ${tbtn}
             <div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>
             <div class="meta"><div class="name"><b>#${i+1} • Leer</b></div><div class="sub">—</div></div>
             <div class="tail"><button class="btn" data-add="${i}">Hinzufügen</button></div>
           </div>`;
-      }else{
-        const t = tools.find(x=>x.id===v.toolId);
-        const name = t ? t.name : '—';
-        const code = t ? t.code : '';
-        const thumb = t?.imgData
-          ? `<img class="thumb" src="${t.imgData}" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">`
-          : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
+      } else {
+        const t=tools.find(x=>x.id===v.toolId);
+        const name=t?t.name:'—'; const code=t?t.code:'';
+        const thumb=t?.imgData? `<img class="thumb" src="${t.imgData}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">`
+                               : `<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>`;
         cell.innerHTML = `
           <div class="slot-full slot-tnum">
-            ${tnumBtn}
+            ${tbtn}
             ${thumb}
             <div class="meta"><div class="name"><b>${esc(name)}</b></div><div class="sub">${esc(code)}</div></div>
             <div class="tail" style="display:flex;gap:.25rem">
@@ -262,96 +266,80 @@
       }
       root.appendChild(cell);
     }
-
-    // handlers
-    root.querySelectorAll('[data-add]').forEach(btn=>{
-      btn.onclick=()=>{
-        const idx=+btn.dataset.add;
-        // очень простой выбор: первый инструмент из списка
-        const tools = readTools();
-        if(!tools.length){ FX_toast('Keine Werkzeuge'); return; }
-        const items = tools.map(t=>({id:t.id,title:t.name,meta:t.code}));
-        // если есть CT.openDrawer — используем, иначе возьмём первый
-        if(window.CT && CT.openDrawer){
-          CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
-            const prev = live[side][idx] || {};
-            live[side][idx] = { toolId:id, tnum: prev.tnum || defaultTnum(idx) };
-            saveLive(); if(CT.closeDrawer) CT.closeDrawer(); renderSlots();
-          }});
-        }else{
-          const id = tools[0].id;
-          const prev = live[side][idx] || {};
-          live[side][idx] = { toolId:id, tnum: prev.tnum || defaultTnum(idx) };
-          saveLive(); renderSlots();
-        }
-      };
-    });
-    root.querySelectorAll('[data-info]').forEach(btn=>{
-      btn.onclick=()=>{
-        const i=+btn.dataset.info;
-        const cell = live[side][i];
-        const t = (window.CT && CT.getToolFromSlot) ? CT.getToolFromSlot(live, side, i) : readTools().find(x=>x.id===cell?.toolId);
-        if(!t) return FX_toast('Kein Werkzeug');
-        const big = t.imgData ? `<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`
-                              : `<div class="imgwrap"><div style="width:92vw;max-width:520px;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>`;
-        FX_openModal({title:`Position #${i+1}`, html: `${big}<b>${esc(t.name)}</b><div class="i-row">${esc(t.code)}</div><div class="row"><button class="btn warn" id="_rem">Entfernen</button></div>`, cancelText:'Schließen'});
-        setTimeout(()=>{
-          const r=document.getElementById('_rem');
-          if(r) r.onclick=()=>{ live[side][i]=null; saveLive(); if(window.CT && CT.closeModal) CT.closeModal(); renderSlots(); };
-        },0);
-      };
-    });
-    root.querySelectorAll('[data-change]').forEach(btn=>{
-      btn.onclick=()=>{
-        const idx=+btn.dataset.change;
-        const tools = readTools();
-        if(!tools.length){ FX_toast('Keine Werkzeuge'); return; }
-        if(window.CT && CT.openDrawer){
-          CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items: tools.map(t=>({id:t.id,title:t.name,meta:t.code})), onSelect:(id)=>{
-            const prev = live[side][idx] || {};
-            live[side][idx] = { toolId:id, tnum: prev.tnum || defaultTnum(idx) };
-            saveLive(); if(CT.closeDrawer) CT.closeDrawer(); renderSlots();
-          }});
-        }else{
-          // без drawer — просто циклическая замена на следующий инструмент
-          const curId = live[side][idx]?.toolId;
-          let next = 0;
-          const ci = tools.findIndex(t=>t.id===curId);
-          next = (ci>=0 && ci<tools.length-1) ? ci+1 : 0;
-          const prev = live[side][idx] || {};
-          live[side][idx] = { toolId:tools[next].id, tnum: prev.tnum || defaultTnum(idx) };
-          saveLive(); renderSlots();
-        }
-      };
-    });
-    root.querySelectorAll('[data-tnum]').forEach(btn=>{
-      btn.onclick=()=>{
-        const i=+btn.dataset.tnum;
-        const v = live[side][i] || {};
-        const cur = v.tnum || defaultTnum(i);
-        FX_openModal({title:`Nummer #${i+1}`, html:`<label class="fld">Nummer<input id="_tn" value="${esc(cur)}"></label>`, okText:'OK', onOk:()=>{
-          const val = (document.getElementById('_tn').value||'').trim() || cur;
-          const cell = live[side][i] || {}; cell.tnum = val; live[side][i] = cell; saveLive(); renderSlots();
-        }});
-      };
-    });
+    // события
+    root.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>quickAssign(+b.dataset.add));
+    root.querySelectorAll('[data-change]').forEach(b=>b.onclick=()=>quickAssign(+b.dataset.change,true));
+    root.querySelectorAll('[data-info]').forEach(b=>b.onclick=()=>slotInfo(+b.dataset.info));
+    root.querySelectorAll('[data-tnum]').forEach(b=>b.onclick=()=>editTnum(+b.dataset.tnum));
   }
 
-  // ====== Слушатели верхних кнопок ======
-  document.getElementById('btnNewProg').onclick = createNewProgram;
-  document.getElementById('btnEditProg').onclick = ()=>{
-    const cur = progs.find(p=>p.id===currentProgId);
-    if(!cur){ FX_toast('Kein Programm'); return; }
-    openProgramEditor(cur,false);
-  };
-  document.getElementById('btnApply').onclick = applyToLive;
+  function quickAssign(idx, cycle=false){
+    const tools=S_read(KEYS.TOOLS,[]);
+    if(!tools.length){ FX_toast('Keine Werkzeuge'); return; }
+    if(cycle){
+      const cur = live[side][idx]?.toolId;
+      const i = tools.findIndex(t=>t.id===cur);
+      const next = (i>=0 && i<tools.length-1) ? i+1 : 0;
+      const prev = live[side][idx] || {};
+      live[side][idx] = { toolId:tools[next].id, tnum:(prev.tnum||defaultT(idx)) };
+    }else{
+      const prev = live[side][idx] || {};
+      live[side][idx] = { toolId:tools[0].id, tnum:(prev.tnum||defaultT(idx)) };
+    }
+    S_write(KEYS.SETUP, live); renderSlots();
+  }
 
+  function slotInfo(i){
+    const cell = live[side][i];
+    const tools = S_read(KEYS.TOOLS, []);
+    const t = tools.find(x=>x.id===cell?.toolId);
+    if(!t){ FX_toast('Kein Werkzeug'); return; }
+    const big = t.imgData?`<div class="imgwrap"><img src="${t.imgData}" style="max-height:70vh"></div>`
+                         :`<div class="imgwrap"><div style="width:92vw;max-width:520px;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>`;
+    const html = `${big}<b>${esc(t.name)}</b><div class="i-row">${esc(t.code)}</div>
+      <div class="row"><button class="btn warn" id="_rem">Entfernen</button></div>`;
+    const m=FX_openModal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
+    setTimeout(()=>{ const r=document.getElementById('_rem'); if(r) r.onclick=()=>{ live[side][i]=null; S_write(KEYS.SETUP,live); if(window.CT&&CT.closeModal) CT.closeModal(); renderSlots(); }; },0);
+  }
+
+  function editTnum(i){
+    const v=live[side][i]||{}; const cur=v.tnum||defaultT(i);
+    const m=FX_openModal({title:`Nummer #${i+1}`, html:`<label class="fld">Nummer<input id="_tn" value="${esc(cur)}"></label>`, okText:'OK'});
+    setTimeout(()=>{ const ok=document.querySelector('._fx-modal #_fxOk')||document.querySelector('.modal .ok'); const input=document.getElementById('_tn'); if(input) input.focus();
+      const apply=()=>{ const val=(input.value||cur).trim()||cur; const cell=live[side][i]||{}; cell.tnum=val; live[side][i]=cell; S_write(KEYS.SETUP,live); renderSlots(); };
+      if(ok) ok.onclick=apply;
+    },0);
+  }
+
+  // ===== Слушатели верхнего блока =====
+  document.getElementById('newProg').onclick = ()=>{
+    const p={id:(window.CT?CT.uid():Math.random().toString(36).slice(2,9)), number: 1000+Math.floor(Math.random()*9000),
+      title:'Neues Programm', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawingName:'', drawingData:''};
+    openEditModal(p, true);
+  };
+  document.getElementById('chooseProg').onclick = openChooseProgram;
+  document.getElementById('applyLive').onclick = ()=>{
+    const p=progs.find(x=>x.id===currentProgId); if(!p) return;
+    live={ro:p.ro||Array(12).fill(null), ru:p.ru||Array(12).fill(null)}; S_write(KEYS.SETUP, live); FX_toast('In Live angewendet'); renderSlots();
+  };
+  document.getElementById('drawingThumb').onclick = ()=>{
+    const p=progs.find(x=>x.id===currentProgId);
+    if(!p){ FX_toast('Kein Programm'); return; }
+    openEditModal(p,false);
+  };
+  document.getElementById('progTitle').onclick = ()=>{
+    const p=progs.find(x=>x.id===currentProgId);
+    if(!p){ openChooseProgram(); return; }
+    openEditModal(p,false);
+  };
+
+  // Tabs
   document.querySelectorAll('.tab').forEach(b=>{
-    b.onclick = ()=>{ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; renderSlots(); };
+    b.onclick=()=>{ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; renderSlots(); };
   });
 
-  refreshProgDisplay();
-  renderSlots();
+  // init
+  refreshHeader(); renderSlots();
 })();
 </script>
 </body>
