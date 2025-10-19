@@ -6,12 +6,14 @@
   <title>CitiTool • Assistenten</title>
   <link rel="stylesheet" href="./ui/core.css">
   <style>
-    /* локально — только минимум сетки, всё остальное из /ui */
+    /* минимальный локальный стиль; остальное — из /ui */
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
     @media (max-width:480px){ .grid2{grid-template-columns:1fr} }
     .mutetip{font-size:13px;color:var(--muted)}
     .thumb-ph{width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700}
     .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; white-space:pre-wrap}
+    .subpanel.hidden{display:none}
+    .chip{border:1px solid #dbe5ff;background:#fff;border-radius:12px;padding:6px 10px}
   </style>
 </head>
 <body data-active="setup">
@@ -31,56 +33,71 @@
 </div>
 
 <main class="container">
-  <!-- Material-Assistent -->
-  <section class="section" id="matSec">
-    <h2>Material-Assistent (Drehen)</h2>
-    <div class="row">
-      <select id="mat">
-        <option>1.4112</option><option>1.4104</option><option>1.4122</option>
-        <option>F75</option><option>Ms58</option>
-      </select>
-      <select id="mode">
-        <option>Schruppen</option><option>Schlichten</option>
-      </select>
+  <section class="section">
+    <h2>Assistenten</h2>
+
+    <!-- Табы -->
+    <div class="tabs" id="tabs">
+      <button class="tab active" data-tab="mat">Material-Assistent (Drehen)</button>
+      <button class="tab" data-tab="pass">Passmassen (Schnellsuche)</button>
+      <button class="tab" data-tab="fasen">Fasen (Vorab)</button>
     </div>
 
-    <div class="grid2">
-      <label class="fld">Ø (mm)<input id="mmD" type="number" inputmode="decimal" placeholder="z.B. 20"></label>
-      <label class="fld">L (mm)<input id="mmL" type="number" inputmode="decimal" placeholder="optional"></label>
-      <label class="fld">Vc (m/min)<input id="vc" type="number" inputmode="decimal" value="180"></label>
-      <label class="fld">fn (mm/U)<input id="fn" type="number" inputmode="decimal" value="0.2"></label>
+    <!-- Панель: Material -->
+    <div class="subpanel" id="panel-mat">
+      <div class="row">
+        <select id="mat">
+          <option>1.4112</option><option>1.4104</option><option>1.4122</option>
+          <option>F75</option><option>Ms58</option>
+        </select>
+        <select id="mode">
+          <option>Schruppen</option><option>Schlichten</option>
+        </select>
+      </div>
+
+      <div class="grid2">
+        <label class="fld">Ø (mm)<input id="mmD" type="number" inputmode="decimal" placeholder="z.B. 20"></label>
+        <label class="fld">L (mm)<input id="mmL" type="number" inputmode="decimal" placeholder="optional"></label>
+        <label class="fld">Vc (m/min)<input id="vc" type="number" inputmode="decimal" value="180"></label>
+        <label class="fld">fn (mm/U)<input id="fn" type="number" inputmode="decimal" value="0.2"></label>
+      </div>
+
+      <div id="calcOut" class="calc">n = —, Vf = —</div>
+      <div id="calcHint" class="mutetip">Gib Ø, Vc, fn ein — wir berechnen n und Vf.</div>
+
+      <div class="row mt">
+        <button class="btn brand" id="saveNote">In Notiz speichern</button>
+      </div>
     </div>
 
-    <div id="calcOut" class="calc">n = —, Vf = —</div>
-    <div id="calcHint" class="mutetip">Gib Ø, Vc, fn ein — wir berechnen n und Vf.</div>
+    <!-- Панель: Passmassen -->
+    <div class="subpanel hidden" id="panel-pass">
+      <div class="grid2">
+        <label class="fld">Nennmaß (mm)<input id="passNom" type="number" inputmode="decimal" placeholder="z.B. 10"></label>
+        <label class="fld">Schnellsuche<input id="passQ" placeholder="z.B. d10 h7 oder H7/g6"></label>
+      </div>
 
-    <div class="row mt">
-      <button class="btn brand" id="saveNote">In Notiz speichern</button>
-    </div>
-  </section>
+      <div class="muted" style="margin:.4rem 0">Vorauswahl für Nennmaß:</div>
+      <div class="row" id="passChips"></div>
 
-  <!-- Passmassen -->
-  <section class="section" id="passSec">
-    <h2>Passmassen (Schnellsuche)</h2>
-    <div class="row">
-      <input class="field" id="passQ" placeholder="z.B. d12 h6 oder H7/g6">
-      <button class="btn sm" id="passClear">Leeren</button>
+      <div id="passOut" class="mono muted" style="margin-top:.6rem">Gib Nennmaß oder Passmaß ein…</div>
+      <div class="row mt">
+        <button class="btn sm" id="passClear">Leeren</button>
+      </div>
     </div>
-    <div id="passOut" class="mono muted" style="margin-top:.5rem">Gib ein Passmaß ein…</div>
-  </section>
 
-  <!-- Fasen (черновой) -->
-  <section class="section" id="fasenSec">
-    <h2>Fasen (Vorab-Assistent)</h2>
-    <div class="grid2">
-      <label class="fld">Winkel (°)<input id="faAngle" type="number" inputmode="decimal" value="45"></label>
-      <label class="fld">Länge L (mm)<input id="faLen" type="number" inputmode="decimal" placeholder="z.B. 1.5"></label>
-      <label class="fld">X-Start<input id="faXs" type="number" inputmode="decimal" placeholder="optional"></label>
-      <label class="fld">Z-Start<input id="faZs" type="number" inputmode="decimal" placeholder="optional"></label>
-    </div>
-    <div class="mono" id="faOut" style="margin-top:.5rem">G-Code Vorschau erscheint hier…</div>
-    <div class="row mt">
-      <button class="btn" id="faCopy">In Zwischenablage</button>
+    <!-- Панель: Fasen -->
+    <div class="subpanel hidden" id="panel-fasen">
+      <div class="grid2">
+        <label class="fld">Winkel (°)<input id="faAngle" type="number" inputmode="decimal" value="45"></label>
+        <label class="fld">Länge L (mm)<input id="faLen" type="number" inputmode="decimal" placeholder="z.B. 1.5"></label>
+        <label class="fld">X-Start<input id="faXs" type="number" inputmode="decimal" placeholder="optional"></label>
+        <label class="fld">Z-Start<input id="faZs" type="number" inputmode="decimal" placeholder="optional"></label>
+      </div>
+      <div class="mono" id="faOut" style="margin-top:.5rem">G-Code Vorschau erscheint hier…</div>
+      <div class="row mt">
+        <button class="btn" id="faCopy">In Zwischenablage</button>
+      </div>
     </div>
   </section>
 </main>
@@ -92,6 +109,18 @@
 <script>
 CT.ready(()=>{
   CT.ensureSeeds();
+
+  /* ===== ТАБЫ ===== */
+  const tabs = document.getElementById('tabs');
+  function showTab(key){
+    document.querySelectorAll('.tab', tabs).forEach(b=>b.classList.toggle('active', b.dataset.tab===key));
+    document.querySelectorAll('.subpanel').forEach(p=>p.classList.add('hidden'));
+    document.getElementById('panel-'+key).classList.remove('hidden');
+  }
+  tabs.addEventListener('click', (e)=>{
+    const b=e.target.closest('.tab'); if(!b) return;
+    showTab(b.dataset.tab);
+  });
 
   /* ===== MATERIAL ===== */
   const $D=mmD, $Vc=vc, $Fn=fn, $Calc=calcOut, $Hint=calcHint;
@@ -120,39 +149,66 @@ ${$Calc.textContent}`;
     CT.toast('Als Notiz gespeichert','ok');
   };
 
-  /* ===== PASSMASSEN ===== */
-  const passDB = (function(){
-    // компактная демо-база: ключ -> текст
-    const m = new Map();
-    m.set('d12 h6', 'Welle d12 h6: 12.000 / −0.006 (Demo)');
-    m.set('h7/g6', 'Loch H7 / Welle g6: Übergang/Spiel (Demo)');
-    // расширенные примеры:
-    m.set('h7',   'ISO Toleranz H7 (Loch): obere Abweichung 0, untere <0');
-    m.set('g6',   'ISO Toleranz g6 (Welle): Lage unterhalb Nulllinie');
-    m.set('d10 h7','Welle d10 h7: 10.000 / −0.015 (Demo)');
-    m.set('h8/f7','Loch H8 / Welle F7: enger Übergang (Demo)');
-    return m;
-  })();
-  function norm(s){
-    return (s||'').toString().trim().replace(/\s+/g,' ').replace(/[,;]+/g,'/').toLowerCase();
-  }
-  function lookup(q){
-    q = norm(q);
-    if(!q){ passOut.textContent='Gib ein Passmaß ein…'; return; }
-    // пробуем прямые ключи и перестановки
-    const variants = [q, q.replace(' ','/'), q.replace('/',' ')];
-    for(const v of variants){ if(passDB.has(v)){ passOut.textContent = passDB.get(v); return; } }
-    passOut.textContent = '—';
-  }
-  passQ.addEventListener('input', ()=>lookup(passQ.value));
-  passClear.onclick=()=>{ passQ.value=''; lookup(''); };
+  /* ===== PASSMASSEN (Schnellsuche с пресетами по номиналу) ===== */
+  // База: по Nennmaß -> список пресетов; и по ключу пресета -> краткая строка
+  const PASS_PRESETS = {
+    '10': ['d10 h7', 'H7/g6', 'h7/f7'],
+    '12': ['d12 h6', 'H7/g6', 'h8/f7'],
+    '20': ['d20 h7', 'H7/g6', 'h7/f7']
+  };
+  const PASS_INFO = {
+    'd10 h7': 'Welle d10 h7: 10.000 / −0.015 (Demo)',
+    'H7/g6' : 'Loch H7 / Welle g6: Übergang/Spiel (Demo)',
+    'h7/f7' : 'Welle h7 / Loch F7: enger Übergang (Demo)',
+    'd12 h6': 'Welle d12 h6: 12.000 / −0.006 (Demo)',
+    'h8/f7' : 'Loch H8 / Welle F7: enger Übergang (Demo)',
+    'd20 h7': 'Welle d20 h7: 20.000 / −0.021 (Demo)'
+  };
+  function norm(s){ return (s||'').toString().trim().replace(/\s+/g,' ').toLowerCase(); }
 
-  /* ===== FASEN (черновой) =====
-     Простой генератор G-кода:
-     — Берём Winkel α и Länge L.
-     — Если заданы Xs/Zs, делаем линейный ход G01 на длину L под углом α.
-     — Это черновая версия (без расчёта реальной геометрии станка).
-  */
+  const passChips = document.getElementById('passChips');
+  const passOut   = document.getElementById('passOut');
+
+  function renderPresetsFor(nom){
+    passChips.innerHTML='';
+    const list = PASS_PRESETS[nom] || [];
+    if(!list.length){ passChips.innerHTML = '<span class="muted">Keine Presets</span>'; return; }
+    list.forEach(k=>{
+      const b=document.createElement('button');
+      b.className='chip';
+      b.textContent=k;
+      b.onclick=()=> showPass(k);
+      passChips.appendChild(b);
+    });
+  }
+  function showPass(key){
+    const info = PASS_INFO[key] || '—';
+    passOut.textContent = info;
+    CT.toast(key, 'ok', 1200);
+  }
+
+  passNom.addEventListener('input', ()=>{
+    const nom = (passNom.value||'').trim();
+    if(!nom){ passChips.innerHTML=''; passOut.textContent='Gib Nennmaß oder Passmaß ein…'; return; }
+    renderPresetsFor(nom);
+  });
+
+  passQ.addEventListener('input', ()=>{
+    const q = norm(passQ.value);
+    if(!q){ passOut.textContent='Gib Nennmaß oder Passmaß ein…'; return; }
+    // прямой ключ
+    if(PASS_INFO[q]) return showPass(q);
+    // гибко: допускаем варианты с пробелом/слэшем
+    const v1 = q.replace(' ','/');
+    const v2 = q.replace('/',' ');
+    if(PASS_INFO[v1]) return showPass(v1);
+    if(PASS_INFO[v2]) return showPass(v2);
+    passOut.textContent = '—';
+  });
+
+  passClear.onclick=()=>{ passNom.value=''; passQ.value=''; passChips.innerHTML=''; passOut.textContent='Gib Nennmaß oder Passmaß ein…'; };
+
+  /* ===== FASEN (черновой) ===== */
   function fasenPreview(){
     const ang = parseFloat(faAngle.value||0);
     const L   = parseFloat(faLen.value||0);
@@ -163,7 +219,6 @@ ${$Calc.textContent}`;
     let g = [];
     g.push('(Fase vorab – einfacher G-Code)');
     if(Xs && Zs){
-      // очень упрощённо: шаг по X и Z одинаковый по длине L / √2 при 45°, иначе распределим по косинус/синус
       const rad = ang * Math.PI/180;
       const dX  = (L * Math.cos(rad)).toFixed(3);
       const dZ  = (L * Math.sin(rad)).toFixed(3);
@@ -186,15 +241,17 @@ ${$Calc.textContent}`;
       .catch(()=>CT.toast('Clipboard nicht verfügbar','err'));
   };
 
-  /* ===== Глобальный поиск (ничего не фильтруем — просто демонстрация) ===== */
+  /* ===== Глобальный поиск (прячем панели без совпадений) ===== */
   CT.bindGlobalSearch((q)=>{
-    // Можно быстро прятать секции по ключевым словам
-    document.querySelectorAll('main .section').forEach(sec=>{
+    document.querySelectorAll('.subpanel').forEach(sec=>{
       if(!q){ sec.style.display=''; return; }
       const hit = sec.textContent.toLowerCase().includes(q);
       sec.style.display = hit ? '' : 'none';
     });
   });
+
+  // старт: показываем Material
+  showTab('mat');
 });
 </script>
 </body>
