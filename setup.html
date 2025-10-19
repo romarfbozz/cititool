@@ -1,352 +1,238 @@
-<!doctype html>
-<html lang="de">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>CitiTool • Programme + Setup</title>
-  <link rel="stylesheet" href="./ui/core.css">
-  <style>
-    /* Минимум локального оформления, всё остальное — из /ui */
-    .errbar{position:fixed;left:8px;right:8px;top:8px;z-index:9999;background:#fff3f3;border:1px solid #f3c2c2;color:#7a1e1e;border-radius:12px;padding:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);font-size:14px}
-    .select-like.thumb{display:grid;place-items:center;min-width:120px;min-height:44px}
-    .slot-tnum{display:grid;grid-template-columns:72px 56px 1fr auto;gap:.6rem;align-items:center}
-    .tnum-btn.badge{min-width:64px}
-  </style>
-</head>
-<body data-active="programme">
-<noscript>
-  <div class="section" style="margin:12px">Bitte JavaScript aktivieren.</div>
-</noscript>
+===== FILE: /ui/core.js =====
+/* CitiTool Core — единый API */
+window.CT = (function(){
+  const $  = (sel, root=document)=>root.querySelector(sel);
+  const $$ = (sel, root=document)=>Array.from(root.querySelectorAll(sel));
 
-<header class="appbar">
-  <div class="wrap">
-    <a class="logo" href="./index.html">
-      <img src="./ui/brand.png" class="badge" alt="CT">
-      <div class="tit">
-        <div class="title">CitiTool</div>
-        <div class="subtitle">Programme + Setup</div>
-      </div>
-    </a>
-    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
-      <svg><use href="./ui/icons.svg#search"/></svg>
-    </button>
-  </div>
-</header>
-<div class="searchbar collapsed">
-  <input class="field" type="search" placeholder="Im Setup suchen…" id="setupSearch">
-</div>
+  const CT_KEYS = {
+    TOOLS:'ct_tools_v2',
+    CATS:'ct_cats_v1',
+    SETUP:'ct_setup_live',
+    PROGS:'ct_programs_v1',
+    DASH:'ct_dash_v1',
+    DOCS:'ct_docs_v3'
+  };
 
-<main class="container">
-  <!-- MODULE 1: PROGRAMME (TOP) -->
-  <section class="section" id="progSection">
-    <h2>Programme</h2>
-    <div class="row between">
-      <div class="row">
-        <div class="select-like" id="progTitle">Programm wählen…</div>
-        <button class="btn sm" id="btnChoose">Wechseln</button>
-        <button class="btn brand sm" id="btnNew">Neues Programm</button>
-        <button class="btn sm" id="btnEdit">Bearbeiten</button>
-      </div>
-      <div class="row">
-        <div id="progNumber" class="muted"># —</div>
-        <div class="select-like thumb" id="thumbBtn" title="Zeichnung ansehen">no foto</div>
-      </div>
-    </div>
-    <div class="row mt">
-      <button class="btn ok" id="applyLive">In Live anwenden</button>
-    </div>
-  </section>
+  const state = { toastTimer:null };
 
-  <!-- MODULE 2: SETUP (BOTTOM) -->
-  <section class="section">
-    <h2>Setup (Live)</h2>
-    <div class="tabs">
-      <button class="tab active" data-side="ro">RO (G54)</button>
-      <button class="tab" data-side="ru">RU (G55)</button>
-    </div>
-    <div id="slots" class="slots"></div>
-  </section>
-</main>
-
-<nav class="dock" id="dock"></nav>
-
-<!-- Глобальный ловец ошибок, чтобы не было «белого экрана» -->
-<script>
-(function(){
-  function showErr(msg, src, line, col){
-    var el=document.createElement('div'); el.className='errbar';
-    el.textContent='Fehler: '+msg+(src?(' @ '+src+':'+line+':'+col):'');
-    document.body.appendChild(el);
+  function ready(fn){
+    if (document.readyState!=='loading') fn();
+    else document.addEventListener('DOMContentLoaded', fn);
   }
-  window.addEventListener('error', function(e){ showErr(e.message, e.filename, e.lineno, e.colno); });
-  window.addEventListener('unhandledrejection', function(e){ showErr((e.reason&&e.reason.message)||String(e.reason)||'Promise error'); });
-})();
-</script>
+  function uid(){ return Math.random().toString(36).slice(2,9); }
 
-<script src="./ui/core.js"></script>
-<script src="./ui/dock.js"></script>
-<script>
-CT.ready(function(){
-  try{
-    /* ===== ИНИЦИАЛИЗАЦИЯ ДАННЫХ ===== */
-    CT.ensureSeeds();
-    var SKEY = CT_KEYS;
-    var progs = CT.storage.read(SKEY.PROGS, []);
-    var live  = CT.storage.read(SKEY.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
-    var side  = 'ro';
-    var currentProgId = (progs[0] && progs[0].id) || null;
+  // 🔧 БЕЗОПАСНЫЙ escape: принимает любые типы (null/undefined/число/строка)
+  function escapeHTML(s){
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+    ));
+  }
 
-    /* ===== DOM ===== */
-    var elTitle = document.getElementById('progTitle');
-    var elNum   = document.getElementById('progNumber');
-    var elThumb = document.getElementById('thumbBtn');
-    var slots   = document.getElementById('slots');
+  // Storage
+  const storage = {
+    read:(k, def)=>{
+      try{
+        const v = JSON.parse(localStorage.getItem(k));
+        return (v===null||v===undefined) ? def : v;
+      }catch(e){ return def; }
+    },
+    write:(k,v)=>localStorage.setItem(k, JSON.stringify(v)),
+    clear:(k)=>localStorage.removeItem(k)
+  };
 
-    /* ===== HELPERS ===== */
-    function pad2(n){ n=String(n); return n.length<2?('0'+n):n; }
-    function defT(i){ return 'T'+pad2(i+1)+pad2(i+1); }
-    function curProg(){ for(var i=0;i<progs.length;i++){ if(progs[i].id===currentProgId) return progs[i]; } return null; }
-
-    /* ===== PROGRAMME: HEADER RENDER ===== */
-    function renderProgramme(){
-      progs = CT.storage.read(SKEY.PROGS, []);
-      var p = curProg();
-      if(!p){
-        elTitle.textContent='Programm wählen…';
-        elNum.textContent  ='# —';
-        elThumb.textContent='no foto'; elThumb.innerHTML='no foto';
-        return;
-      }
-      elTitle.textContent = p.title || 'Programm';
-      elNum.textContent   = '#'+(p.number||'—');
-      elThumb.innerHTML   = p.drawingData ? ('<img src="'+p.drawingData+'" alt="" style="height:44px;border-radius:8px">') : 'no foto';
+  // Seeds
+  function ensureSeeds(){
+    if(!storage.read(CT_KEYS.CATS)){
+      storage.write(CT_KEYS.CATS, [
+        {id:uid(), title:'Halter'},
+        {id:uid(), title:'Platten'},
+        {id:uid(), title:'Bohrer'}
+      ]);
     }
-
-    /* ===== PROGRAMME: DRAWER ===== */
-    function openChoose(){
-      var items = progs.map(function(p){
-        return {id:p.id, title:'#'+p.number+' — '+p.title, meta:new Date(p.date).toLocaleDateString()};
+    if(!storage.read(CT_KEYS.TOOLS)){
+      const cats = storage.read(CT_KEYS.CATS, []);
+      const idH = cats.find(c=>c.title==='Halter')?.id || cats[0]?.id;
+      const idP = cats.find(c=>c.title==='Platten')?.id || cats[1]?.id;
+      const idB = cats.find(c=>c.title==='Bohrer')?.id || cats[2]?.id;
+      storage.write(CT_KEYS.TOOLS, [
+        {id:uid(), name:'VDI30 Halter Rechts', code:'VDI30-R', catId:idH, iso:'', maker:'', note:'', imgData:'', lifePct:100},
+        {id:uid(), name:'ER32 Ø8', code:'ER32-8', catId:idH, iso:'', maker:'', note:'', imgData:'', lifePct:70},
+        {id:uid(), name:'CNMG120408-PM 4325', code:'CNMG120408-PM', catId:idP, iso:'CNMG120408', maker:'Sandvik', note:'Stahl', imgData:'', lifePct:40},
+        {id:uid(), name:'Bohrer Ø10', code:'DR-10', catId:idB, iso:'', maker:'', note:'', imgData:'', lifePct:90},
+      ]);
+    }
+    if(!storage.read(CT_KEYS.PROGS)){
+      const tools = storage.read(CT_KEYS.TOOLS, []);
+      const t1=tools[0]?.id, t2=tools[2]?.id;
+      storage.write(CT_KEYS.PROGS, [
+        {id:uid(), number:1001, title:'Grundsetup', date:Date.now(), ro:Array(12).fill(null).map((_,i)=> i===0?{toolId:t1}:null), ru:Array(12).fill(null)},
+        {id:uid(), number:1002, title:'Serie A',    date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null).map((_,i)=> i===1?{toolId:t2}:null)},
+      ]);
+    }
+    if(!storage.read(CT_KEYS.SETUP)){
+      storage.write(CT_KEYS.SETUP, {ro:Array(12).fill(null), ru:Array(12).fill(null)});
+    }
+    if(!storage.read(CT_KEYS.DASH)){
+      storage.write(CT_KEYS.DASH, {
+        produktion: [{id:uid(), title:'Los 123', targetQty:100, madeQty:20, date:Date.now()}],
+        checklist:  [{id:uid(), title:'Nullpunkt prüfen', done:false}]
       });
-      if(!items.length){ CT.toast('Keine Programme','err'); return; }
-      CT.openDrawer({title:'Programme', items:items, onSelect:function(id){
-        currentProgId=id; CT.closeDrawer(); renderProgramme(); renderSlots();
-      }});
     }
+    if(!storage.read(CT_KEYS.DOCS)){
+      storage.write(CT_KEYS.DOCS, [
+        {id:uid(), title:'Werkstoff Notiz', category:'Stahl', tags:['ISO-P'], body:'Hinweise zur Kühlung…', favorite:true},
+        {id:uid(), title:'Aufspann-Check', category:'Setup', tags:['check'], body:'Schrauben, Anschläge, Reitstock…', favorite:false}
+      ]);
+    }
+  }
 
-    /* ===== PROGRAMME: EDITOR (CT.openModal) ===== */
-    function openEditor(p, isNew){
-      var imgBlock = p.drawingData
-        ? '<div class="imgwrap"><img src="'+p.drawingData+'" alt=""></div>'
-        : '<div class="imgwrap"><div style="width:100%;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>';
+  // Splash
+  function splash({logo, ms=700}){
+    const el=document.createElement('div');
+    el.className='modal show';
+    el.innerHTML=`
+      <div class="overlay" style="backdrop-filter:blur(10px)"></div>
+      <div class="card" style="text-align:center;padding:24px">
+        <img src="${logo}" alt="" style="width:64px;height:64px;border-radius:16px;margin:10px auto 8px">
+        <div style="font-weight:800;font-size:18px">CitiTool</div>
+        <div class="muted">lädt…</div>
+      </div>`;
+    document.body.appendChild(el);
+    document.body.classList.add('noscroll');
+    setTimeout(()=>{ el.remove(); document.body.classList.remove('noscroll'); }, ms);
+  }
 
-      var html = ''
-        + imgBlock
-        + '<div class="row">'
-        + '  <label class="btn sm" for="pr_file" style="cursor:pointer">Zeichnung anhängen</label>'
-        + (p.drawingData?'<button class="btn sm warn" id="btnRemove">Entfernen</button>':'')
-        + '</div>'
-        + '<input id="pr_file" type="file" accept="image/*,application/pdf" style="display:none">'
-        + '<div class="muted" id="fileInfo">'+(p.drawingName?CT.escape('Angehängt: '+p.drawingName):'Keine Zeichnung')+'</div>'
-        + '<label class="fld" style="margin-top:.5rem">Titel<input id="pr_t" value="'+CT.escape(p.title||'')+'" placeholder="Programmname"></label>'
-        + '<label class="fld">Nummer<input id="pr_n" inputmode="numeric" pattern="[0-9]*" value="'+CT.escape(p.number||'')+'" placeholder="z.B. 1234"></label>'
-        + (!isNew?'<div class="row mt"><button class="btn warn" id="doDelete">Löschen</button></div>':'')
-      ;
+  // Modal
+  function openModal({title='', html='', okText, cancelText='Schließen', onOk}){
+    closeModal();
+    const el=document.createElement('div'); el.className='modal show';
+    el.innerHTML=`
+      <div class="overlay" data-close="1"></div>
+      <div class="card">
+        <div class="hdr" style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+          <b>${escapeHTML(title)}</b>
+          <button class="icon-btn" data-close="1"><svg><use href="./ui/icons.svg#close"/></svg></button>
+        </div>
+        <div class="body">${html}</div>
+        <div class="footer">
+          ${cancelText?`<button class="btn cancel">${escapeHTML(cancelText)}</button>`:''}
+          ${okText?`<button class="btn brand ok">${escapeHTML(okText)}</button>`:''}
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+    document.body.classList.add('noscroll');
+    el.addEventListener('click', (e)=>{ if(e.target.dataset.close){ closeModal(); } });
+    const okBtn = $('.ok', el), cancelBtn=$('.cancel', el);
+    if(okBtn) okBtn.onclick=()=>{ if(onOk) onOk(); };
+    if(cancelBtn) cancelBtn.onclick=()=>closeModal();
+    document.addEventListener('keydown', modalEsc); // esc
+  }
+  function closeModal(){
+    const el=$('.modal.show');
+    if(el){ el.remove(); document.body.classList.remove('noscroll'); document.removeEventListener('keydown', modalEsc); }
+  }
+  function modalEsc(e){ if(e.key==='Escape') closeModal(); }
 
-      CT.openModal({
-        title: isNew?'Neues Programm':'Programm',
-        html: html,
-        okText: 'Speichern',
-        cancelText: 'Schließen',
-        onOk: function(){
-          // Собираем значения при нажатии OK
-          var up = {}; for(var k in p){ up[k]=p[k]; }
-          var tEl=document.getElementById('pr_t'), nEl=document.getElementById('pr_n');
-          up.title  = ((tEl&&tEl.value)||'').trim() || 'Programm';
-          up.number = ((nEl&&nEl.value)||'').trim() || up.number || 1000;
-
-          var fEl=document.getElementById('pr_file');
-          var rmEl=document.getElementById('btnRemove');
-          var removed = rmEl && rmEl.getAttribute('data-rm')==='1';
-
-          function commit(){
-            if(isNew){ progs.push(up); }
-            else{ for(var i=0;i<progs.length;i++){ if(progs[i].id===up.id){ progs[i]=up; break; } } }
-            CT.storage.write(SKEY.PROGS, progs);
-            currentProgId = up.id;
-            renderProgramme();
-            CT.toast('Gespeichert','ok');
-          }
-
-          if(fEl && fEl.files && fEl.files[0]){
-            var file=fEl.files[0];
-            var r=new FileReader();
-            r.onload=function(){ up.drawingName=file.name; up.drawingData=r.result; commit(); };
-            r.onerror=function(){ CT.toast('Datei Fehler','err'); commit(); };
-            r.readAsDataURL(file);
-          }else if(removed){
-            up.drawingName=''; up.drawingData=''; commit();
-          }else{
-            commit();
-          }
-        }
+  // Drawer
+  function openDrawer({title='', items, onSelect, html}){
+    closeDrawer();
+    const el=document.createElement('div'); el.className='drawer show';
+    const listHTML = html || `<ul class="list">${(items||[]).map(it=>`
+      <li data-id="${it.id}">
+        <div><b>${escapeHTML(it.title)}</b><div class="muted">${escapeHTML(it.meta||'')}</div></div>
+        <button class="btn sm">Wählen</button>
+      </li>`).join('')}</ul>`;
+    el.innerHTML = `
+      <div class="overlay" data-close="1"></div>
+      <div class="panel">
+        <div class="hdr"><b>${escapeHTML(title)}</b><button class="icon-btn" data-close="1"><svg><use href="./ui/icons.svg#close"/></svg></button></div>
+        ${listHTML}
+      </div>`;
+    document.body.appendChild(el); document.body.classList.add('noscroll');
+    el.addEventListener('click', (e)=>{ if(e.target.dataset.close){ closeDrawer(); } });
+    if(items && onSelect){
+      $$('.list li', el).forEach(li=>{
+        $('button', li).onclick=()=>{ onSelect(li.dataset.id); };
       });
-
-      // Привязки внутри модалки
-      setTimeout(function(){
-        var f = document.getElementById('pr_file');
-        if(f){ f.onchange=function(){ var ff=f.files&&f.files[0]; if(ff){ var fi=document.getElementById('fileInfo'); if(fi) fi.textContent='Ausgewählt: '+ff.name; } }; }
-        var rm = document.getElementById('btnRemove');
-        if(rm){ rm.onclick=function(){ rm.setAttribute('data-rm','1'); var fi=document.getElementById('fileInfo'); if(fi) fi.textContent='Keine Zeichnung'; }; }
-        var del = document.getElementById('doDelete');
-        if(del){ del.onclick=function(){
-          progs = progs.filter(function(x){ return x.id!==p.id; });
-          CT.storage.write(SKEY.PROGS, progs);
-          currentProgId = (progs[0]&&progs[0].id) || null;
-          CT.closeModal(); renderProgramme(); renderSlots(); CT.toast('Gelöscht','ok');
-        }; }
-        var t=document.getElementById('pr_t'); if(t) t.focus();
-      },0);
     }
+    document.addEventListener('keydown', drawerEsc);
+  }
+  function closeDrawer(){
+    const el=$('.drawer.show');
+    if(el){ el.remove(); document.body.classList.remove('noscroll'); document.removeEventListener('keydown', drawerEsc); }
+  }
+  function drawerEsc(e){ if(e.key==='Escape') closeDrawer(); }
 
-    /* ===== SETUP (Live) ===== */
-    function renderSlots(){
-      live = CT.storage.read(SKEY.SETUP, live);
-      var tools = CT.storage.read(SKEY.TOOLS, []);
-      var sInput=document.getElementById('setupSearch'); var q = sInput ? (sInput.value||'').toLowerCase() : '';
-      slots.innerHTML='';
-      for(var i=0;i<12;i++){
-        var v = live[side][i];
-        var tnum = (v && v.tnum) ? v.tnum : defT(i);
-        var wrap=document.createElement('div'); wrap.className='slot';
-        if(!v){
-          wrap.innerHTML = ''
-            + '<div class="slot-full slot-tnum">'
-            + '  <span class="badge tnum-btn" data-tnum="'+i+'">'+CT.escape(tnum)+'</span>'
-            + '  <div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>'
-            + '  <div class="meta"><div class="name"><b>#'+(i+1)+' • Leer</b></div><div class="sub">—</div></div>'
-            + '  <div class="tail"><button class="btn sm" data-add="'+i+'">Hinzufügen</button></div>'
-            + '</div>';
-        }else{
-          var t=null; for(var j=0;j<tools.length;j++){ if(tools[j].id===v.toolId){ t=tools[j]; break; } }
-          var name = t ? t.name : '—';
-          var code = t ? t.code : '';
-          if(q && name && code){
-            var hit = (name.toLowerCase().indexOf(q)>-1) || (code.toLowerCase().indexOf(q)>-1);
-            if(!hit){ continue; }
-          }
-          var thumb = (t && t.imgData)
-            ? '<img class="thumb" src="'+t.imgData+'" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa">'
-            : '<div class="thumb" style="width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700">no foto</div>';
-          wrap.innerHTML = ''
-            + '<div class="slot-full slot-tnum">'
-            + '  <span class="badge tnum-btn" data-tnum="'+i+'">'+CT.escape(tnum)+'</span>'
-            +    thumb
-            + '  <div class="meta"><div class="name"><b>'+CT.escape(name||'—')+'</b></div><div class="sub">'+CT.escape(code||'')+'</div></div>'
-            + '  <div class="tail" style="display:flex;gap:.25rem">'
-            + '    <button class="icon-btn info" data-info="'+i+'"><svg><use href="./ui/icons.svg#info"/></svg></button>'
-            + '    <button class="icon-btn" data-change="'+i+'"><svg><use href="./ui/icons.svg#edit"/></svg></button>'
-            + '  </div>'
-            + '</div>';
-        }
-        slots.appendChild(wrap);
-      }
-      // bind actions
-      var addBtns = slots.querySelectorAll('[data-add]');
-      for(var a=0;a<addBtns.length;a++){ addBtns[a].onclick = (function(b){ return function(){ selectToolFor(parseInt(b.getAttribute('data-add'),10)); }; })(addBtns[a]); }
-      var chBtns = slots.querySelectorAll('[data-change]');
-      for(var c=0;c<chBtns.length;c++){ chBtns[c].onclick = (function(b){ return function(){ selectToolFor(parseInt(b.getAttribute('data-change'),10), true); }; })(chBtns[c]); }
-      var iBtns = slots.querySelectorAll('[data-info]');
-      for(var d=0; d<iBtns.length; d++){ iBtns[d].onclick = (function(b){ return function(){ slotInfo(parseInt(b.getAttribute('data-info'),10)); }; })(iBtns[d]); }
-      var tnBtns = slots.querySelectorAll('[data-tnum]');
-      for(var e=0; e<tnBtns.length; e++){ tnBtns[e].onclick = (function(b){ return function(){ editTnum(parseInt(b.getAttribute('data-tnum'),10)); }; })(tnBtns[e]); }
-    }
+  // Toast
+  function toast(text, type='info', ms=2000){
+    const el=document.createElement('div'); el.className='toast show';
+    el.innerHTML = `<div class="inner" data-type="${type}">${escapeHTML(text)}</div>`;
+    document.body.appendChild(el);
+    clearTimeout(state.toastTimer); state.toastTimer=setTimeout(()=>{ el.remove(); }, ms);
+  }
 
-    function selectToolFor(idx, cycle){
-      var tools = CT.storage.read(SKEY.TOOLS, []);
-      if(!tools.length){ CT.toast('Keine Werkzeuge','err'); return; }
-      if(cycle){
-        var cur = live[side][idx] && live[side][idx].toolId;
-        var ind=-1; for(var k=0;k<tools.length;k++){ if(tools[k].id===cur){ ind=k; break; } }
-        var next = (ind>=0 && ind<tools.length-1) ? ind+1 : 0;
-        var prev = live[side][idx] || {};
-        live[side][idx] = { toolId:tools[next].id, tnum:(prev.tnum||defT(idx)) };
-        CT.storage.write(SKEY.SETUP, live); renderSlots(); return;
-      }
-      var items = tools.map(function(t){ return {id:t.id, title:t.name, meta:t.code}; });
-      CT.openDrawer({title:'Werkzeug wählen (#'+(idx+1)+')', items:items, onSelect:function(id){
-        var prev = live[side][idx] || {};
-        live[side][idx] = { toolId:id, tnum:(prev.tnum||defT(idx)) };
-        CT.storage.write(SKEY.SETUP, live); CT.closeDrawer(); CT.toast('Aktualisiert','ok'); renderSlots();
-      }});
-    }
-
-    function slotInfo(i){
-      var v = live[side][i];
-      if(!v){ CT.toast('Kein Werkzeug','err'); return; }
-      var tools = CT.storage.read(SKEY.TOOLS, []);
-      var t=null; for(var j=0;j<tools.length;j++){ if(tools[j].id===v.toolId){ t=tools[j]; break; } }
-      if(!t){ CT.toast('Kein Werkzeug','err'); return; }
-      var big = t.imgData
-        ? '<div class="imgwrap"><img src="'+t.imgData+'" alt=""></div>'
-        : '<div class="imgwrap"><div style="width:100%;aspect-ratio:4/3;display:grid;place-items:center;background:#eef3ff;border-radius:14px;color:#9cb1d9;font-weight:700">no foto</div></div>';
-      var html = big
-        + '<b>'+CT.escape(t.name||'—')+'</b><div class="i-row">'+CT.escape(t.code||'')+'</div>'
-        + '<div class="row"><button class="btn warn" id="btnRem">Entfernen</button></div>';
-      CT.openModal({title:'Position #'+(i+1), html:html, cancelText:'Schließen'});
-      setTimeout(function(){
-        var r=document.getElementById('btnRem'); if(r){ r.onclick=function(){ live[side][i]=null; CT.storage.write(SKEY.SETUP, live); CT.closeModal(); renderSlots(); }; }
-      },0);
-    }
-
-    function editTnum(i){
-      var v = live[side][i] || {};
-      var cur = v.tnum || defT(i);
-      var html = '<label class="fld">Nummer<input id="_tn" value="'+CT.escape(cur)+'"></label>';
-      CT.openModal({title:'Nummer #'+(i+1), html:html, okText:'Speichern', cancelText:'Schließen', onOk:function(){
-        var inp=document.getElementById('_tn'); var val=(inp&&inp.value?inp.value:cur).trim()||cur;
-        var cell = live[side][i] || {}; cell.tnum = val; live[side][i]=cell;
-        CT.storage.write(SKEY.SETUP, live); CT.toast('Gespeichert','ok'); renderSlots();
-      }});
-    }
-
-    /* ===== BINDINGS ===== */
-    document.getElementById('btnChoose').onclick = openChoose;
-    document.getElementById('btnNew').onclick = function(){
-      var p = { id:CT.uid(), number:1000+Math.floor(Math.random()*9000), title:'Neues Programm', date:Date.now(),
-                ro:Array(12).fill(null), ru:Array(12).fill(null), drawingName:'', drawingData:'' };
-      openEditor(p, true);
-    };
-    document.getElementById('btnEdit').onclick = function(){ var p=curProg(); if(p) openEditor(p,false); else CT.toast('Kein Programm','err'); };
-    elTitle.onclick = function(){ var p=curProg(); if(!p) openChoose(); else openEditor(p,false); };
-    elThumb.onclick = function(){ var p=curProg(); if(p) openEditor(p,false); };
-
-    document.querySelectorAll('.tab').forEach(function(b){
-      b.onclick=function(){
-        document.querySelectorAll('.tab').forEach(function(x){ x.classList.remove('active'); });
-        b.classList.add('active'); side=b.getAttribute('data-side'); renderSlots();
+  // AppBar search toggle + binding
+  ready(()=>{
+    $$('[data-ct="search-toggle"]').forEach(btn=>{
+      btn.onclick=()=>{
+        const s=$('.searchbar'); if(!s) return;
+        s.classList.toggle('collapsed');
+        if(!s.classList.contains('collapsed')) $('.field',s)?.focus();
       };
     });
-
-    document.getElementById('applyLive').onclick = function(){
-      var p = curProg(); if(!p) return;
-      live = { ro:(p.ro||Array(12).fill(null)), ru:(p.ru||Array(12).fill(null)) };
-      CT.storage.write(SKEY.SETUP, live); CT.toast('In Live angewendet','ok'); renderSlots();
-    };
-
-    var sField=document.getElementById('setupSearch');
-    if(sField){ sField.addEventListener('input', renderSlots); }
-    CT.bindGlobalSearch(function(){ renderSlots(); });
-
-    // START
-    renderProgramme();
-    renderSlots();
-
-  }catch(e){
-    console.error(e);
-    var bar=document.createElement('div'); bar.className='errbar'; bar.textContent='Init error: '+e.message;
-    document.body.appendChild(bar);
+  });
+  function bindGlobalSearch(onInput){
+    const f=$('#globalSearch')||$('#toolSearch')||$('#setupSearch')||$('#docSearch')||$('#asSearch');
+    if(f) f.addEventListener('input', ()=> onInput((f.value||'').toLowerCase()));
   }
-});
-</script>
-</body>
-</html>
+
+  // Utils
+  function readFileAsDataURL(file){
+    return new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload = ()=>res(r.result);
+      r.onerror= rej;
+      r.readAsDataURL(file);
+    });
+  }
+  function exportJSON(filename, data){
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+    a.download=filename; a.click();
+  }
+  function importJSON(){
+    return new Promise((resolve)=>{
+      const i=document.createElement('input');
+      i.type='file'; i.accept='application/json';
+      i.onchange=()=>{
+        const f=i.files[0]; const r=new FileReader();
+        r.onload=()=>resolve(JSON.parse(r.result||'[]'));
+        r.readAsText(f);
+      };
+      i.click();
+    });
+  }
+  function getToolFromSlot(live, side, idx){
+    const v=live[side][idx]; if(!v) return null;
+    const tools=storage.read(CT_KEYS.TOOLS,[]);
+    return tools.find(t=>t.id===v.toolId)||null;
+  }
+
+  // --- экспорт API ---
+  const api = {
+    ready, uid, escape:escapeHTML,
+    storage, splash, openModal, closeModal, openDrawer, closeDrawer, toast,
+    readFileAsDataURL, exportJSON, importJSON,
+    bindGlobalSearch, ensureSeeds, getToolFromSlot,
+  };
+  // публикуем ключи, чтобы можно было брать их как CT.CT_KEYS
+  api.CT_KEYS = CT_KEYS;
+  return api;
+})();
+
+// Глобальный алиас, если где-то ожидается window.CT_KEYS
+window.CT_KEYS = CT.CT_KEYS || {
+  TOOLS:'ct_tools_v2', CATS:'ct_cats_v1', SETUP:'ct_setup_live',
+  PROGS:'ct_programs_v1', DASH:'ct_dash_v1', DOCS:'ct_docs_v3'
+};
