@@ -1,4 +1,4 @@
-===== FILE: /ui/core.js =====
+
 /* CitiTool Core — единый API */
 window.CT = (function(){
   const $  = (sel, root=document)=>root.querySelector(sel);
