@@ -6,14 +6,18 @@
   <title>CitiTool • Assistenten</title>
   <link rel="stylesheet" href="./ui/core.css">
   <style>
-    /* минимальный локальный стиль; остальное — из /ui */
+    /* только минимум локальных стилей, остальное — из /ui */
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
     @media (max-width:480px){ .grid2{grid-template-columns:1fr} }
     .mutetip{font-size:13px;color:var(--muted)}
-    .thumb-ph{width:56px;height:56px;border-radius:10px;background:#eef3ff;display:grid;place-items:center;color:#9cb1d9;font-weight:700}
     .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:13px; white-space:pre-wrap}
     .subpanel.hidden{display:none}
     .chip{border:1px solid #dbe5ff;background:#fff;border-radius:12px;padding:6px 10px}
+    /* чуть выразительнее табы и кнопки (в рамках /ui) */
+    .tabs{gap:.35rem}
+    .tab{padding:10px 14px;border-radius:12px}
+    .tab.active{background:#eef3ff;color:var(--brand);border-color:#cfe0ff}
+    .btn.ghost.sm{height:36px;padding:0 10px}
   </style>
 </head>
 <body data-active="setup">
@@ -40,10 +44,10 @@
     <div class="tabs" id="tabs">
       <button class="tab active" data-tab="mat">Material-Assistent (Drehen)</button>
       <button class="tab" data-tab="pass">Passmassen (Schnellsuche)</button>
-      <button class="tab" data-tab="fasen">Fasen (Vorab)</button>
+      <button class="tab" data-tab="fasen">Fasen (3 aus 4 + Winkel)</button>
     </div>
 
-    <!-- Панель: Material -->
+    <!-- PANEL: MATERIAL -->
     <div class="subpanel" id="panel-mat">
       <div class="row">
         <select id="mat">
@@ -70,7 +74,7 @@
       </div>
     </div>
 
-    <!-- Панель: Passmassen -->
+    <!-- PANEL: PASSMASSEN -->
     <div class="subpanel hidden" id="panel-pass">
       <div class="grid2">
         <label class="fld">Nennmaß (mm)<input id="passNom" type="number" inputmode="decimal" placeholder="z.B. 10"></label>
@@ -82,19 +86,25 @@
 
       <div id="passOut" class="mono muted" style="margin-top:.6rem">Gib Nennmaß oder Passmaß ein…</div>
       <div class="row mt">
-        <button class="btn sm" id="passClear">Leeren</button>
+        <button class="btn ghost sm" id="passClear">Leeren</button>
       </div>
     </div>
 
-    <!-- Панель: Fasen -->
+    <!-- PANEL: FASEN (3 из 4 координат + угол) -->
     <div class="subpanel hidden" id="panel-fasen">
       <div class="grid2">
-        <label class="fld">Winkel (°)<input id="faAngle" type="number" inputmode="decimal" value="45"></label>
-        <label class="fld">Länge L (mm)<input id="faLen" type="number" inputmode="decimal" placeholder="z.B. 1.5"></label>
-        <label class="fld">X-Start<input id="faXs" type="number" inputmode="decimal" placeholder="optional"></label>
-        <label class="fld">Z-Start<input id="faZs" type="number" inputmode="decimal" placeholder="optional"></label>
+        <label class="fld">Winkel α (°)<input id="faAngle" type="number" inputmode="decimal" value="45"></label>
+        <label class="fld">X Start<input id="faXs" type="number" inputmode="decimal" placeholder="z.B. 10.0"></label>
+        <label class="fld">Z Start<input id="faZs" type="number" inputmode="decimal" placeholder="z.B. 0.0"></label>
+        <label class="fld">X Ende<input id="faXe" type="number" inputmode="decimal" placeholder="z.B. 11.0"></label>
+        <label class="fld">Z Ende<input id="faZe" type="number" inputmode="decimal" placeholder="z.B. 1.0"></label>
       </div>
-      <div class="mono" id="faOut" style="margin-top:.5rem">G-Code Vorschau erscheint hier…</div>
+
+      <div class="mutetip" id="faHint" style="margin-top:.4rem">
+        Fülle beliebige <b>3 von 4</b> Koordinaten (Xs, Zs, Xe, Ze) + Winkel — wir lösen die fehlende.
+      </div>
+
+      <div class="mono" id="faOut" style="margin-top:.6rem">G-Code Vorschau erscheint hier…</div>
       <div class="row mt">
         <button class="btn" id="faCopy">In Zwischenablage</button>
       </div>
@@ -113,7 +123,7 @@ CT.ready(()=>{
   /* ===== ТАБЫ ===== */
   const tabs = document.getElementById('tabs');
   function showTab(key){
-    document.querySelectorAll('.tab', tabs).forEach(b=>b.classList.toggle('active', b.dataset.tab===key));
+    tabs.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===key));
     document.querySelectorAll('.subpanel').forEach(p=>p.classList.add('hidden'));
     document.getElementById('panel-'+key).classList.remove('hidden');
   }
@@ -149,30 +159,31 @@ ${$Calc.textContent}`;
     CT.toast('Als Notiz gespeichert','ok');
   };
 
-  /* ===== PASSMASSEN (Schnellsuche с пресетами по номиналу) ===== */
-  // База: по Nennmaß -> список пресетов; и по ключу пресета -> краткая строка
+  /* ===== PASSMASSEN (пресеты по номиналу) ===== */
   const PASS_PRESETS = {
-    '10': ['d10 h7', 'H7/g6', 'h7/f7'],
-    '12': ['d12 h6', 'H7/g6', 'h8/f7'],
-    '20': ['d20 h7', 'H7/g6', 'h7/f7']
+    '8':  ['d8 h7','H7/g6'],
+    '10': ['d10 h7','H7/g6','h7/f7'],
+    '12': ['d12 h6','H7/g6','h8/f7'],
+    '16': ['d16 h7','H7/g6'],
+    '20': ['d20 h7','H7/g6','h7/f7']
   };
   const PASS_INFO = {
-    'd10 h7': 'Welle d10 h7: 10.000 / −0.015 (Demo)',
-    'H7/g6' : 'Loch H7 / Welle g6: Übergang/Spiel (Demo)',
-    'h7/f7' : 'Welle h7 / Loch F7: enger Übergang (Demo)',
-    'd12 h6': 'Welle d12 h6: 12.000 / −0.006 (Demo)',
-    'h8/f7' : 'Loch H8 / Welle F7: enger Übergang (Demo)',
-    'd20 h7': 'Welle d20 h7: 20.000 / −0.021 (Demo)'
+    'd8 h7':'Welle d8 h7: 8.000 / −0.014 (Demo)',
+    'd10 h7':'Welle d10 h7: 10.000 / −0.015 (Demo)',
+    'd12 h6':'Welle d12 h6: 12.000 / −0.006 (Demo)',
+    'd16 h7':'Welle d16 h7: 16.000 / −0.018 (Demo)',
+    'd20 h7':'Welle d20 h7: 20.000 / −0.021 (Demo)',
+    'H7/g6':'Loch H7 / Welle g6: Übergang/Spiel (Demo)',
+    'h7/f7':'Welle h7 / Loch F7: enger Übergang (Demo)',
+    'h8/f7':'Loch H8 / Welle F7: enger Übergang (Demo)',
   };
-  function norm(s){ return (s||'').toString().trim().replace(/\s+/g,' ').toLowerCase(); }
-
   const passChips = document.getElementById('passChips');
   const passOut   = document.getElementById('passOut');
 
   function renderPresetsFor(nom){
     passChips.innerHTML='';
-    const list = PASS_PRESETS[nom] || [];
-    if(!list.length){ passChips.innerHTML = '<span class="muted">Keine Presets</span>'; return; }
+    const list = PASS_PRESETS[(nom||'').trim()] || [];
+    if(!list.length){ passChips.innerHTML='<span class="muted">Keine Presets</span>'; return; }
     list.forEach(k=>{
       const b=document.createElement('button');
       b.className='chip';
@@ -182,66 +193,123 @@ ${$Calc.textContent}`;
     });
   }
   function showPass(key){
-    const info = PASS_INFO[key] || '—';
-    passOut.textContent = info;
-    CT.toast(key, 'ok', 1200);
+    passOut.textContent = PASS_INFO[key] || '—';
+    CT.toast(key,'ok',1000);
   }
-
-  passNom.addEventListener('input', ()=>{
-    const nom = (passNom.value||'').trim();
-    if(!nom){ passChips.innerHTML=''; passOut.textContent='Gib Nennmaß oder Passmaß ein…'; return; }
-    renderPresetsFor(nom);
-  });
-
+  passNom.addEventListener('input', ()=>{ renderPresetsFor(passNom.value); });
   passQ.addEventListener('input', ()=>{
-    const q = norm(passQ.value);
+    const q=(passQ.value||'').trim();
     if(!q){ passOut.textContent='Gib Nennmaß oder Passmaß ein…'; return; }
-    // прямой ключ
-    if(PASS_INFO[q]) return showPass(q);
-    // гибко: допускаем варианты с пробелом/слэшем
-    const v1 = q.replace(' ','/');
-    const v2 = q.replace('/',' ');
+    const v1=q, v2=q.replace(' ','/'), v3=q.replace('/',' ');
     if(PASS_INFO[v1]) return showPass(v1);
     if(PASS_INFO[v2]) return showPass(v2);
-    passOut.textContent = '—';
+    if(PASS_INFO[v3]) return showPass(v3);
+    passOut.textContent='—';
   });
-
   passClear.onclick=()=>{ passNom.value=''; passQ.value=''; passChips.innerHTML=''; passOut.textContent='Gib Nennmaß oder Passmaß ein…'; };
 
-  /* ===== FASEN (черновой) ===== */
-  function fasenPreview(){
-    const ang = parseFloat(faAngle.value||0);
-    const L   = parseFloat(faLen.value||0);
-    const Xs  = faXs.value.trim();
-    const Zs  = faZs.value.trim();
-    if(!ang || !L){ faOut.textContent = 'Bitte Winkel und Länge angeben.'; return; }
+  /* ===== FASEN: 3 из 4 координат + угол =====
+     Дано: α, и любые 3 из (Xs, Xe, Zs, Ze). Ищем 4-ю.
+     Связь: tan α = ΔZ / ΔX, где ΔX = Xe − Xs, ΔZ = Ze − Zs.
+     Если известны обе X (или обе Z) — вычисляем недостающую Z (или X).
+     Если известны Xs, Ze, Zs — находим Xe, и т.д.
+     Плюс считаем длину L = sqrt(ΔX^2+ΔZ^2) и черновой G-Code.
+  */
+  const $fa = { a:faAngle, Xs:faXs, Zs:faZs, Xe:faXe, Ze:faZe, out:faOut, hint:faHint };
+  function parse(v){ const n=parseFloat(v); return Number.isFinite(n)?n:null; }
 
-    let g = [];
-    g.push('(Fase vorab – einfacher G-Code)');
-    if(Xs && Zs){
-      const rad = ang * Math.PI/180;
-      const dX  = (L * Math.cos(rad)).toFixed(3);
-      const dZ  = (L * Math.sin(rad)).toFixed(3);
-      const Xe  = (parseFloat(Xs)+parseFloat(dX)).toFixed(3);
-      const Ze  = (parseFloat(Zs)+parseFloat(dZ)).toFixed(3);
-      g.push(`(Start X${Xs} Z${Zs}, α=${ang}°, L=${L})`);
-      g.push(`G01 X${Xe} Z${Ze} F...`);
-      g.push('(Ende Fase)');
-    }else{
-      g.push(`(α=${ang}°, L=${L})`);
-      g.push('G01  …  (Setze Startkoordinaten X/Z)');
+  function solveChamfer(){
+    const a = parse($fa.a.value);
+    const Xs = parse($fa.Xs.value), Xe = parse($fa.Xe.value);
+    const Zs = parse($fa.Zs.value), Ze = parse($fa.Ze.value);
+
+    if(!a){ $fa.out.textContent='Bitte Winkel angeben.'; return; }
+    const rad = a*Math.PI/180;
+    const tanA = Math.tan(rad);
+
+    let known = {Xs: Xs!=null, Xe: Xe!=null, Zs: Zs!=null, Ze: Ze!=null};
+    const count = Object.values(known).filter(Boolean).length;
+    if(count < 3){ $fa.out.textContent='Gib mindestens 3 Koordinaten ein (Xs, Xe, Zs, Ze).'; return; }
+
+    let _Xs = Xs, _Xe = Xe, _Zs = Zs, _Ze = Ze;
+
+    // 1) Если известны обе X → считаем одну из Z
+    if(known.Xs && known.Xe && (!known.Zs || !known.Ze)){
+      const dX = _Xe - _Xs;
+      const dZ = Math.abs(dX)*tanA;
+      if(known.Zs && !known.Ze){ _Ze = _Zs + Math.sign(dX||1)*Math.sign(tanA||1)*dZ; known.Ze=true; }
+      else if(known.Ze && !known.Zs){ _Zs = _Ze - Math.sign(dX||1)*Math.sign(tanA||1)*dZ; known.Zs=true; }
     }
-    faOut.textContent = g.join('\n');
+    // 2) Если известны обе Z → считаем одну из X
+    if(known.Zs && known.Ze && (!known.Xs || !known.Xe)){
+      const dZ = _Ze - _Zs;
+      const dX = Math.abs(dZ)/ (tanA||1e-9);
+      if(known.Xs && !known.Xe){ _Xe = _Xs + Math.sign(dZ||1)*dX; known.Xe=true; }
+      else if(known.Xe && !known.Xs){ _Xs = _Xe - Math.sign(dZ||1)*dX; known.Xs=true; }
+    }
+    // 3) Смешанные случаи: известны Xs, Zs, и один из (Xe|Ze)
+    if(known.Xs && known.Zs && !known.Xe && known.Ze){
+      const dZ = _Ze - _Zs;
+      const dX = Math.abs(dZ)/ (tanA||1e-9);
+      _Xe = _Xs + Math.sign(dZ||1)*dX; known.Xe=true;
+    }
+    if(known.Xs && known.Zs && known.Xe && !known.Ze){
+      const dX = _Xe - _Xs;
+      const dZ = Math.abs(dX)*tanA;
+      _Ze = _Zs + Math.sign(dX||1)*dZ; known.Ze=true;
+    }
+    // 4) Xe, Ze и один из (Xs|Zs)
+    if(!known.Xs && known.Zs && known.Xe && known.Ze){
+      const dZ = _Ze - _Zs;
+      const dX = Math.abs(dZ)/ (tanA||1e-9);
+      _Xs = _Xe - Math.sign(dZ||1)*dX; known.Xs=true;
+    }
+    if(known.Xs && !known.Zs && known.Xe && known.Ze){
+      const dX = _Xe - _Xs;
+      const dZ = Math.abs(dX)*tanA;
+      _Zs = _Ze - Math.sign(dX||1)*dZ; known.Zs=true;
+    }
+
+    // Проверка: всё ли нашли
+    if(!(known.Xs && known.Xe && known.Zs && known.Ze)){
+      $fa.out.textContent='Nicht eindeutig. Bitte andere 3 Werte angeben (oder Richtung prüfen).';
+      return;
+    }
+
+    const dX = _Xe - _Xs;
+    const dZ = _Ze - _Zs;
+    const L  = Math.sqrt(dX*dX + dZ*dZ);
+
+    // Вывод + G-Code (очень базовый)
+    let g = [];
+    g.push(`(Fase: α=${a}°, L≈${L.toFixed(3)} mm)`);
+    g.push(`(Start: X${_Xs.toFixed(3)} Z${_Zs.toFixed(3)})`);
+    g.push(`(Ende : X${_Xe.toFixed(3)} Z${_Ze.toFixed(3)})`);
+    g.push(`G01 X${_Xe.toFixed(3)} Z${_Ze.toFixed(3)} F...`);
+
+    $fa.out.textContent = g.join('\n');
+
+    // Подсказка что посчитали
+    const missing = [];
+    if(Xs==null) missing.push('Xs');
+    if(Zs==null) missing.push('Zs');
+    if(Xe==null) missing.push('Xe');
+    if(Ze==null) missing.push('Ze');
+    $fa.hint.innerHTML = missing.length
+      ? `Berechnet: <b>${missing.join(', ')}</b>.`
+      : `Alle 4 Koordinaten bekannt.`;
   }
-  [faAngle, faLen, faXs, faZs].forEach(el=>el.addEventListener('input', fasenPreview));
-  fasenPreview();
+
+  [$fa.a, $fa.Xs, $fa.Zs, $fa.Xe, $fa.Ze].forEach(el=>el.addEventListener('input', solveChamfer));
+  solveChamfer();
+
   faCopy.onclick=()=>{
     navigator.clipboard?.writeText(faOut.textContent||'')
       .then(()=>CT.toast('Kopiert','ok'))
       .catch(()=>CT.toast('Clipboard nicht verfügbar','err'));
   };
 
-  /* ===== Глобальный поиск (прячем панели без совпадений) ===== */
+  /* ===== Глобальный поиск: прячем панели без совпадений ===== */
   CT.bindGlobalSearch((q)=>{
     document.querySelectorAll('.subpanel').forEach(sec=>{
       if(!q){ sec.style.display=''; return; }
@@ -250,7 +318,7 @@ ${$Calc.textContent}`;
     });
   });
 
-  // старт: показываем Material
+  // стартовая вкладка
   showTab('mat');
 });
 </script>
