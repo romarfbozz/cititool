@@ -6,11 +6,17 @@
   <title>CitiTool • Dashboard</title>
   <link rel="stylesheet" href="./ui/core.css">
   <style>
-    /* минимум локального: выравнивание карточек */
+    /* локальные мелочи */
     .job .job-meta{font-size:12px;color:var(--muted)}
     .checklist{list-style:none;padding:0;margin:0;display:grid;gap:.5rem}
     .checklist li{display:flex;align-items:center;gap:.5rem;border:1px dashed #dfe6f7;border-radius:12px;padding:8px}
     .checklist .drag{cursor:grab;color:#9cb1d9}
+    /* проценты поверх полосы */
+    .barwrap{position:relative;margin:8px 0}
+    .barwrap .pct{
+      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+      font-size:12px;font-weight:700;color:var(--brand);pointer-events:none;
+    }
   </style>
 </head>
 <body data-active="dash">
@@ -45,14 +51,6 @@
     </div>
   </section>
 
-  <!-- Setup -->
-  <section class="section">
-    <h2>Setup-Überblick</h2>
-    <div class="row">
-      <button class="btn ok" id="goSetup">Zu Setup</button>
-    </div>
-  </section>
-
   <!-- Produktion -->
   <section class="section">
     <h2>Produktion</h2>
@@ -82,7 +80,6 @@
     CT.ensureSeeds();
 
     // Schnellaktionen
-    document.getElementById('goSetup').onclick = ()=> location.href='./setup.html';
     document.getElementById('actNewSetup').onclick = ()=> location.href='./setup.html';
     document.getElementById('actNewTool').onclick = ()=> {
       CT.openModal({
@@ -114,7 +111,10 @@
             <b>${CT.escape(item.title)}</b>
             <button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
           </div>
-          <div class="bar"><div style="width:${pct}%"></div></div>
+          <div class="barwrap">
+            <div class="bar"><div style="width:${pct}%"></div></div>
+            <div class="pct">${pct}%</div>
+          </div>
           <div class="job-meta">${item.madeQty} / ${item.targetQty} • ${new Date(item.date).toLocaleDateString()}</div>
         `;
         el.querySelector('button').onclick = () => editJob(item);
@@ -156,7 +156,7 @@
     };
     renderProd();
 
-    // ----- Checkliste -----
+    // ----- Checkliste (с перетаскиванием) -----
     const list = document.getElementById('checklist');
     function renderChecklist(){
       const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
@@ -164,34 +164,37 @@
       if(!data.checklist.length){ list.innerHTML = '<li class="muted">Keine Punkte</li>'; return; }
       data.checklist.forEach(it=>{
         const li = document.createElement('li'); li.draggable=true; li.dataset.id=it.id;
-        li.innerHTML = `<span class="drag">≡</span>
-          <label><input type="checkbox" ${it.done?'checked':''}/> ${CT.escape(it.title)}</label>
+        li.innerHTML = `
+          <span class="drag">≡</span>
+          <label style="flex:1"><input type="checkbox" ${it.done?'checked':''}/> ${CT.escape(it.title)}</label>
           <button class="icon-btn sm" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>`;
+        // toggle done
         li.querySelector('input').onchange = ()=>{
           const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-          const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].done=!cur.checklist[idx].done; CT.storage.write(CT_KEYS.DASH,cur);}
+          const idx=cur.checklist.findIndex(x=>x.id===it.id);
+          if(idx>-1){cur.checklist[idx].done=!cur.checklist[idx].done; CT.storage.write(CT_KEYS.DASH,cur);}
         };
+        // edit/delete
         li.querySelector('button').onclick = ()=>{
           CT.openModal({title:'Punkt', html:`<input id="c_t" value="${CT.escape(it.title)}">`,
             okText:'Speichern', cancelText:'Löschen', onOk:()=>{
               const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-              const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].title=document.getElementById('c_t').value||'Punkt'; CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); CT.toast('Gespeichert','ok');}
+              const idx=cur.checklist.findIndex(x=>x.id===it.id);
+              if(idx>-1){cur.checklist[idx].title=document.getElementById('c_t').value||'Punkt'; CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); CT.toast('Gespeichert','ok');}
             }});
           const foot=document.querySelector('.modal .footer .cancel');
-          foot.onclick=()=>{ // вешаем "Удалить" на cancel
-            const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-            cur.checklist = cur.checklist.filter(x=>x.id!==it.id); CT.storage.write(CT_KEYS.DASH,cur); CT.closeModal(); renderChecklist(); CT.toast('Gelöscht','ok');
-          };
+          foot.onclick=()=>{ const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
+            cur.checklist = cur.checklist.filter(x=>x.id!==it.id); CT.storage.write(CT_KEYS.DASH,cur); CT.closeModal(); renderChecklist(); CT.toast('Gelöscht','ok'); };
         };
         // DnD порядок
-        li.addEventListener('dragstart', e=>e.dataTransfer.setData('text', it.id));
+        li.addEventListener('dragstart', e=>e.dataTransfer.setData('text/plain', it.id));
         li.addEventListener('dragover', e=>e.preventDefault());
         li.addEventListener('drop', e=>{
           e.preventDefault();
-          const from = e.dataTransfer.getData('text'); const to = it.id;
+          const from = e.dataTransfer.getData('text/plain'); const to = it.id;
           const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
           const a=cur.checklist.findIndex(x=>x.id===from), b=cur.checklist.findIndex(x=>x.id===to);
-          if(a>-1 && b>-1){ const [m]=cur.checklist.splice(a,1); cur.checklist.splice(b,0,m); CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); }
+          if(a>-1 && b>-1 && a!==b){ const [m]=cur.checklist.splice(a,1); cur.checklist.splice(b,0,m); CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); }
         });
         list.appendChild(li);
       });
@@ -205,11 +208,12 @@
     };
     document.getElementById('clearDone').onclick=()=>{
       const data=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-      data.checklist = data.checklist.filter(x=>!x.done); CT.storage.write(CT_KEYS.DASH,data); renderChecklist(); CT.toast('Aufgeräumt','ok');
+      data.checklist = data.checklist.filter(x=>!x.done);
+      CT.storage.write(CT_KEYS.DASH,data); renderChecklist(); CT.toast('Aufgeräumt','ok');
     };
     renderChecklist();
 
-    // Поиск по секциям (демо)
+    // Поиск по секциям
     CT.bindGlobalSearch((q)=>{
       document.querySelectorAll('.section').forEach(sec=>{
         if(!q){ sec.style.display=''; return; }
