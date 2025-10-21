@@ -6,17 +6,22 @@
   <title>CitiTool • Dashboard</title>
   <link rel="stylesheet" href="./ui/core.css">
   <style>
-    /* локальные мелочи */
-    .job .job-meta{font-size:12px;color:var(--muted)}
-    .checklist{list-style:none;padding:0;margin:0;display:grid;gap:.5rem}
-    .checklist li{display:flex;align-items:center;gap:.5rem;border:1px dashed #dfe6f7;border-radius:12px;padding:8px}
-    .checklist .drag{cursor:grab;color:#9cb1d9}
-    /* проценты поверх полосы */
+    /* Локальный минимум — всё остальное из /ui */
+    .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem}
+    .tile{display:grid;place-items:center;padding:14px;border:1px solid #e5ebf7;border-radius:14px;background:#fff}
+    .tile:active{transform:translateY(1px)}
+    .tile svg{width:28px;height:28px;margin-bottom:6px}
+    .sub{font-size:12px;color:var(--muted)}
+
     .barwrap{position:relative;margin:8px 0}
-    .barwrap .pct{
-      position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-      font-size:12px;font-weight:700;color:var(--brand);pointer-events:none;
-    }
+    .barwrap .pct{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:700;color:var(--brand);pointer-events:none}
+
+    .hscroll{display:flex;gap:.6rem;overflow:auto;padding-bottom:2px}
+    .tool-chip{min-width:160px;display:grid;grid-template-columns:56px 1fr;gap:.6rem;align-items:center;border:1px solid #e5ebf7;border-radius:14px;background:#fff;padding:8px}
+    .tool-chip .thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f0f3fa}
+    .thumb.ph{display:grid;place-items:center;color:#9cb1d9;font-weight:800}
+
+    .quick-note{display:grid;gap:.5rem}
   </style>
 </head>
 <body data-active="dash">
@@ -29,9 +34,13 @@
         <div class="subtitle">Dashboard</div>
       </div>
     </a>
-    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
-      <svg><use href="./ui/icons.svg#search"/></svg>
-    </button>
+    <div class="actions" style="display:flex;gap:.4rem;align-items:center">
+      <button class="btn sm" id="btnBackup">Backup</button>
+      <button class="btn ghost sm" id="btnRestore">Restore</button>
+      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
+        <svg><use href="./ui/icons.svg#search"/></svg>
+      </button>
+    </div>
   </div>
 </header>
 
@@ -40,15 +49,34 @@
 </div>
 
 <main class="container" id="dashRoot">
-  <!-- Schnellaktionen -->
+  <!-- Schnellaktionen (плитки) -->
   <section class="section">
     <h2>Schnellaktionen</h2>
-    <div class="row">
-      <button class="btn brand" id="actNewSetup">Neues Setup</button>
-      <button class="btn" id="actNewTool">Neues Werkzeug</button>
-      <button class="btn" id="actFasen">Fasen-Assist</button>
-      <button class="btn" id="actMaterial">Material-Assist</button>
+    <div class="tiles">
+      <button class="tile" id="actNewSetup">
+        <svg><use href="./ui/icons.svg#setup"/></svg>
+        <div>Neues Setup</div>
+      </button>
+      <button class="tile" id="actNewTool">
+        <svg><use href="./ui/icons.svg#tools"/></svg>
+        <div>Neues Werkzeug</div>
+      </button>
+      <button class="tile" id="actFasen">
+        <svg><use href="./ui/icons.svg#program"/></svg>
+        <div>Fasen-Assist</div>
+      </button>
+      <button class="tile" id="actMaterial">
+        <svg><use href="./ui/icons.svg#docs"/></svg>
+        <div>Material-Assist</div>
+      </button>
     </div>
+  </section>
+
+  <!-- Последние инструменты (из Live RO/RU) -->
+  <section class="section">
+    <h2>Letzte Tools (Live)</h2>
+    <div id="recentTools" class="hscroll"></div>
+    <div class="sub">Aus RO/G54 und RU/G55 • Klick → Setup</div>
   </section>
 
   <!-- Produktion -->
@@ -60,13 +88,16 @@
     </div>
   </section>
 
-  <!-- Checkliste -->
+  <!-- Быстрые заметки -->
   <section class="section">
-    <h2>Setup-Checkliste</h2>
-    <ul id="checklist" class="checklist"></ul>
-    <div class="row mt">
-      <button class="btn" id="addCheck">Neuer Punkt</button>
-      <button class="btn warn" id="clearDone">Abgehakte löschen</button>
+    <h2>Schnell-Notiz</h2>
+    <div class="quick-note">
+      <input id="qnTitle" class="field" placeholder="Titel (optional)">
+      <textarea id="qnBody" class="field" rows="4" placeholder="Kurze Notiz…"></textarea>
+      <div class="row">
+        <button class="btn brand" id="qnSave">Speichern</button>
+        <button class="btn" id="qnClear">Leeren</button>
+      </div>
     </div>
   </section>
 </main>
@@ -79,7 +110,36 @@
   CT.ready(() => {
     CT.ensureSeeds();
 
-    // Schnellaktionen
+    // -------- Backup / Restore (весь localStorage) --------
+    function dumpAllLS(){
+      const data={};
+      for(let i=0;i<localStorage.length;i++){
+        const k=localStorage.key(i);
+        try{ data[k]=JSON.parse(localStorage.getItem(k)); }catch(e){ data[k]=localStorage.getItem(k); }
+      }
+      return data;
+    }
+    document.getElementById('btnBackup').onclick=()=>{
+      const all=dumpAllLS();
+      CT.exportJSON('citi_backup.json', all);
+      CT.toast('Backup erstellt','ok');
+    };
+    document.getElementById('btnRestore').onclick=()=>{
+      CT.importJSON().then(obj=>{
+        if(!obj || typeof obj!=='object') return CT.toast('Falsches Format','err');
+        CT.openModal({
+          title:'Restore bestätigen',
+          html:'Vorhandene Daten überschreiben?',
+          okText:'Überschreiben', cancelText:'Abbrechen',
+          onOk:()=>{
+            Object.keys(obj).forEach(k=> localStorage.setItem(k, JSON.stringify(obj[k])));
+            CT.toast('Wiederhergestellt','ok'); location.reload();
+          }
+        });
+      });
+    };
+
+    // -------- Schnellaktionen плитками --------
     document.getElementById('actNewSetup').onclick = ()=> location.href='./setup.html';
     document.getElementById('actNewTool').onclick = ()=> {
       CT.openModal({
@@ -92,7 +152,38 @@
     document.getElementById('actFasen').onclick = ()=> location.href='./assist.html';
     document.getElementById('actMaterial').onclick = ()=> location.href='./assist.html';
 
-    // ----- Produktion -----
+    // -------- Последние инструменты из Live --------
+    function renderRecentTools(){
+      const wrap = document.getElementById('recentTools');
+      wrap.innerHTML='';
+      const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
+      const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+      const ids = new Set();
+      ['ro','ru'].forEach(side=>{
+        live[side].forEach(cell=>{
+          if(cell && cell.toolId) ids.add(cell.toolId);
+        });
+      });
+      const arr = [...ids].map(id=> tools.find(t=>t.id===id)).filter(Boolean);
+      if(!arr.length){ wrap.innerHTML='<div class="muted">Keine Tools in Live</div>'; return; }
+      arr.forEach(t=>{
+        const chip=document.createElement('button');
+        chip.className='tool-chip';
+        const hasImg = !!t.imgData;
+        chip.innerHTML = `
+          ${hasImg ? `<img class="thumb" src="${t.imgData}" alt="">`
+                    : `<div class="thumb ph">No</div>`}
+          <div>
+            <div class="name" style="font-weight:800">${CT.escape(t.name)}</div>
+            <div class="sub">${CT.escape(t.code||'')}</div>
+          </div>`;
+        chip.onclick=()=> location.href='./setup.html';
+        wrap.appendChild(chip);
+      });
+    }
+    renderRecentTools();
+
+    // -------- Produktion --------
     const prodList = document.getElementById('prodList');
     function renderProd(){
       prodList.innerHTML = '';
@@ -156,64 +247,22 @@
     };
     renderProd();
 
-    // ----- Checkliste (с перетаскиванием) -----
-    const list = document.getElementById('checklist');
-    function renderChecklist(){
-      const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
-      list.innerHTML = '';
-      if(!data.checklist.length){ list.innerHTML = '<li class="muted">Keine Punkte</li>'; return; }
-      data.checklist.forEach(it=>{
-        const li = document.createElement('li'); li.draggable=true; li.dataset.id=it.id;
-        li.innerHTML = `
-          <span class="drag">≡</span>
-          <label style="flex:1"><input type="checkbox" ${it.done?'checked':''}/> ${CT.escape(it.title)}</label>
-          <button class="icon-btn sm" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>`;
-        // toggle done
-        li.querySelector('input').onchange = ()=>{
-          const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-          const idx=cur.checklist.findIndex(x=>x.id===it.id);
-          if(idx>-1){cur.checklist[idx].done=!cur.checklist[idx].done; CT.storage.write(CT_KEYS.DASH,cur);}
-        };
-        // edit/delete
-        li.querySelector('button').onclick = ()=>{
-          CT.openModal({title:'Punkt', html:`<input id="c_t" value="${CT.escape(it.title)}">`,
-            okText:'Speichern', cancelText:'Löschen', onOk:()=>{
-              const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-              const idx=cur.checklist.findIndex(x=>x.id===it.id);
-              if(idx>-1){cur.checklist[idx].title=document.getElementById('c_t').value||'Punkt'; CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); CT.toast('Gespeichert','ok');}
-            }});
-          const foot=document.querySelector('.modal .footer .cancel');
-          foot.onclick=()=>{ const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-            cur.checklist = cur.checklist.filter(x=>x.id!==it.id); CT.storage.write(CT_KEYS.DASH,cur); CT.closeModal(); renderChecklist(); CT.toast('Gelöscht','ok'); };
-        };
-        // DnD порядок
-        li.addEventListener('dragstart', e=>e.dataTransfer.setData('text/plain', it.id));
-        li.addEventListener('dragover', e=>e.preventDefault());
-        li.addEventListener('drop', e=>{
-          e.preventDefault();
-          const from = e.dataTransfer.getData('text/plain'); const to = it.id;
-          const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-          const a=cur.checklist.findIndex(x=>x.id===from), b=cur.checklist.findIndex(x=>x.id===to);
-          if(a>-1 && b>-1 && a!==b){ const [m]=cur.checklist.splice(a,1); cur.checklist.splice(b,0,m); CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); }
-        });
-        list.appendChild(li);
-      });
-    }
-    document.getElementById('addCheck').onclick=()=>{
-      CT.openModal({title:'Neuer Punkt', html:`<input id="p_t" placeholder="Text">`, okText:'Hinzufügen', onOk:()=>{
-        const data=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-        data.checklist.push({id:CT.uid(), title:document.getElementById('p_t').value||'Punkt', done:false});
-        CT.storage.write(CT_KEYS.DASH,data); CT.toast('Hinzugefügt','ok'); renderChecklist();
-      }});
+    // -------- Schnell-Notиз --------
+    document.getElementById('qnSave').onclick=()=>{
+      const title=(document.getElementById('qnTitle').value||'Quick Note').trim();
+      const body=(document.getElementById('qnBody').value||'').trim();
+      if(!body){ return CT.toast('Leerer Text','err'); }
+      const docs=CT.storage.read(CT_KEYS.DOCS, []);
+      docs.push({id:CT.uid(), title, category:'Quick Notes', tags:['quick'], body, favorite:false});
+      CT.storage.write(CT_KEYS.DOCS, docs);
+      document.getElementById('qnBody').value=''; CT.toast('Gespeichert','ok');
     };
-    document.getElementById('clearDone').onclick=()=>{
-      const data=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-      data.checklist = data.checklist.filter(x=>!x.done);
-      CT.storage.write(CT_KEYS.DASH,data); renderChecklist(); CT.toast('Aufgeräumt','ok');
+    document.getElementById('qnClear').onclick=()=>{
+      document.getElementById('qnTitle').value='';
+      document.getElementById('qnBody').value='';
     };
-    renderChecklist();
 
-    // Поиск по секциям
+    // -------- Поиск по секциям --------
     CT.bindGlobalSearch((q)=>{
       document.querySelectorAll('.section').forEach(sec=>{
         if(!q){ sec.style.display=''; return; }
