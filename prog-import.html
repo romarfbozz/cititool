@@ -43,7 +43,7 @@
       <button class="btn brand" id="parse">Parsen</button>
       <button class="btn" id="clear">Leeren</button>
     </div>
-    <div class="muted" style="margin-top:.4rem">Beispiel: <code class="mono">O1809(PK234185RO)</code> → Nr=<b>234185</b>, Seite=<b>RO</b>. Titel для инструмента берём из первого комментария <b>после</b> первой T-строки, например <code>(KOPIERST.NEGATIV R.8 G54)</code>.</div>
+    <div class="muted" style="margin-top:.4rem">Beispiel: <code class="mono">O1809(PK234185RO)</code> → Nr=<b>234185</b>, Seite=<b>RO</b>. Für jedes <code>Tnnnn</code> берём первый Kommentar <b>после</b> этого T (до следующего T).</div>
   </section>
 
   <section class="section" id="res" style="display:none">
@@ -58,7 +58,7 @@
     <div class="muted" id="tCount" style="margin:.4rem 0">Tools: —</div>
     <label class="chk"><input type="checkbox" id="assignLive" checked> Auch ins Live-Setup einfügen</label>
 
-    <h3 style="margin:12px 2px 8px">Tools (Tnnnn)</h3>
+    <h3 style="margin:12px 2px 8px">Tools (pro T, Kommentar-spezifisch)</h3>
     <div id="list" class="findings"></div>
 
     <div class="row mt">
@@ -91,16 +91,6 @@ CT.ready(()=>{
     return { num: extNum, comment, side, raw: m[0] };
   }
 
-  function firstCommentAfterIndex(txt, startIdx){
-    // идём по комментариям и берём первый, чей индекс > startIdx
-    const re = /\(([^)]+)\)/g;
-    let m;
-    while((m = re.exec(txt)) !== null){
-      if(m.index > startIdx) return (m[1]||'').trim();
-    }
-    return '';
-  }
-
   function detectWCS(txt, sideHint){
     if(sideHint==='RO') return { text:'RO (G54)', raw:'G54' };
     if(sideHint==='RU') return { text:'RU (G55)', raw:'G55' };
@@ -112,64 +102,75 @@ CT.ready(()=>{
   // супер-терпимый парсер T:
   // ловит: T0101, T 01  01, T01-01, T01,01, T0101; и т.п.
   // а также T01 (только слот) как fallback
-  function parseTools(txt){
+  function parseToolsWithIndices(txt){
     const out = [];
     const seen = new Set();
-    // без левой границы, чтобы поймать G0G99T0101M765
-    // Вариант A: 2+разделитель+2
+    // A: 2 + разделитель + 2
     const rePair = /T\s*([0-9]{2})[\s,.;:_-]*([0-9]{2})/ig;
     let m;
     while((m = rePair.exec(txt)) !== null){
       const pos = parseInt(m[1],10), off = m[2];
       if(pos>=1 && pos<=12 && !seen.has(pos)){ seen.add(pos); out.push({ t:`T${m[1]}${off}`, pos, off, index:m.index }); }
     }
-    // Вариант B: подряд 4 цифры
+    // B: 4 подряд
     const re4 = /T\s*([0-9]{4})/ig;
     while((m = re4.exec(txt)) !== null){
       const digits = m[1];
       const pos = parseInt(digits.slice(0,2),10), off = digits.slice(2);
       if(pos>=1 && pos<=12 && !seen.has(pos)){ seen.add(pos); out.push({ t:`T${digits}`, pos, off, index:m.index }); }
     }
-    // Вариант C: только 2 цифры (fallback)
+    // C: только 2 (fallback)
     const re2 = /T\s*([0-9]{2})(?!\s*[0-9])/ig;
     while((m = re2.exec(txt)) !== null){
       const pos = parseInt(m[1],10);
       if(pos>=1 && pos<=12 && !seen.has(pos)){ seen.add(pos); out.push({ t:`T${m[1]}`, pos, off:'', index:m.index }); }
     }
-    // отсортируем по порядку появления
     out.sort((a,b)=>a.index-b.index);
     return out;
+  }
+
+  // Собираем список ВСЕХ комментариев с позициями
+  function collectComments(txt){
+    const res = [];
+    const re = /\(([^)]+)\)/g; let m;
+    while((m = re.exec(txt)) !== null){
+      res.push({ text:(m[1]||'').trim(), index:m.index });
+    }
+    return res;
+  }
+
+  // Берём первый комментарий ПОСЛЕ startIdx и ДО nextIdx (или до конца)
+  function nearestComment(comments, startIdx, nextIdx){
+    for(const c of comments){
+      if(c.index > startIdx && (nextIdx===null || c.index < nextIdx)) return c.text;
+    }
+    return '';
   }
 
   function buildParsed(txt){
     const O   = parseOLine(txt);           // {num, comment, side}
     const wcs = detectWCS(txt, O.side);    // 'RO (G54)' / 'RU (G55)'
-    const tools = parseTools(txt);         // список T
+    const tools = parseToolsWithIndices(txt);
+    const comments = collectComments(txt);
 
     // Заголовок программы:
     let progTitle = '';
     if(O.comment){
       progTitle = O.comment.replace(/\b(RO|RU)\b/i,'').replace(/\d{5,}/,'').replace(/[_\-\.]+/g,' ').trim();
     }
-    if(!progTitle){
-      // если в O не получилось — возьмём первый комментарий в файле
-      const m = txt.match(/\(([^)]+)\)/);
-      if(m) progTitle = (m[1]||'').trim();
-    }
+    if(!progTitle && comments[0]) progTitle = comments[0].text;
 
-    // База названия для инструментов: первый комментарий ПОСЛЕ первой T
-    let instrTitleBase = '';
-    if(tools.length){
-      const idxFirstT = tools[0].index;
-      instrTitleBase = firstCommentAfterIndex(txt, idxFirstT) || progTitle || '';
-    }else{
-      instrTitleBase = progTitle || '';
+    // Для каждого T — свой базовый тайтл из ближайшего комментария после него (до следующего T)
+    for(let i=0;i<tools.length;i++){
+      const start = tools[i].index;
+      const end   = (i<tools.length-1) ? tools[i+1].index : null;
+      const local = nearestComment(comments, start, end) || progTitle || '';
+      tools[i].titleBase = local;
     }
 
     return {
       number: O.num || '',
       title:  progTitle,
-      instrBase: instrTitleBase, // для имени инструментов
       wcsText: wcs.text,
       wcsRaw:  wcs.raw,          // 'G54'/'G55'/''
       tools
@@ -200,7 +201,7 @@ CT.ready(()=>{
     }
 
     parsed.tools.forEach((row,i)=>{
-      const nameDef = (parsed.instrBase || parsed.title || 'Werkzeug') + ' • ' + row.t;
+      const nameDef = (row.titleBase || parsed.title || 'Werkzeug') + ' • ' + row.t;
       const catOptions = cats.map(c=>`<option value="${c.id}" ${c.id===defCat?'selected':''}>${CT.escape(c.title)}</option>`).join('');
       const exists = findExistingToolByCode(row.t);
       const el = document.createElement('div'); el.className='tool-row';
@@ -231,14 +232,14 @@ CT.ready(()=>{
 
   function addOneTool(i, parsed){
     const t = parsed.tools[i];
-    const name = document.getElementById('nm_'+i).value || (parsed.instrBase||parsed.title||'Werkzeug')+' • '+t.t;
+    const name = document.getElementById('nm_'+i).value || (t.titleBase||parsed.title||'Werkzeug')+' • '+t.t;
     const catId= document.getElementById('cat_'+i).value;
     const iso  = document.getElementById('iso_'+i).value;
 
     let tool = findExistingToolByCode(t.t);
     if(!tool){
       const tools = CT.storage.read(CT_KEYS.TOOLS, []);
-      tool = { id:CT.uid(), name, code:t.t, catId, iso, maker:'', note:(parsed.instrBase||parsed.title||''), imgData:'', lifePct:100 };
+      tool = { id:CT.uid(), name, code:t.t, catId, iso, maker:'', note:(t.titleBase||parsed.title||''), imgData:'', lifePct:100 };
       tools.push(tool);
       CT.storage.write(CT_KEYS.TOOLS, tools);
     }
@@ -299,7 +300,6 @@ CT.ready(()=>{
     const parsed = buildParsed(txt);
     render(parsed);
     if(!parsed.tools.length){
-      // покажем первую строку с 'T' (для дебага формата)
       const firstT = (txt.match(/^[^\n]*T[^\n]*/im)||[''])[0].trim();
       if(firstT) CT.toast('Hinweis: '+firstT, 'info', 2500);
     }
