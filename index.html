@@ -5,12 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Dashboard</title>
   <link rel="stylesheet" href="./ui/core.css">
+  <style>
+    /* минимум локального: выравнивание карточек */
+    .job .job-meta{font-size:12px;color:var(--muted)}
+    .checklist{list-style:none;padding:0;margin:0;display:grid;gap:.5rem}
+    .checklist li{display:flex;align-items:center;gap:.5rem;border:1px dashed #dfe6f7;border-radius:12px;padding:8px}
+    .checklist .drag{cursor:grab;color:#9cb1d9}
+  </style>
 </head>
 <body data-active="dash">
 <header class="appbar">
   <div class="wrap">
     <a class="logo" href="./index.html">
-      <img src="./ui/brand.png" alt="CT" class="badge">
+      <span class="ct-badge" aria-hidden="true">CT</span>
       <div class="tit">
         <div class="title">CitiTool</div>
         <div class="subtitle">Dashboard</div>
@@ -21,11 +28,13 @@
     </button>
   </div>
 </header>
+
 <div class="searchbar collapsed">
   <input class="field" type="search" placeholder="Suchen…" id="globalSearch">
 </div>
 
 <main class="container" id="dashRoot">
+  <!-- Schnellaktionen -->
   <section class="section">
     <h2>Schnellaktionen</h2>
     <div class="row">
@@ -36,13 +45,15 @@
     </div>
   </section>
 
+  <!-- Setup -->
   <section class="section">
     <h2>Setup-Überblick</h2>
     <div class="row">
-      <button class="btn ok" onclick="location.href='./setup.html'">Zu Setup</button>
+      <button class="btn ok" id="goSetup">Zu Setup</button>
     </div>
   </section>
 
+  <!-- Produktion -->
   <section class="section">
     <h2>Produktion</h2>
     <div id="prodList" class="stack"></div>
@@ -51,6 +62,7 @@
     </div>
   </section>
 
+  <!-- Checkliste -->
   <section class="section">
     <h2>Setup-Checkliste</h2>
     <ul id="checklist" class="checklist"></ul>
@@ -67,39 +79,44 @@
 <script src="./ui/dock.js"></script>
 <script>
   CT.ready(() => {
-    CT.splash({logo:'./ui/brand.png', ms:600});
     CT.ensureSeeds();
 
     // Schnellaktionen
-    document.getElementById('actNewSetup').onclick = () =>
-      CT.toast('Gehe zu Setup…', 'info'), location.href='./setup.html';
-    document.getElementById('actNewTool').onclick = () =>
-      CT.openModal({title:'Neues Werkzeug', html:'Öffne Werkzeugs­chrank zum Anlegen?',
-        okText:'Öffnen', cancelText:'Abbrechen', onOk:()=>location.href='./tools.html'});
-    document.getElementById('actFasen').onclick = () =>
-      CT.openModal({title:'Fasen-Assist', html:'Öffnen?', okText:'Öffnen', onOk:()=>location.href='./assist.html'});
-    document.getElementById('actMaterial').onclick = () =>
-      CT.openModal({title:'Material-Assistent', html:'Öffnen?', okText:'Öffnen', onOk:()=>location.href='./assist.html'});
+    document.getElementById('goSetup').onclick = ()=> location.href='./setup.html';
+    document.getElementById('actNewSetup').onclick = ()=> location.href='./setup.html';
+    document.getElementById('actNewTool').onclick = ()=> {
+      CT.openModal({
+        title:'Neues Werkzeug',
+        html:'Werkzeugs­chrank öffnen?',
+        okText:'Öffnen', cancelText:'Abbrechen',
+        onOk:()=>location.href='./tools.html'
+      });
+    };
+    document.getElementById('actFasen').onclick = ()=> location.href='./assist.html';
+    document.getElementById('actMaterial').onclick = ()=> location.href='./assist.html';
 
-    // Produktion
+    // ----- Produktion -----
     const prodList = document.getElementById('prodList');
     function renderProd(){
       prodList.innerHTML = '';
-      const arr = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] }).produktion;
-      if(!arr.length){ prodList.innerHTML = '<div class="muted">Keine Aufträge</div>'; return; }
+      const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
+      const arr = data.produktion||[];
+      if(!arr.length){
+        prodList.innerHTML = '<div class="muted">Keine Aufträge</div>';
+        return;
+      }
       arr.forEach(item=>{
         const pct = Math.min(100, Math.round((item.madeQty / Math.max(1,item.targetQty))*100));
         const el = document.createElement('div');
         el.className='card job';
         el.innerHTML = `
-          <div class="job-hdr">
-            <b>${item.title}</b>
-            <button class="icon-btn" aria-label="Info" data-id="${item.id}">
-              <svg><use href="./ui/icons.svg#info"/></svg>
-            </button>
+          <div class="job-hdr" style="display:flex;justify-content:space-between;align-items:center">
+            <b>${CT.escape(item.title)}</b>
+            <button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
           </div>
           <div class="bar"><div style="width:${pct}%"></div></div>
-          <div class="job-meta">${item.madeQty} / ${item.targetQty} • ${new Date(item.date).toLocaleDateString()}</div>`;
+          <div class="job-meta">${item.madeQty} / ${item.targetQty} • ${new Date(item.date).toLocaleDateString()}</div>
+        `;
         el.querySelector('button').onclick = () => editJob(item);
         prodList.appendChild(el);
       });
@@ -139,7 +156,7 @@
     };
     renderProd();
 
-    // Checklist
+    // ----- Checkliste -----
     const list = document.getElementById('checklist');
     function renderChecklist(){
       const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
@@ -161,12 +178,12 @@
               const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].title=document.getElementById('c_t').value||'Punkt'; CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); CT.toast('Gespeichert','ok');}
             }});
           const foot=document.querySelector('.modal .footer .cancel');
-          foot.onclick=()=>{
+          foot.onclick=()=>{ // вешаем "Удалить" на cancel
             const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
             cur.checklist = cur.checklist.filter(x=>x.id!==it.id); CT.storage.write(CT_KEYS.DASH,cur); CT.closeModal(); renderChecklist(); CT.toast('Gelöscht','ok');
           };
         };
-        // DnD
+        // DnD порядок
         li.addEventListener('dragstart', e=>e.dataTransfer.setData('text', it.id));
         li.addEventListener('dragover', e=>e.preventDefault());
         li.addEventListener('drop', e=>{
@@ -192,7 +209,7 @@
     };
     renderChecklist();
 
-    // Поиск
+    // Поиск по секциям (демо)
     CT.bindGlobalSearch((q)=>{
       document.querySelectorAll('.section').forEach(sec=>{
         if(!q){ sec.style.display=''; return; }
@@ -203,4 +220,3 @@
 </script>
 </body>
 </html>
-===== END FILE =====
