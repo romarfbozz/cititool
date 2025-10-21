@@ -1,48 +1,50 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>CitiTool • Programm-Import</title>
-  <link rel="stylesheet" href="./ui/core.css">
-  <style>
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .codearea{width:100%;min-height:220px;border-radius:12px;border:1px solid #dae2f3;padding:10px}
-    .tool-row{display:grid;grid-template-columns:56px 1fr auto;gap:.6rem;align-items:center;border:1px solid #e5ebf7;border-radius:14px;padding:8px;background:#fff}
-    .thumb{width:56px;height:56px;border-radius:10px;background:#f0f3fa;display:grid;place-items:center;color:#9cb1d9;font-weight:800}
-    .muted-sm{font-size:12px;color:var(--muted)}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
-    @media (max-width:520px){.grid2{grid-template-columns:1fr}}
-    .pill{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:700;margin-left:6px}
-    .hidden{display:none}
-    .no-print{}
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>CitiTool • Programm-Import</title>
+<link rel="stylesheet" href="./ui/core.css">
+<style>
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .codearea{width:100%;min-height:220px;border-radius:12px;border:1px solid #dae2f3;padding:10px}
+  .tool-row{display:grid;grid-template-columns:56px 1fr auto;gap:.6rem;align-items:center;border:1px solid #e5ebf7;border-radius:14px;padding:8px;background:#fff}
+  .thumb{width:56px;height:56px;border-radius:10px;background:#f0f3fa;display:grid;place-items:center;color:#9cb1d9;font-weight:800}
+  .muted-sm{font-size:12px;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  @media (max-width:520px){.grid2{grid-template-columns:1fr}}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:700;margin-left:6px}
+  .hidden{display:none}
+  .no-print{}
 
-    /* ---------- Werkzeugliste (экран) ---------- */
-    .print-wrap{background:#fff;border:1px solid #e7eef9;border-radius:14px;box-shadow:var(--shadow);padding:16px}
-    .wl-head{display:flex;align-items:center;gap:10px;margin:0 0 12px}
-    .wl-title{font-size:14px;color:var(--muted)}
-    .wl-progline[contenteditable="true"]{display:inline-block;border:1px dashed #dfe6f7;border-radius:8px;padding:4px 8px;min-width:160px}
-    .wl-progline:focus{outline:none;border-color:#c9d8fb;background:#f8fbff}
-    .wl-table{width:100%;border-collapse:separate;border-spacing:0}
-    .wl-table th,.wl-table td{padding:12px;border-top:1px solid #eef3ff}
-    .wl-table thead th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#5b6b86;border-top:0}
-    .wl-table tbody tr:nth-child(odd){background:#fafcff}
-    .wl-table .nr{white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    .wl-remark{min-height:32px;border:1px dashed #dfe6f7;border-radius:8px;padding:6px}
+  /* ---------- Werkzeugliste (экран) ---------- */
+  .print-wrap{background:#fff;border:1px solid #e7eef9;border-radius:14px;box-shadow:var(--shadow);padding:16px}
+  .wl-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 12px}
+  .wl-head h3{margin:0;font-size:20px}
+  .wl-title{font-size:14px;color:var(--muted)}
+  .wl-progline[contenteditable="true"]{display:inline-block;border:1px dashed #dfe6f7;border-radius:8px;padding:4px 8px;min-width:160px}
+  .wl-progline:focus{outline:none;border-color:#c9d8fb;background:#f8fbff}
+  .wl-table{width:100%;border-collapse:separate;border-spacing:0}
+  .wl-table th,.wl-table td{padding:12px;border-top:1px solid #eef3ff}
+  .wl-table thead th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#5b6b86;border-top:0}
+  .wl-table tbody tr:nth-child(odd){background:#fafcff}
+  .wl-table .nr{white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .wl-remark{min-height:32px;border:1px dashed #dfe6f7;border-radius:8px;padding:6px}
 
-    /* ---------- Печать ---------- */
-    @media print{
-      body{background:#fff}
-      header.appbar, .dock, .section:first-of-type, .tabs, .no-print{display:none!important}
-      .print-wrap{box-shadow:none;border:0;border-radius:0;padding:0}
-      .wl-title{font-size:16pt}
-      .wl-progline{border:0;padding:0}
-      .wl-table th,.wl-table td{border:1px solid #ccc;padding:8px}
-      .wl-table thead th{text-transform:none;color:#000;border:1px solid #ccc}
-      .wl-table tbody tr:nth-child(odd){background:#fff}
-      .wl-remark{border:1px solid #bbb;min-height:24px}
-    }
-  </style>
+  /* ---------- Печать ---------- */
+  @media print{
+    header.appbar, .dock, .section:first-of-type, .tabs, .no-print{display:none!important}
+    body{background:#fff}
+    .print-wrap{box-shadow:none;border:0;border-radius:0;padding:0}
+    .wl-head h3{font-size:18pt}
+    .wl-title{font-size:12pt}
+    .wl-progline{border:0;padding:0}
+    .wl-table th,.wl-table td{border:1px solid #ccc;padding:8px}
+    .wl-table thead th{text-transform:none;color:#000;border:1px solid #ccc}
+    .wl-table tbody tr:nth-child(odd){background:#fff}
+    .wl-remark{border:1px solid #bbb;min-height:24px}
+  }
+</style>
 </head>
 <body data-active="tools">
 <header class="appbar">
@@ -59,7 +61,7 @@
 <div class="searchbar collapsed"><input class="field" type="search" placeholder="Suchen…" id="s"></div>
 
 <main class="container">
-  <!-- Ввод программы -->
+  <!-- G-code input -->
   <section class="section">
     <h2>G-Code</h2>
     <div class="row">
@@ -77,7 +79,7 @@
     </div>
   </section>
 
-  <!-- Табы -->
+  <!-- Tabs -->
   <section class="section hidden" id="res">
     <div class="tabs">
       <button class="tab active" data-tab="prog">Programm anlegen</button>
@@ -103,14 +105,13 @@
     </div>
 
     <!-- TAB: Werkzeuge anlegen -->
-    <div id="tab-tools" class="hidden">
-      <div id="list"></div>
-    </div>
+    <div id="tab-tools" class="hidden"><div id="list"></div></div>
 
     <!-- TAB: Werkzeugliste -->
     <div id="tab-list" class="hidden">
       <div class="print-wrap">
         <div class="wl-head">
+          <h3>Werkzeugliste</h3>
           <div class="wl-title">Programm:&nbsp;<span id="pl-progline" class="wl-progline" contenteditable="true">—</span></div>
         </div>
         <table class="wl-table" id="pl-table">
@@ -123,7 +124,6 @@
       <div class="row mt no-print">
         <button class="btn" id="btnPrint">Drucken / PDF</button>
       </div>
-      <div class="muted mt no-print">Hinweis: Bilder/Thumbs werden in der Druckversion ausgelassen.</div>
     </div>
   </section>
 </main>
@@ -137,7 +137,7 @@ CT.ready(()=>{
   CT.ensureSeeds();
   const readFileAsText = f => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result||''); r.onerror=rej; r.readAsText(f); });
 
-  // ===== парсинг =====
+  // ==== parsing helpers ====
   function parseOLine(src){
     const m = src.match(/^\s*O(\d+)\s*\(([^)]*)\)/mi);
     if(!m) return { num:null, comment:null, side:null, raw:null };
@@ -153,6 +153,7 @@ CT.ready(()=>{
     if(!m) return { text:'—', raw:'' };
     return m[1]==='4' ? { text:'RO (G54)', raw:'G54' } : { text:'RU (G55)', raw:'G55' };
   }
+  function sideShortFromRaw(raw){ return raw==='G54'?'RO':(raw==='G55'?'RU':''); }
   function parseToolsWithIndices(txt){
     const out=[]; const seen=new Set(); let m;
     const rePair=/T\s*([0-9]{2})[\s,.;:_-]*([0-9]{2})/ig;
@@ -181,7 +182,7 @@ CT.ready(()=>{
     return { number:O.num||'', title:progTitle, wcsText:wcs.text, wcsRaw:wcs.raw, tools };
   }
 
-  // ===== рендер =====
+  // ==== render ====
   function findExistingToolByCode(code){
     const tools=CT.storage.read(CT_KEYS.TOOLS,[]);
     return tools.find(t => (t.code||'').toLowerCase()===(code||'').toLowerCase());
@@ -228,8 +229,8 @@ CT.ready(()=>{
   }
 
   function renderListTab(parsed){
-    // Программная строка по умолчанию: "231850.RO" (или RU)
-    const progLine = (parsed.number ? parsed.number : '—') + (parsed.wcsRaw ? '.' + parsed.wcsRaw.replace('G','') : '');
+    const sideShort = sideShortFromRaw(parsed.wcsRaw); // RO/RU
+    const progLine = (parsed.number ? parsed.number : '—') + (sideShort ? '.'+sideShort : '');
     const el = document.getElementById('pl-progline');
     el.textContent = progLine;
 
@@ -237,14 +238,14 @@ CT.ready(()=>{
     parsed.tools.forEach(t=>{
       const tr=document.createElement('tr');
       tr.innerHTML = `
-        <td class="nr">${CT.escape(t.t)}</td>
-        <td>${CT.escape(t.titleBase||parsed.title||'—')}</td>
-        <td><div class="wl-remark"></div></td>`;
+        <td class="nr" contenteditable="true">${CT.escape(t.t)}</td>
+        <td class="wname" contenteditable="true">${CT.escape(t.titleBase||parsed.title||'—')}</td>
+        <td><div class="wl-remark" contenteditable="true"></div></td>`;
       tbody.appendChild(tr);
     });
   }
 
-  // ===== действия =====
+  // ==== actions ====
   function addOneTool(i, parsed){
     const t = parsed.tools[i];
     const name = document.getElementById('nm_'+i).value || (t.titleBase||parsed.title||'Werkzeug')+' • '+t.t;
@@ -297,7 +298,7 @@ CT.ready(()=>{
     CT.toast(`Programm #${number} als Entwurf angelegt`, 'ok');
   }
 
-  // ===== табы / UI =====
+  // ==== tabs / UI ====
   function showTab(key){
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===key));
     document.getElementById('tab-prog').classList.toggle('hidden', key!=='prog');
