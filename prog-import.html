@@ -14,6 +14,7 @@
     .muted-sm{font-size:12px;color:var(--muted)}
     .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
     @media (max-width:520px){.grid2{grid-template-columns:1fr}}
+    .pill{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:700;margin-left:6px}
   </style>
 </head>
 <body data-active="tools">
@@ -42,18 +43,29 @@
       <button class="btn brand" id="parse">Parsen</button>
       <button class="btn" id="clear">Leeren</button>
     </div>
+    <div class="muted" style="margin-top:.4rem">Beispiel: <code class="mono">O1407(PK231850RO)</code> → Nr=<b>231850</b>, Seite=<b>RO</b>; Titel берём из первого Kommentars <code>(...)</code>.</div>
   </section>
 
   <section class="section" id="res" style="display:none">
     <h2>Erkannte Daten</h2>
     <div class="grid2">
       <label class="fld">Titel<input id="pTitle" placeholder="—"></label>
+      <label class="fld">Programm-Nr.<input id="pNum" placeholder="—"></label>
       <label class="fld">Koordinatensystem<input id="pWCS" readonly></label>
+      <label class="fld">Status<input id="pStatus" value="Entwurf" readonly></label>
     </div>
+
     <label class="chk mt"><input type="checkbox" id="assignLive" checked> Auch ins Live-Setup einfügen</label>
+    <div class="muted" id="tCount" style="margin:.4rem 0">Tools: —</div>
 
     <h3 style="margin:12px 2px 8px">Tools (Tnnnn)</h3>
     <div id="list" class="findings"></div>
+
+    <div class="row mt">
+      <button class="btn brand" id="createDraft">Als Programm anlegen (Entwurf)</button>
+      <button class="btn" id="openSetup">In Setup öffnen</button>
+      <button class="btn" id="addAll">Fehlende Tools → hinzufügen</button>
+    </div>
   </section>
 </main>
 
@@ -68,38 +80,47 @@ CT.ready(()=>{
 
   const readFileAsText = f => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result||''); r.onerror=rej; r.readAsText(f); });
 
+  // ===== Парсинг =====
+  function parseOLine(src){
+    // Oxxxx(any) — забираем комментарий в скобках.
+    const m = src.match(/^\s*O(\d+)\s*\(([^)]*)\)/mi);
+    if(!m) return { num:null, comment:null, side:null, raw:null };
+    const raw = m[0];
+    const comment = (m[2]||'').trim(); // например PK231850RO
+    const side = /RU\b/i.test(comment) ? 'RU' : (/RO\b/i.test(comment) ? 'RO' : null);
+    const extNum = (comment.match(/(\d{5,})/)||[])[1] || null; // берём 5+ цифр → 231850
+    return { num: extNum, comment, side, raw };
+  }
   function firstComment(txt){
-    // первый комментарий в круглых скобках
     return (txt.match(/\(([^)]+)\)/) || [,''])[1]?.trim() || '';
   }
-  function detectWCS(txt){
+  function detectWCS(txt, sideHint){
+    if(sideHint==='RO') return { text:'RO (G54)', raw:'G54' };
+    if(sideHint==='RU') return { text:'RU (G55)', raw:'G55' };
     const m = txt.match(/\bG5([45])\b/i);
     if(!m) return { text:'—', raw:'' };
     return m[1]==='4' ? { text:'RO (G54)', raw:'G54' } : { text:'RU (G55)', raw:'G55' };
   }
 
-  // РОБАСТНЫЙ ПАРСЕР T-кодов:
-  // поддерживает: "T0202", "T 0202", "T02 02", "T0202;", "t0202"
-  // а также "T02" (только номер слота) как запасной вариант
+  // супер-терпимый парсер T:
   function parseTools(txt){
     const out = [];
     const seen = new Set();
 
-    // 1) T + 2 и 2 цифры с пробелами/без
-    const rePair = /\bT\s*([0-9]{2})\s*([0-9]{2})\b/ig;
+    // Вариант А: T + 2 цифры + разделители + 2 цифры (например T 02  02, T02-02, T02,02)
+    const rePair = /(^|[^A-Za-z0-9_])T\s*([0-9]{2})[\s,.;:_-]*([0-9]{2})(?![0-9])/ig;
     let m;
     while((m = rePair.exec(txt)) !== null){
-      const pos = parseInt(m[1],10);
-      const off = m[2];
+      const pos = parseInt(m[2],10), off = m[3];
       if(pos>=1 && pos<=12 && !seen.has(pos)){
-        seen.add(pos); out.push({ t:`T${m[1]}${m[2]}`, pos, off });
+        seen.add(pos); out.push({ t:`T${m[2]}${off}`, pos, off });
       }
     }
 
-    // 2) T + 4 цифры подряд
-    const re4 = /\bT\s*([0-9]{4})\b/ig;
+    // Вариант B: T + 4 цифры подряд (T0202)
+    const re4 = /(^|[^A-Za-z0-9_])T\s*([0-9]{4})(?![0-9])/ig;
     while((m = re4.exec(txt)) !== null){
-      const digits = m[1];
+      const digits = m[2];
       const pos = parseInt(digits.slice(0,2),10);
       const off = digits.slice(2);
       if(pos>=1 && pos<=12 && !seen.has(pos)){
@@ -107,22 +128,46 @@ CT.ready(()=>{
       }
     }
 
-    // 3) запасной вариант: T + 2 цифры (не за которым сразу идут ещё цифры)
-    const re2 = /\bT\s*([0-9]{2})(?!\s*[0-9])/ig;
+    // Вариант C (fallback): T + 2 цифры (без следующих цифр)
+    const re2 = /(^|[^A-Za-z0-9_])T\s*([0-9]{2})(?!\s*[0-9])/ig;
     while((m = re2.exec(txt)) !== null){
-      const pos = parseInt(m[1],10);
+      const pos = parseInt(m[2],10);
       if(pos>=1 && pos<=12 && !seen.has(pos)){
-        seen.add(pos); out.push({ t:`T${m[1]}`, pos, off:'' });
+        seen.add(pos); out.push({ t:`T${m[2]}`, pos, off:'' });
       }
     }
 
     return out;
   }
 
+  // ===== UI заполнение =====
+  function buildParsed(txt){
+    const O = parseOLine(txt); // {num, comment, side}
+    const wcs = detectWCS(txt, O.side);
+    // Заголовок: из O-коммента очищаем номер/RO/RU, иначе — первый комментарий
+    let title = '';
+    if(O.comment){
+      title = O.comment.replace(/\b(RO|RU)\b/i,'').replace(/\d{5,}/,'').replace(/[_\-\.]+/g,' ').trim();
+    }
+    if(!title) title = firstComment(txt) || `Programm ${O.num||''}`.trim();
+    const tools = parseTools(txt);
+
+    return {
+      number: O.num || '',
+      title,
+      wcsText: wcs.text,
+      wcsRaw: wcs.raw,   // 'G54' / 'G55' / ''
+      tools
+    };
+  }
+
   function render(parsed){
     res.style.display = '';
     pTitle.value = parsed.title || '';
-    pWCS.value   = parsed.wcs.text;
+    pNum.value   = parsed.number || '';
+    pWCS.value   = parsed.wcsText;
+    pStatus.value= 'Entwurf';
+    tCount.textContent = `Tools: ${parsed.tools.length}`;
 
     const cats = CT.storage.read(CT_KEYS.CATS, []);
     const defCat = cats[0]?.id;
@@ -136,11 +181,15 @@ CT.ready(()=>{
     parsed.tools.forEach((row,i)=>{
       const nameDef = (parsed.title || 'Werkzeug') + ' • ' + row.t;
       const catOptions = cats.map(c=>`<option value="${c.id}" ${c.id===defCat?'selected':''}>${CT.escape(c.title)}</option>`).join('');
+      const exists = findExistingToolByCode(row.t);
       const el = document.createElement('div'); el.className='tool-row';
       el.innerHTML = `
         ${NOIMG}
         <div class="meta">
-          <div class="name"><input class="field" id="nm_${i}" value="${CT.escape(nameDef)}"></div>
+          <div class="name">
+            <input class="field" id="nm_${i}" value="${CT.escape(nameDef)}">
+            ${exists?'<span class="pill">exis.</span>':''}
+          </div>
           <div class="muted-sm">Slot: <b>${row.pos}</b> • Code: <b>${CT.escape(row.t)}</b></div>
           <div class="row mt">
             <label class="fld" style="flex:1;min-width:140px">Kategorie
@@ -151,40 +200,85 @@ CT.ready(()=>{
             </label>
           </div>
         </div>
-        <div><button class="btn brand" data-idx="${i}">Übernehmen</button></div>`;
-      el.querySelector('button').onclick = ()=> addOne(i, parsed);
+        <div><button class="btn ${exists?'':'brand'}" data-idx="${i}">${exists?'Verknüpfen':'Übernehmen'}</button></div>`;
+      el.querySelector('button').onclick = ()=> addOneTool(i, parsed);
       list.appendChild(el);
     });
+
+    // запомним состояние на секции
+    res._parsed = parsed;
   }
 
-  function addOne(i, parsed){
+  function findExistingToolByCode(code){
+    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    return tools.find(t => (t.code||'').toLowerCase() === (code||'').toLowerCase());
+  }
+
+  function addOneTool(i, parsed){
     const t = parsed.tools[i];
     const name = document.getElementById('nm_'+i).value || (parsed.title||'Werkzeug')+' • '+t.t;
     const catId = document.getElementById('cat_'+i).value;
-    const iso = document.getElementById('iso_'+i).value;
+    const iso   = document.getElementById('iso_'+i).value;
 
-    // создаём в TOOLS
-    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
-    const tool = { id:CT.uid(), name, code:t.t, catId, iso, maker:'', note:(parsed.title||''), imgData:'', lifePct:100 };
-    tools.push(tool);
-    CT.storage.write(CT_KEYS.TOOLS, tools);
+    // если есть — не дублируем
+    let tool = findExistingToolByCode(t.t);
+    if(!tool){
+      const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+      tool = { id:CT.uid(), name, code:t.t, catId, iso, maker:'', note:(parsed.title||''), imgData:'', lifePct:100 };
+      tools.push(tool);
+      CT.storage.write(CT_KEYS.TOOLS, tools);
+    }
 
-    // при необходимости — сразу в Live Setup
+    // при необходимости — сразу в Live Setup (только если слот свободен)
     if(assignLive.checked){
       const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
-      const side = parsed.wcs.raw==='G54' ? 'ro' : (parsed.wcs.raw==='G55' ? 'ru' : null);
+      const side = parsed.wcsRaw==='G54' ? 'ro' : (parsed.wcsRaw==='G55' ? 'ru' : null);
       if(side){
         const idx = Math.max(1, Math.min(12, t.pos)) - 1;
-        if(!live[side][idx]){ // не перезаписываем занятый
+        if(!live[side][idx]){
           live[side][idx] = { toolId: tool.id, note:'' };
           CT.storage.write(CT_KEYS.SETUP, live);
         }
       }
     }
-    CT.toast('Hinzugefügt','ok');
+
+    CT.toast('OK','ok');
   }
 
-  // UI
+  function createDraftProgram(parsed){
+    const progs = CT.storage.read(CT_KEYS.PROGS, []);
+    const number = (pNum.value || parsed.number || '').trim();
+    const title  = (pTitle.value || parsed.title || 'Programm').trim();
+    if(!number){ CT.toast('Programm-Nr. fehlt','err'); return; }
+
+    const ro = Array(12).fill(null), ru = Array(12).fill(null);
+    const side = parsed.wcsRaw==='G55' ? 'ru' : 'ro'; // если не распознано — считаем RO
+
+    // Попробуем проставить toolId, если уже есть в Tools (по code)
+    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    parsed.tools.forEach(t=>{
+      const slot = Math.max(1, Math.min(12, t.pos)) - 1;
+      const found = tools.find(x => (x.code||'').toLowerCase() === t.t.toLowerCase());
+      const cell = found ? { toolId:found.id, note:'' } : { toolId:null, note:'' };
+      if(side==='ro' && !ro[slot]) ro[slot]=cell;
+      if(side==='ru' && !ru[slot]) ru[slot]=cell;
+    });
+
+    const draft = {
+      id: CT.uid(),
+      number: number,
+      title:  title,
+      date:   Date.now(),
+      status: 'draft',
+      ro, ru,
+      drawing: null
+    };
+    progs.push(draft);
+    CT.storage.write(CT_KEYS.PROGS, progs);
+    CT.toast(`Programm #${number} als Entwurf angelegt`, 'ok');
+  }
+
+  // ===== События UI =====
   file.onchange = async ()=>{
     const f = file.files?.[0]; if(!f) return;
     code.value = await readFileAsText(f);
@@ -197,13 +291,27 @@ CT.ready(()=>{
 
   parse.onclick = ()=>{
     const txt = code.value||''; if(!txt.trim()) return CT.toast('Kein Text','err');
-
-    const title = firstComment(txt) || '';
-    const wcs = detectWCS(txt);
-    const tools = parseTools(txt);
-
-    render({ title, wcs, tools });
+    const parsed = buildParsed(txt);
+    render(parsed);
+    if(!parsed.tools.length){
+      // Подсказка: показать первые символы строки с 'T', чтобы понять формат
+      const firstT = (txt.match(/^[^\n]*T[^\n]*/im)||[''])[0].trim();
+      if(firstT) CT.toast('Hinweis: '+firstT, 'info', 2500);
+    }
   };
+
+  addAll.onclick = ()=>{
+    const parsed = res._parsed; if(!parsed) return;
+    parsed.tools.forEach((_,i)=> addOneTool(i, parsed));
+    CT.toast('Tools übernommen','ok');
+  };
+
+  createDraft.onclick = ()=>{
+    const parsed = res._parsed; if(!parsed) return;
+    createDraftProgram(parsed);
+  };
+
+  openSetup.onclick = ()=>{ location.href = './setup.html'; };
 });
 </script>
 </body>
