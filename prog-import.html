@@ -15,15 +15,17 @@
     @media (max-width:520px){.grid2{grid-template-columns:1fr}}
     .pill{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:700;margin-left:6px}
     .hidden{display:none}
+    .no-print{}
 
     /* ---------- Werkzeugliste (экран) ---------- */
-    .print-wrap{background:#fff;border:1px solid #e7eef9;border-radius:14px;box-shadow:var(--shadow);padding:12px}
-    .wl-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:2px 0 10px}
-    .wl-head h3{margin:0;font-size:20px}
-    .wl-meta{display:flex;flex-wrap:wrap;gap:12px;color:var(--muted);font-size:14px}
+    .print-wrap{background:#fff;border:1px solid #e7eef9;border-radius:14px;box-shadow:var(--shadow);padding:16px}
+    .wl-head{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+    .wl-title{font-size:14px;color:var(--muted)}
+    .wl-progline[contenteditable="true"]{display:inline-block;border:1px dashed #dfe6f7;border-radius:8px;padding:4px 8px;min-width:160px}
+    .wl-progline:focus{outline:none;border-color:#c9d8fb;background:#f8fbff}
     .wl-table{width:100%;border-collapse:separate;border-spacing:0}
-    .wl-table th,.wl-table td{padding:10px;border-top:1px solid #eef3ff}
-    .wl-table thead th{font-size:13px;text-transform:uppercase;letter-spacing:.02em;color:#5b6b86;border-top:0}
+    .wl-table th,.wl-table td{padding:12px;border-top:1px solid #eef3ff}
+    .wl-table thead th{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:#5b6b86;border-top:0}
     .wl-table tbody tr:nth-child(odd){background:#fafcff}
     .wl-table .nr{white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
     .wl-remark{min-height:32px;border:1px dashed #dfe6f7;border-radius:8px;padding:6px}
@@ -31,14 +33,14 @@
     /* ---------- Печать ---------- */
     @media print{
       body{background:#fff}
-      header.appbar, .dock, .section:first-of-type, .tabs{display:none!important}
-      .print-wrap{box-shadow:none;border:0;padding:0}
-      .wl-head h3{font-size:18pt}
-      .wl-meta{font-size:10pt}
-      .wl-table th,.wl-table td{border:1px solid #ddd;padding:8px}
-      .wl-table thead th{text-transform:none;color:#000;border:1px solid #ddd}
+      header.appbar, .dock, .section:first-of-type, .tabs, .no-print{display:none!important}
+      .print-wrap{box-shadow:none;border:0;border-radius:0;padding:0}
+      .wl-title{font-size:16pt}
+      .wl-progline{border:0;padding:0}
+      .wl-table th,.wl-table td{border:1px solid #ccc;padding:8px}
+      .wl-table thead th{text-transform:none;color:#000;border:1px solid #ccc}
       .wl-table tbody tr:nth-child(odd){background:#fff}
-      .wl-remark{border:1px solid #bbb;min-height:28px}
+      .wl-remark{border:1px solid #bbb;min-height:24px}
     }
   </style>
 </head>
@@ -109,14 +111,7 @@
     <div id="tab-list" class="hidden">
       <div class="print-wrap">
         <div class="wl-head">
-          <h3>Werkzeugliste</h3>
-          <div class="wl-meta">
-            <div>Programm: <b id="pl-title-v">—</b></div>
-            <div>Nr: <b id="pl-num">—</b></div>
-            <div>Seite: <b id="pl-side">—</b></div>
-            <div>Datum: <span id="pl-date"></span></div>
-            <div>Uhrzeit: <span id="pl-time"></span></div>
-          </div>
+          <div class="wl-title">Programm:&nbsp;<span id="pl-progline" class="wl-progline" contenteditable="true">—</span></div>
         </div>
         <table class="wl-table" id="pl-table">
           <thead>
@@ -125,10 +120,10 @@
           <tbody></tbody>
         </table>
       </div>
-      <div class="row mt">
+      <div class="row mt no-print">
         <button class="btn" id="btnPrint">Drucken / PDF</button>
       </div>
-      <div class="muted mt">Hinweis: Bilder/Thumbs werden in der Druckversion ausgelassen.</div>
+      <div class="muted mt no-print">Hinweis: Bilder/Thumbs werden in der Druckversion ausgelassen.</div>
     </div>
   </section>
 </main>
@@ -140,7 +135,6 @@
 <script>
 CT.ready(()=>{
   CT.ensureSeeds();
-  const NOIMG = '<div class="thumb">No</div>';
   const readFileAsText = f => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result||''); r.onerror=rej; r.readAsText(f); });
 
   // ===== парсинг =====
@@ -234,12 +228,10 @@ CT.ready(()=>{
   }
 
   function renderListTab(parsed){
-    document.getElementById('pl-title-v').textContent = (parsed.title||'—');
-    document.getElementById('pl-num').textContent     = (parsed.number||'—');
-    document.getElementById('pl-side').textContent    = parsed.wcsText||'—';
-    const now=new Date();
-    document.getElementById('pl-date').textContent    = now.toLocaleDateString();
-    document.getElementById('pl-time').textContent    = now.toLocaleTimeString();
+    // Программная строка по умолчанию: "231850.RO" (или RU)
+    const progLine = (parsed.number ? parsed.number : '—') + (parsed.wcsRaw ? '.' + parsed.wcsRaw.replace('G','') : '');
+    const el = document.getElementById('pl-progline');
+    el.textContent = progLine;
 
     const tbody=document.querySelector('#pl-table tbody'); tbody.innerHTML='';
     parsed.tools.forEach(t=>{
