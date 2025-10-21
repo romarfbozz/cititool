@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>CitiTool • Programm-Import</title>
+  <link rel="stylesheet" href="./ui/core.css">
+  <style>
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .codearea{width:100%; min-height:220px; border-radius:12px; border:1px solid #dae2f3; padding:10px}
+    .findings{display:grid; gap:.5rem}
+    .tool-row{display:grid; grid-template-columns:56px 1fr auto; gap:.6rem; align-items:center; border:1px solid #e5ebf7; border-radius:14px; padding:8px; background:#fff}
+    .thumb{width:56px; height:56px; border-radius:10px; background:#f0f3fa; display:grid; place-items:center; color:#9cb1d9; font-weight:800}
+    .tool-row .name{font-weight:800}
+    .muted-sm{font-size:12px; color:var(--muted)}
+    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:.6rem}
+    @media (max-width:520px){ .grid2{grid-template-columns:1fr} }
+    .hint{font-size:12px;color:var(--muted)}
+    .pill{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:700;margin-left:6px}
+  </style>
+</head>
+<body data-active="tools">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html">
+      <span class="ct-badge" aria-hidden="true">CT</span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Programm-Import</div></div>
+    </a>
+    <div class="actions">
+      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
+        <svg><use href="./ui/icons.svg#search"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+<div class="searchbar collapsed">
+  <input class="field" type="search" placeholder="Suchen…" id="dummySearch">
+</div>
+
+<main class="container">
+  <!-- Ввод -->
+  <section class="section">
+    <h2>G-Code Datei / Text</h2>
+    <div class="row">
+      <input id="file" type="file" accept=".txt,.nc,.cnc,.tap,.gcode,.iso" />
+      <button class="btn" id="btnFromClip">Aus Zwischenablage</button>
+    </div>
+    <textarea id="code" class="codearea mono" spellcheck="false" placeholder="Füge hier dein Programm ein…"></textarea>
+    <div class="row mt">
+      <button class="btn brand" id="btnParse">Parsen</button>
+      <button class="btn" id="btnClear">Leeren</button>
+    </div>
+    <div class="hint mt">Tip: O-Zeile вида <b>O1407(PK231850RO)</b> — мы возьмём <b>231850</b> как номер и <b>RO</b> как сторону. Если в скобках нет RO/RU — ищем <b>G54/G55</b> в теле.</div>
+  </section>
+
+  <!-- Результат -->
+  <section class="section" id="resSec" style="display:none">
+    <h2>Erkannte Daten</h2>
+
+    <div class="grid2">
+      <label class="fld">Titel<input id="progTitle" placeholder="—"></label>
+      <label class="fld">Programm-Nr.<input id="progNum" placeholder="—"></label>
+      <label class="fld">Koordinatensystem<input id="progWCS" readonly></label>
+      <label class="fld">Status<input id="progStatus" value="Entwurf" readonly></label>
+    </div>
+
+    <label class="chk mt"><input type="checkbox" id="assignLive" checked> Auch ins Live-Setup einfügen</label>
+    <div class="hint">Beim Anlegen werden die erkannten T-Slots in RO/RU gesetzt (falls Plätze frei).</div>
+
+    <h3 style="margin:12px 2px 8px">Gefundene Tools (Tnnnn)</h3>
+    <div id="toolList" class="findings"></div>
+
+    <div class="row mt">
+      <button class="btn brand" id="btnCreateProg">Als Programm anlegen (Entwurf)</button>
+      <button class="btn" id="btnAddAllTools">Fehlende Tools → hinzufügen</button>
+    </div>
+  </section>
+</main>
+
+<nav class="dock" id="dock"></nav>
+
+<script src="./ui/core.js"></script>
+<script src="./ui/dock.js"></script>
+<script>
+CT.ready(()=>{
+  CT.ensureSeeds();
+  const NOIMG = '<div class="thumb">No</div>';
+
+  // ===== helpers =====
+  function readFileAsText(file){
+    return new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=()=>resolve(r.result||'');
+      r.onerror=reject;
+      r.readAsText(file);
+    });
+  }
+
+  function parseOline(src){
+    // Oxxxx(optional_comment)
+    const oLine = src.match(/^\s*O(\d+)\s*\(([^)]*)\)/mi);
+    if(!oLine) return { num:null, comment:null, side:null, raw:null };
+    const raw = oLine[0];
+    const num = oLine[1] ? oLine[1].trim() : null; // "1407" – это НЕ внешний номер, но есть коммент
+    const comment = (oLine[2]||'').trim();        // "PK231850RO"
+    // из комментария выцепляем длинный номер и RO/RU
+    const side = /RU\b/i.test(comment) ? 'RU' : (/RO\b/i.test(comment) ? 'RO' : null);
+    const extNum = (comment.match(/(\d{5,})/)||[])[1] || null; // 5+ цифр → 231850
+    return { num: extNum, comment, side, raw };
+  }
+
+  function detectWCS(src, sideHint){
+    if(sideHint==='RO') return {wcs:'RO (G54)', raw:'G54'};
+    if(sideHint==='RU') return {wcs:'RU (G55)', raw:'G55'};
+    const w = src.match(/\bG5([45])\b/i);
+    if(!w) return {wcs:'—', raw:''};
+    return w[1]==='4' ? {wcs:'RO (G54)', raw:'G54'} : {wcs:'RU (G55)', raw:'G55'};
+  }
+
+  function parseTools(src){
+    const reg = /\bT(\d{2})(\d{2})\b/g; // T aa bb
+    const out = [];
+    let m; const seen = new Set();
+    while((m=reg.exec(src))!==null){
+      const pos = parseInt(m[1],10); // 1..12
+      if(pos<1 || pos>12) continue;
+      if(!seen.has(pos)){ seen.add(pos); out.push({ t:m[0], pos, off:m[2] }); }
+    }
+    return out;
+  }
+
+  function buildPreview(parsed){
+    document.getElementById('resSec').style.display='';
+    document.getElementById('progTitle').value = parsed.title || '';
+    document.getElementById('progNum').value   = parsed.number || '';
+    document.getElementById('progWCS').value   = parsed.wcsText;
+    document.getElementById('progStatus').value= 'Entwurf';
+
+    renderToolsList(parsed);
+  }
+
+  function findExistingToolByCode(code){
+    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    return tools.find(t => (t.code||'').toLowerCase() === (code||'').toLowerCase());
+  }
+
+  function renderToolsList(parsed){
+    const cats = CT.storage.read(CT_KEYS.CATS, []);
+    const defCat = cats[0]?.id;
+    const list = document.getElementById('toolList');
+    list.innerHTML='';
+
+    if(!parsed.tools.length){
+      list.innerHTML='<div class="muted">Keine Tools gefunden</div>'; return;
+    }
+
+    parsed.tools.forEach((row,i)=>{
+      const exists = findExistingToolByCode(row.t);
+      const catOptions = CT.storage.read(CT_KEYS.CATS, []).map(c=>
+        `<option value="${c.id}" ${c.id===defCat?'selected':''}>${CT.escape(c.title)}</option>`
+      ).join('');
+      const nameDef = (parsed.title || 'Werkzeug') + ` • ${row.t}`;
+
+      const wrap = document.createElement('div'); wrap.className='tool-row';
+      wrap.innerHTML = `
+        ${NOIMG}
+        <div class="meta">
+          <div class="name">
+            <input class="field" id="nm_${i}" value="${CT.escape(nameDef)}">
+            ${exists?'<span class="pill">exis.</span>':''}
+          </div>
+          <div class="muted-sm">Slot: <b>${row.pos}</b> • Code: <b>${CT.escape(row.t)}</b></div>
+          <div class="row mt">
+            <label class="fld" style="flex:1;min-width:140px">Kategorie
+              <select id="cat_${i}">${catOptions}</select>
+            </label>
+            <label class="fld" style="flex:1;min-width:140px">ISO
+              <input id="iso_${i}" placeholder="optional">
+            </label>
+          </div>
+        </div>
+        <div>
+          <button class="btn ${exists?'':'brand'}" data-idx="${i}">${exists?'Verknüpfen':'Hinzufügen'}</button>
+        </div>
+      `;
+      wrap.querySelector('button').onclick = ()=>{
+        addOneTool(i, parsed);
+      };
+      list.appendChild(wrap);
+    });
+  }
+
+  function addOneTool(i, parsed){
+    const t = parsed.tools[i];
+    const name = document.getElementById(`nm_${i}`).value || (parsed.title||'Werkzeug')+` • ${t.t}`;
+    const catId= document.getElementById(`cat_${i}`)?.value;
+    const iso  = document.getElementById(`iso_${i}`)?.value;
+
+    // если уже есть Tool с таким code — не создаём, вернём его id
+    let tool = findExistingToolByCode(t.t);
+    if(!tool){
+      const arr = CT.storage.read(CT_KEYS.TOOLS, []);
+      tool = { id:CT.uid(), name, code:t.t, catId:catId||arr[0]?.catId, iso, maker:'', note:(parsed.title||''), imgData:'', lifePct:100 };
+      arr.push(tool);
+      CT.storage.write(CT_KEYS.TOOLS, arr);
+    }
+
+    // если чекбокс "assignLive" включен — поставим в Live Setup (только если пусто)
+    if(document.getElementById('assignLive').checked){
+      const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
+      const side = parsed.wcsRaw==='G54' ? 'ro' : (parsed.wcsRaw==='G55' ? 'ru' : null);
+      if(side){
+        const idx = Math.max(1, Math.min(12, t.pos)) - 1;
+        if(!live[side][idx]){
+          live[side][idx] = { toolId:tool.id, note:'' };
+          CT.storage.write(CT_KEYS.SETUP, live);
+        }
+      }
+    }
+    CT.toast('OK', 'ok');
+  }
+
+  function createDraftProgram(parsed){
+    const progs = CT.storage.read(CT_KEYS.PROGS, []);
+    const number = (document.getElementById('progNum').value || parsed.number || '').trim();
+    const title  = (document.getElementById('progTitle').value || parsed.title || 'Programm').trim();
+    if(!number){ CT.toast('Programm-Nr. fehlt','err'); return; }
+
+    // соберём ro/ru массивы
+    const ro = Array(12).fill(null), ru = Array(12).fill(null);
+    const side = parsed.wcsRaw==='G55' ? 'ru' : 'ro'; // по умолчанию RO
+    parsed.tools.forEach(t=>{
+      const slot = Math.max(1, Math.min(12, t.pos)) - 1;
+      if(side==='ro' && !ro[slot]) ro[slot]={toolId:null, note:''};
+      if(side==='ru' && !ru[slot]) ru[slot]={toolId:null, note:''};
+    });
+
+    // попробуем сопоставить toolId из Tools по code
+    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    parsed.tools.forEach(t=>{
+      const slot = Math.max(1, Math.min(12, t.pos)) - 1;
+      const found = tools.find(x => (x.code||'').toLowerCase() === t.t.toLowerCase());
+      if(found){
+        if(side==='ro') ro[slot]={toolId:found.id, note:''};
+        else ru[slot]={toolId:found.id, note:''};
+      }
+    });
+
+    const draft = {
+      id: CT.uid(),
+      number: number,
+      title:  title,
+      date:   Date.now(),
+      status: 'draft',           // метка "не готово"
+      ro, ru,
+      drawing: null              // Platzhalter für Zeichnung (позже можно добавить)
+    };
+    progs.push(draft);
+    CT.storage.write(CT_KEYS.PROGS, progs);
+    CT.toast(`Programm #${number} als Entwurf angelegt`, 'ok');
+  }
+
+  // ===== UI events =====
+  file.onchange = async ()=>{
+    const f = file.files?.[0]; if(!f) return;
+    const txt = await readFileAsText(f);
+    code.value = txt;
+  };
+
+  btnFromClip.onclick = async ()=>{
+    try{
+      const txt = await navigator.clipboard.readText();
+      code.value = txt||'';
+      CT.toast('Aus Zwischenablage eingefügt','ok');
+    }catch(e){
+      CT.toast('Clipboard nicht verfügbar','err');
+    }
+  };
+
+  btnParse.onclick = ()=>{
+    const txt = code.value||'';
+    if(!txt.trim()) return CT.toast('Kein Text','err');
+
+    // 1) O-Zeile
+    const O = parseOline(txt); // {num, comment, side, raw}
+    // 2) WCS
+    const W = detectWCS(txt, O.side); // {wcs, raw}
+    // 3) Комментарий-человекочитаемое имя — если есть в теле в круглых скобках первым
+    const firstComment = (txt.match(/\(([^)]+)\)/) || [,''])[1]?.trim() || '';
+    // заголовок: пробуем извлечь из комментария в O-строке без номера/RO/RU
+    let title = '';
+    if(O.comment){
+      title = O.comment.replace(/\b(RO|RU)\b/i,'').replace(/\d{5,}/,'').replace(/[_\-\.]+/g,' ').trim();
+    }
+    if(!title) title = firstComment || `Programm ${O.num||''}`.trim();
+
+    // 4) Tools
+    const tools = parseTools(txt);
+
+    const parsed = {
+      number: O.num, title, wcsText: W.wcs, wcsRaw: W.raw,
+      tools
+    };
+    buildPreview(parsed);
+
+    // сохраним для дальнейших действий
+    document.getElementById('resSec')._parsed = parsed;
+  };
+
+  btnClear.onclick = ()=>{
+    code.value=''; document.getElementById('resSec').style.display='none';
+  };
+
+  btnAddAllTools.onclick = ()=>{
+    const parsed = document.getElementById('resSec')._parsed;
+    if(!parsed) return;
+    parsed.tools.forEach((_,i)=> addOneTool(i, parsed));
+    CT.toast('Tools übernommen','ok');
+  };
+
+  btnCreateProg.onclick = ()=>{
+    const parsed = document.getElementById('resSec')._parsed;
+    if(!parsed) return;
+    createDraftProgram(parsed);
+  };
+});
+</script>
+</body>
+</html>
