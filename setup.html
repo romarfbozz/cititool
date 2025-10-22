@@ -1,9 +1,25 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Setup</title>
   <link rel="stylesheet" href="./ui/core.css">
+  <style>
+    /* Только для этого модуля — большой блок Zeichnung */
+    .hero-drawing{
+      display:grid; place-items:center;
+      width:100%; height:180px; border:1px dashed #dfe6f7; border-radius:14px;
+      background:#fafcff;
+      overflow:hidden;
+    }
+    .hero-drawing img{ width:100%; height:100%; object-fit:contain; }
+    .hero-placeholder{ display:grid; place-items:center; gap:.4rem; color:#8aa0c5; }
+    .hero-placeholder .ct-badge{ width:40px;height:40px;border-radius:12px;font-size:16px }
+    .prog-title{ display:flex; align-items:center; gap:.35rem; }
+    .prog-title .name{ font-size:20px; font-weight:800; }
+    .slot .name{ font-weight:800 }
+  </style>
 </head>
 <body data-active="programme">
 <header class="appbar">
@@ -21,33 +37,38 @@
 <div class="searchbar collapsed"><input class="field" type="search" placeholder="Im Setup suchen…" id="setupSearch"></div>
 
 <main class="container">
-  <!-- Программа: шапка -->
+  <!-- Programme: верхний блок -->
   <section class="section" id="progHeader">
-    <div class="row between">
-      <div>
-        <div class="row">
-          <div class="select-like" id="progSelect">Programm wählen…</div>
-          <button class="icon-btn info" id="editProg" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>
-        </div>
-        <div class="muted" id="progMeta">Nr — / Seite —</div>
-      </div>
-      <div class="row">
-        <div id="drawingWrap" class="card" style="width:96px;height:96px;display:grid;place-items:center;border-radius:12px">
-          <span class="muted">no foto</span>
-        </div>
+    <div class="prog-title">
+      <div class="name" id="progTitleText">Programm wählen…</div>
+      <button class="icon-btn sm info" id="editProg" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>
+    </div>
+    <div class="muted" id="progMeta">Nr — • Seite —</div>
+
+    <div class="hero-drawing mt" id="drawingWrap" role="button" aria-label="Zeichnung wählen">
+      <div class="hero-placeholder">
+        <span class="ct-badge">CT</span>
+        <small>kein Foto</small>
       </div>
     </div>
-    <div class="tabs mt">
+    <input type="file" id="drawingFile" accept="image/*" class="hidden"/>
+
+    <div class="row mt">
       <button class="tab active" data-side="ro">RO (G54)</button>
       <button class="tab" data-side="ru">RU (G55)</button>
+      <span style="flex:1"></span>
+      <button class="btn" id="progSwitch">Wechseln</button>
+      <button class="btn brand" id="newProg">Neues Programm</button>
+      <button class="btn ok" id="applyLive">In Live anwenden</button>
     </div>
   </section>
 
-  <!-- Слоты -->
+  <!-- Slots -->
   <section class="section">
     <div id="slots" class="slots"></div>
   </section>
 </main>
+
 <nav class="dock" id="dock"></nav>
 
 <script src="./ui/core.js"></script>
@@ -61,22 +82,68 @@ CT.ready(()=>{
   let side  = 'ro';
   let currentProgId = progs[0]?.id || null;
 
-  function progTitle(p){ return `#${p.number} — ${p.title}`; }
+  // ——— helpers
+  const $ = (s, r=document)=>r.querySelector(s);
+
+  function progTitle(p){ return `#${p.number||'—'} — ${p.title||'Programm'}`; }
+
   function refreshHeader(){
     progs = CT.storage.read(CT.CT_KEYS.PROGS, []);
-    const cur = progs.find(p=>p.id===currentProgId);
-    document.getElementById('progSelect').textContent = cur? progTitle(cur) : 'Programm wählen…';
-    document.getElementById('progMeta').textContent   = cur? `Nr ${cur.number} • Seite ${side==='ro'?'RO (G54)':'RU (G55)'}` : 'Nr — / Seite —';
-    const dw = document.getElementById('drawingWrap');
+    const cur = progs.find(p=>p.id===currentProgId) || null;
+
+    $('#progTitleText').textContent = cur ? progTitle(cur) : 'Programm wählen…';
+    $('#progMeta').textContent = cur ? `Nr ${cur.number||'—'} • Seite ${side==='ro'?'RO (G54)':'RU (G55)'}` : 'Nr — • Seite —';
+
+    const dw = $('#drawingWrap');
     if(cur?.drawing){
-      dw.innerHTML = `<img src="${cur.drawing}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:10px">`;
+      dw.innerHTML = `<img src="${cur.drawing}" alt="Zeichnung">`;
     }else{
-      dw.innerHTML = `<span class="muted">no foto</span>`;
+      dw.innerHTML = `<div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>`;
     }
   }
 
+  function render(){
+    const root=$('#slots'); root.innerHTML='';
+    const data = live[side];
+    const tools = CT.storage.read(CT.CT_KEYS.TOOLS, []);
+    const q = ($('#setupSearch').value||'').toLowerCase();
+
+    for(let i=0;i<12;i++){
+      const cell = document.createElement('div'); cell.className='slot';
+      const v = data[i];
+      if(!v){
+        cell.innerHTML = `<div class="slot-empty"><div class="muted">#${i+1} • Frei</div><button class="btn" data-i="${i}">Hinzufügen</button></div>`;
+        cell.querySelector('button').onclick=()=>selectToolFor(i);
+      }else{
+        const t = tools.find(x=>x.id===v.toolId);
+        const name = t? t.name : '—';
+        const code = t? t.code : '';
+        if(q && !(name.toLowerCase().includes(q)||code.toLowerCase().includes(q))) { continue; }
+
+        cell.innerHTML = `
+          <div class="slot-full">
+            <button class="btn tnum-btn" id="tn_${i}">T${String(i+1).padStart(2,'0')}${String(i+1).padStart(2,'0')}</button>
+            ${t?.imgData?`<img class="thumb" src="${t.imgData}" alt="">`:`<div class="thumb" style="display:grid;place-items:center;color:#9cb1d9">No</div>`}
+            <div class="meta">
+              <div class="name">${CT.escape(name)}</div>
+              <div class="muted">${CT.escape(code)}</div>
+            </div>
+            <div class="tail">
+              <button class="btn ghost sm" data-i="${i}">Wechseln</button>
+              <button class="btn warn sm" id="rem_${i}">Entfernen</button>
+            </div>
+          </div>`;
+        cell.querySelector('.btn.ghost').onclick=()=> selectToolFor(i);
+        cell.querySelector(`#rem_${i}`).onclick=()=>{ live[side][i]=null; CT.storage.write(CT.CT_KEYS.SETUP,live); render(); };
+        cell.querySelector(`#tn_${i}`).onclick=()=> editTNum(i);
+      }
+      root.appendChild(cell);
+    }
+  }
+
+  // ——— program actions
   function openProgMenu(){
-    const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date).toLocaleDateString()}));
+    const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date||Date.now()).toLocaleDateString()}));
     CT.openDrawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; CT.closeDrawer(); refreshHeader(); render(); }});
   }
 
@@ -85,72 +152,35 @@ CT.ready(()=>{
     const isNew = !p;
     const cur = p || {id:CT.uid(), number:'', title:'', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawing:null};
     const html = `
-      <label class="fld">Zeichnung / Foto<input id="pr_img" type="file" accept="image/*"></label>
       <label class="fld">Titel<input id="pr_t" value="${CT.escape(cur.title)}" placeholder="Programm"></label>
       <label class="fld">Nummer<input id="pr_n" value="${CT.escape(cur.number)}" placeholder="123456"></label>
       ${!isNew?'<div class="row"><button class="btn warn" id="del">Löschen</button></div>':''}
     `;
     CT.openModal({title:isNew?'Neues Programm':'Programm bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
       const up = {...cur};
-      up.title=document.getElementById('pr_t').value||'Programm';
-      up.number=document.getElementById('pr_n').value||'—';
-      const file=document.getElementById('pr_img').files?.[0];
-      const commit=()=>{
-        let arr=CT.storage.read(CT.CT_KEYS.PROGS,[]);
-        const i=arr.findIndex(x=>x.id===up.id);
-        if(i>-1)arr[i]=up; else arr.push(up);
-        CT.storage.write(CT.CT_KEYS.PROGS, arr);
-        currentProgId=up.id; refreshHeader(); CT.toast('Gespeichert','ok'); render();
-      };
-      if(file){ CT.readFileAsDataURL(file).then(data=>{up.drawing=data; commit();}); } else commit();
+      up.title = document.getElementById('pr_t').value || 'Programm';
+      up.number= document.getElementById('pr_n').value || '—';
+      let arr=CT.storage.read(CT.CT_KEYS.PROGS,[]);
+      const i=arr.findIndex(x=>x.id===up.id);
+      if(i>-1)arr[i]=up; else arr.push(up);
+      CT.storage.write(CT.CT_KEYS.PROGS, arr);
+      currentProgId=up.id; refreshHeader(); CT.toast('Gespeichert','ok');
     }});
     const del=document.getElementById('del');
     if(del) del.onclick=()=>{ progs = progs.filter(x=>x.id!==cur.id); CT.storage.write(CT.CT_KEYS.PROGS,progs); currentProgId=progs[0]?.id||null; CT.closeModal(); refreshHeader(); render(); CT.toast('Gelöscht','ok'); };
   }
 
-  function render(){
-    const root=document.getElementById('slots'); root.innerHTML='';
-    const data = live[side];
-    const tools = CT.storage.read(CT.CT_KEYS.TOOLS, []);
-    const q = (document.getElementById('setupSearch').value||'').toLowerCase();
-
-    for(let i=0;i<12;i++){
-      const cell = document.createElement('div'); cell.className='slot';
-      const v = data[i];
-      if(!v){
-        cell.innerHTML = `<div class="slot-empty">
-          <div class="muted">#${i+1} • Frei</div>
-          <button class="btn" data-i="${i}">Hinzufügen</button></div>`;
-        cell.querySelector('button').onclick=()=>selectToolFor(i);
-      }else{
-        const t = tools.find(x=>x.id===v.toolId);
-        const name = t? t.name : '—';
-        const code = t? t.code : '';
-        if(q && !(name.toLowerCase().includes(q)||code.toLowerCase().includes(q))) { continue; }
-        cell.innerHTML = `
-          <div class="slot-full">
-            <button class="btn tnum-btn" id="tn_${i}">T${String(i+1).padStart(2,'0')}${String(i+1).padStart(2,'0')}</button>
-            ${t?.imgData?`<img class="thumb" src="${t.imgData}" alt="">`:`<div class="thumb" style="display:grid;place-items:center;color:#9cb1d9">No</div>`}
-            <div class="meta">
-              <div class="name" style="font-weight:800">${CT.escape(name)}</div>
-              <div class="muted">${CT.escape(code)}</div>
-            </div>
-            <div class="tail">
-              <button class="icon-btn info" aria-label="Info" id="i_${i}"><svg><use href="./ui/icons.svg#info"/></svg></button>
-              <button class="btn ghost sm" data-i="${i}">Wechseln</button>
-            </div>
-          </div>`;
-        cell.querySelector('.btn.ghost').onclick=()=> selectToolFor(i);
-        cell.querySelector(`#i_${i}`).onclick=()=> infoSlot(i);
-        cell.querySelector(`#tn_${i}`).onclick=()=> editTNum(i);
-      }
-      root.appendChild(cell);
-    }
+  function applyToLive(){
+    const cur = progs.find(x=>x.id===currentProgId); if(!cur) return;
+    live = { ro: cur.ro||Array(12).fill(null), ru: cur.ru||Array(12).fill(null) };
+    CT.storage.write(CT.CT_KEYS.SETUP, live);
+    CT.toast('In Live angewendet','ok');
+    render();
   }
 
   function editTNum(i){
-    const html = `<label class="fld">T-Nummer (Anzeige)<input id="t_num" placeholder="например T0101"></label>`;
-    CT.openModal({title:`Slot #${i+1}`, html, okText:'OK', onOk:()=>{ const v=document.getElementById('t_num').value||''; document.getElementById(`tn_${i}`).textContent = v||document.getElementById(`tn_${i}`).textContent; CT.toast('Aktualisiert','ok'); }});
+    const html = `<label class="fld">T-Nummer (Anzeige)<input id="t_num" placeholder="z.B. T0101"></label>`;
+    CT.openModal({title:`Slot #${i+1}`, html, okText:'OK', onOk:()=>{ const v=document.getElementById('t_num').value||''; const b=document.getElementById(\`tn_${i}\`); if(v) b.textContent=v; CT.toast('Aktualisiert','ok'); }});
   }
 
   function selectToolFor(idx){
@@ -163,28 +193,28 @@ CT.ready(()=>{
     }});
   }
 
-  function infoSlot(i){
-    const v = live[side][i]; if(!v){ CT.toast('Leer','err'); return; }
-    const tAll = CT.storage.read(CT.CT_KEYS.TOOLS, []);
-    const t = tAll.find(x=>x.id===v.toolId);
-    const html = `
-      ${t?.imgData?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
-      <b>${CT.escape(t?.name||'—')}</b>
-      <div class="muted">${CT.escape(t?.code||'')}</div>
-      <div class="row">
-        <button class="btn warn" id="rem">Entfernen</button>
-        <button class="btn brand" id="openTools">Werkzeug öffnen</button>
-      </div>`;
-    CT.openModal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
-    document.getElementById('rem').onclick=()=>{ live[side][i]=null; CT.storage.write(CT.CT_KEYS.SETUP,live); CT.closeModal(); render(); };
-    document.getElementById('openTools').onclick=()=>{ location.href='./tools.html'; };
-  }
-
+  // ——— wire UI
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; refreshHeader(); render();});
-  document.getElementById('progSelect').onclick=openProgMenu;
-  document.getElementById('editProg').onclick=()=>openProgEditor();
-  document.getElementById('newProgTop').onclick=()=>openProgEditor(null);
+  document.getElementById('editProg').onclick = ()=>openProgEditor();
+  document.getElementById('newProgTop').onclick = ()=>openProgEditor(null);
+  document.getElementById('newProg').onclick = ()=>openProgEditor(null);
+  document.getElementById('progSwitch').onclick = openProgMenu;
+  document.getElementById('applyLive').onclick = applyToLive;
   document.getElementById('setupSearch').addEventListener('input', render);
+
+  // click на Zeichnung
+  document.getElementById('drawingWrap').onclick = ()=> document.getElementById('drawingFile').click();
+  document.getElementById('drawingFile').onchange = ()=>{
+    const f = document.getElementById('drawingFile').files?.[0];
+    if(!f) return;
+    CT.readFileAsDataURL(f).then(data=>{
+      progs = CT.storage.read(CT.CT_KEYS.PROGS, []);
+      const cur = progs.find(p=>p.id===currentProgId); if(!cur) return CT.toast('Programm fehlt','err');
+      cur.drawing = data;
+      CT.storage.write(CT.CT_KEYS.PROGS, progs);
+      refreshHeader(); CT.toast('Zeichnung gespeichert','ok');
+    });
+  };
 
   refreshHeader(); render();
 });
