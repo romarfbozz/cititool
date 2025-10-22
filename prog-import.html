@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>CitiTool • Programm-Import</title>
+<link rel="stylesheet" href="./ui/core.css">
+<style>
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  .codearea{width:100%;min-height:220px;border-radius:12px;border:1px solid #dae2f3;padding:10px}
+  .tool-row{display:grid;grid-template-columns:56px 1fr auto;gap:.6rem;align-items:center;border:1px solid #e5ebf7;border-radius:14px;padding:8px;background:#fff}
+  .thumb{width:56px;height:56px;border-radius:10px;background:#f0f3fa;display:grid;place-items:center;color:#9cb1d9;font-weight:800}
+  .muted-sm{font-size:12px;color:var(--muted)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+  @media (max-width:520px){.grid2{grid-template-columns:1fr}}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:700;margin-left:6px}
+  .hidden{display:none}
+  .print-wrap{background:#fff;border:1px solid #e7eef9;border-radius:14px;box-shadow:var(--shadow);padding:16px}
+</style>
+</head>
+<body data-active="tools">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html">
+      <span class="ct-badge">CT</span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Programm-Import</div></div>
+    </a>
+    <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
+      <svg><use href="./ui/icons.svg#search"/></svg>
+    </button>
+  </div>
+</header>
+<div class="searchbar collapsed"><input class="field" type="search" placeholder="Suchen…" id="s"></div>
+
+<main class="container">
+  <section class="section">
+    <h2>G-Code</h2>
+    <div class="row">
+      <input id="file" type="file" accept=".txt,.nc,.tap,.gcode,.iso">
+      <button class="btn" id="fromClip">Aus Zwischenablage</button>
+    </div>
+    <textarea id="code" class="codearea mono" spellcheck="false" placeholder="Füge hier dein Programm ein…"></textarea>
+    <div class="row mt">
+      <button class="btn brand" id="parse">Parsen</button>
+      <button class="btn" id="clear">Leeren</button>
+    </div>
+    <div class="muted" style="margin-top:.4rem">Unterstützt: O-Zeile, G54/G55, T-codes (T02 / T0202 / T 02 02), Kommentar direkt nach T.</div>
+  </section>
+
+  <section class="section hidden" id="res">
+    <div class="tabs">
+      <button class="tab active" data-tab="prog">Analyse</button>
+      <button class="tab" data-tab="tools">Werkzeuge</button>
+      <button class="tab" data-tab="wl">Werkzeugliste</button>
+    </div>
+
+    <!-- Analyse -->
+    <div id="tab-prog">
+      <div class="grid2">
+        <label class="fld">Programm-Titel<input id="pTitle" placeholder="—"></label>
+        <label class="fld">Programm-Nr.<input id="pNum" placeholder="—"></label>
+        <label class="fld">Koordinatensystem<input id="pWCS" readonly></label>
+        <label class="fld">Status<input id="pStatus" value="Entwurf" readonly></label>
+      </div>
+      <div class="row mt">
+        <label class="chk"><input type="checkbox" id="assignLive" checked> Auch ins Live-Setup einfügen</label>
+        <button class="btn brand" id="createDraft">Als Programm anlegen (Entwurf)</button>
+        <button class="btn" id="openSetup">In Setup öffnen</button>
+      </div>
+    </div>
+
+    <!-- Werkzeuge -->
+    <div id="tab-tools" class="hidden"><div id="list"></div></div>
+
+    <!-- Werkzeugliste -->
+    <div id="tab-wl" class="hidden">
+      <div class="print-wrap">
+        <div class="wl-head">
+          <h3>Werkzeugliste</h3>
+          <div class="wl-title">Programm:&nbsp;<span id="pl-progline" class="wl-progline" contenteditable="true">—</span></div>
+        </div>
+        <table class="wl-table" id="pl-table">
+          <thead><tr><th style="width:88px">Nr.</th><th>Werkzeug</th><th style="width:220px">Bemerkungen</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="row mt">
+        <button class="btn" id="btnCSV">CSV exportieren</button>
+        <button class="btn" id="btnPrint">Drucken / PDF</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="dock" id="dock"></nav>
+
+<script src="./ui/core.js"></script>
+<script src="./ui/dock.js"></script>
+<script>
+CT.ready(()=>{
+  CT.ensureSeeds();
+
+  // ===== helpers =====
+  const readFileAsText = f => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result||''); r.onerror=rej; r.readAsText(f); });
+  const sideShort = raw => raw==='G54'?'RO':(raw==='G55'?'RU':'');
+
+  function parseOLine(src){
+    const m = src.match(/^\s*O(\d+)\s*\(([^)]*)\)/mi);
+    if(!m) return { num:null, comment:null, side:null, raw:null };
+    const c = (m[2]||'').trim();
+    const sd = /RU\b/i.test(c) ? 'RU' : (/RO\b/i.test(c) ? 'RO' : null);
+    const extNum = (c.match(/(\d{5,})/)||[])[1] || null;
+    return { num: extNum, comment:c, side:sd, raw:m[0] };
+  }
+  function detectWCS(txt, sideHint){
+    if(sideHint==='RO') return { text:'RO (G54)', raw:'G54' };
+    if(sideHint==='RU') return { text:'RU (G55)', raw:'G55' };
+    const m = txt.match(/\bG5([45])\b/i);
+    if(!m) return { text:'—', raw:'' };
+    return m[1]==='4' ? { text:'RO (G54)', raw:'G54' } : { text:'RU (G55)', raw:'G55' };
+  }
+  function parseToolsWithIndices(txt){
+    const out=[]; let m;
+    const marks=[];
+    // разные формы T
+    const rePair=/T\s*([0-9]{2})\s*[,.;:_-]?\s*([0-9]{2})/ig;
+    while((m=rePair.exec(txt))!==null){ marks.push({t:`T${m[1]}${m[2]}`,pos:+m[1],index:m.index}); }
+    const re4=/T\s*([0-9]{4})/ig;
+    while((m=re4.exec(txt))!==null){ const d=m[1]; marks.push({t:`T${d}`,pos:+d.slice(0,2),index:m.index}); }
+    const re2=/\bT\s*([0-9]{2})(?!\s*[0-9])/ig;
+    while((m=re2.exec(txt))!==null){ marks.push({t:`T${m[1]}`,pos:+m[1],index:m.index}); }
+    // нормализация 1..12
+    const seen=new Set();
+    marks.sort((a,b)=>a.index-b.index).forEach(mk=>{
+      const p = Math.max(1,Math.min(12, mk.pos|0));
+      if(!seen.has(p)){ seen.add(p); out.push({...mk, pos:p}); }
+    });
+    return out;
+  }
+  function collectComments(txt){ const res=[]; const re=/\(([^)]+)\)/g; let m; while((m=re.exec(txt))!==null){ res.push({text:(m[1]||'').trim(),index:m.index}); } return res; }
+  function nearestComment(comments, startIdx, nextIdx){ for(const c of comments){ if(c.index>startIdx && (nextIdx==null || c.index<nextIdx)) return c.text; } return ''; }
+
+  function buildParsed(txt){
+    const O=parseOLine(txt);
+    const wcs=detectWCS(txt,O.side);
+    const tools=parseToolsWithIndices(txt);
+    const comments=collectComments(txt);
+    let progTitle='';
+    if(O.comment){ progTitle=O.comment.replace(/\b(RO|RU)\b/i,'').replace(/\d{5,}/,'').replace(/[_\-\.]+/g,' ').trim(); }
+    if(!progTitle && comments[0]) progTitle=comments[0].text;
+    // подпишем к каждому T ближайший комментарий
+    for(let i=0;i<tools.length;i++){
+      const start=tools[i].index, end=(i<tools.length-1)?tools[i+1].index:null;
+      tools[i].titleBase = nearestComment(comments,start,end) || progTitle || '';
+    }
+    return { number:O.num||'', title:progTitle, wcsText:wcs.text, wcsRaw:wcs.raw, tools };
+  }
+
+  // ===== render =====
+  function findExistingToolByCode(code){
+    const tools=CT.storage.read(CT.CT_KEYS.TOOLS,[]);
+    return tools.find(t => (t.code||'').toLowerCase()===(code||'').toLowerCase());
+  }
+  function renderProgTab(p){
+    pTitle.value = p.title||'';
+    pNum.value   = p.number||'';
+    pWCS.value   = p.wcsText||'—';
+    pStatus.value= 'Entwurf';
+  }
+  function renderToolsTab(parsed){
+    const cats=CT.storage.read(CT.CT_KEYS.CATS,[]); const defCat=cats[0]?.id;
+    const root=document.getElementById('list'); root.innerHTML='';
+    if(!parsed.tools.length){ root.innerHTML='<div class="muted">Keine Tools gefunden</div>'; return; }
+    parsed.tools.forEach((row,i)=>{
+      const nameDef=(row.titleBase||parsed.title||'Werkzeug')+' • '+row.t;
+      const catOptions=cats.map(c=>`<option value="${c.id}" ${c.id===defCat?'selected':''}>${CT.escape(c.title)}</option>`).join('');
+      const exists=findExistingToolByCode(row.t);
+      const el=document.createElement('div'); el.className='tool-row';
+      el.innerHTML=`
+        <div class="thumb">No</div>
+        <div class="meta">
+          <div class="name">
+            <input class="field" id="nm_${i}" value="${CT.escape(nameDef)}">
+            ${exists?'<span class="pill">exis.</span>':''}
+          </div>
+          <div class="muted-sm">Slot: <b>${row.pos}</b> • Code: <b>${CT.escape(row.t)}</b></div>
+          <div class="row mt">
+            <label class="fld" style="flex:1;min-width:140px">Kategorie
+              <select id="cat_${i}">${catOptions}</select>
+            </label>
+            <label class="fld" style="flex:1;min-width:140px">ISO
+              <input id="iso_${i}" placeholder="optional">
+            </label>
+          </div>
+        </div>
+        <div><button class="btn ${exists?'':'brand'}" data-idx="${i}">${exists?'Verknüpfen':'Übernehmen'}</button></div>`;
+      el.querySelector('button').onclick=()=>addOneTool(i,parsed);
+      root.appendChild(el);
+    });
+  }
+  function renderListTab(parsed){
+    const progLine = (parsed.number ? parsed.number : '—') + (parsed.wcsRaw ? '.'+sideShort(parsed.wcsRaw) : '');
+    const el = document.getElementById('pl-progline'); el.textContent = progLine;
+
+    const tbody=document.querySelector('#pl-table tbody'); tbody.innerHTML='';
+    if(!parsed.tools.length){ tbody.innerHTML = `<tr><td colspan="3" class="muted">Keine Tools</td></tr>`; return; }
+    parsed.tools.forEach(t=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td class="nr" contenteditable="true">${CT.escape(t.t)}</td>
+        <td class="wname" contenteditable="true">${CT.escape(t.titleBase||parsed.title||'—')}</td>
+        <td><div class="wl-remark" contenteditable="true"></div></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ===== actions =====
+  function addOneTool(i, parsed){
+    const t = parsed.tools[i];
+    const name = document.getElementById('nm_'+i).value || (t.titleBase||parsed.title||'Werkzeug')+' • '+t.t;
+    const catId= document.getElementById('cat_'+i).value;
+    const iso  = document.getElementById('iso_'+i).value;
+
+    let tool = findExistingToolByCode(t.t);
+    if(!tool){
+      const tools = CT.storage.read(CT.CT_KEYS.TOOLS, []);
+      tool = { id:CT.uid(), name, code:t.t, catId, iso, maker:'', note:(t.titleBase||parsed.title||''), imgData:'', lifePct:100 };
+      tools.push(tool);
+      CT.storage.write(CT.CT_KEYS.TOOLS, tools);
+    }
+    if(assignLive.checked){
+      const live = CT.storage.read(CT.CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
+      const side = parsed.wcsRaw==='G54' ? 'ro' : (parsed.wcsRaw==='G55' ? 'ru' : null);
+      if(side){
+        const idx = Math.max(1, Math.min(12, t.pos)) - 1;
+        if(!live[side][idx]){
+          live[side][idx] = { toolId: tool.id, note:'' };
+          CT.storage.write(CT.CT_KEYS.SETUP, live);
+        }
+      }
+    }
+    CT.toast('OK','ok');
+  }
+  function createDraftProgram(parsed){
+    const progs = CT.storage.read(CT.CT_KEYS.PROGS, []);
+    const number = (pNum.value || parsed.number || '').trim();
+    const title  = (pTitle.value || parsed.title || 'Programm').trim();
+    if(!number){ CT.toast('Programm-Nr. fehlt','err'); return; }
+
+    const ro = Array(12).fill(null), ru = Array(12).fill(null);
+    const side = parsed.wcsRaw==='G55' ? 'ru' : 'ro';
+
+    const tools = CT.storage.read(CT.CT_KEYS.TOOLS, []);
+    parsed.tools.forEach(t=>{
+      const slot = Math.max(1, Math.min(12, t.pos)) - 1;
+      const found = tools.find(x => (x.code||'').toLowerCase() === t.t.toLowerCase());
+      const cell = found ? { toolId:found.id, note:'' } : { toolId:null, note:'' };
+      if(side==='ro' && !ro[slot]) ro[slot]=cell;
+      if(side==='ru' && !ru[slot]) ru[slot]=cell;
+    });
+
+    const draft = { id:CT.uid(), number, title, date:Date.now(), status:'draft', ro, ru, drawing:null };
+    progs.push(draft);
+    CT.storage.write(CT.CT_KEYS.PROGS, progs);
+    CT.toast(`Programm #${number} als Entwurf angelegt`, 'ok');
+  }
+  function exportCSV(){
+    const prog = document.getElementById('pl-progline').textContent.trim() || 'Werkzeugliste';
+    const rows = Array.from(document.querySelectorAll('#pl-table tbody tr')).map(tr=>{
+      const t = tr.querySelector('.nr').textContent.replace(/"/g,'""');
+      const n = tr.querySelector('.wname').textContent.replace(/"/g,'""');
+      const r = tr.querySelector('.wl-remark').textContent.replace(/"/g,'""');
+      return `"${t}","${n}","${r}"`;
+    });
+    const csv = `Nr,Werkzeug,Bemerkungen\n` + rows.join('\n');
+    CT.exportCSV(`${prog}.csv`, csv);
+  }
+
+  // ===== wire UI =====
+  function showTab(key){
+    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===key));
+    document.getElementById('tab-prog').classList.toggle('hidden', key!=='prog');
+    document.getElementById('tab-tools').classList.toggle('hidden', key!=='tools');
+    document.getElementById('tab-wl').classList.toggle('hidden', key!=='wl');
+  }
+
+  file.onchange = async ()=>{ const f=file.files?.[0]; if(!f) return; code.value = await readFileAsText(f); };
+  fromClip.onclick = async ()=>{ try{ code.value = await navigator.clipboard.readText(); CT.toast('Eingefügt','ok'); }catch{ CT.toast('Clipboard nicht verfügbar','err'); } };
+  clear.onclick = ()=>{ code.value=''; res.classList.add('hidden'); };
+
+  parse.onclick = ()=>{
+    const txt = code.value||''; if(!txt.trim()) return CT.toast('Kein Text','err');
+    const p = buildParsed(txt);
+    res.classList.remove('hidden');
+    renderProgTab(p); renderToolsTab(p); renderListTab(p);
+    res._parsed = p;
+  };
+
+  document.getElementById('createDraft').onclick = ()=>{ const p=res._parsed; if(!p) return; createDraftProgram(p); };
+  document.getElementById('openSetup').onclick   = ()=>{ location.href='./setup.html'; };
+  document.getElementById('btnCSV').onclick      = ()=>exportCSV();
+  document.getElementById('btnPrint').onclick    = ()=>window.print();
+
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+  showTab('prog');
+});
+</script>
+</body>
+</html>
