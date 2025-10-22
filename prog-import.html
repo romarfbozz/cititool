@@ -8,16 +8,24 @@
 <style>
   .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .codearea{width:100%;min-height:220px;border-radius:12px;border:1px solid #dae2f3;padding:10px}
-  .tool-row{display:grid;grid-template-columns:56px 1fr auto;gap:.6rem;align-items:center;border:1px solid #e5ebf7;border-radius:14px;padding:8px;background:#fff}
-  .thumb{width:56px;height:56px;border-radius:10px;background:#f0f3fa;display:grid;place-items:center;color:#9cb1d9;font-weight:800}
+  .hidden{display:none}
+  .pill{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:700}
   .muted-sm{font-size:12px;color:var(--muted)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
   @media (max-width:520px){.grid2{grid-template-columns:1fr}}
-  .pill{display:inline-block;padding:2px 8px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:700;margin-left:6px}
-  .hidden{display:none}
-  .no-print{}
-
-  /* ---------- Werkzeugliste (экран) ---------- */
+  .tool-row{display:grid;grid-template-columns:56px 1fr auto;gap:.6rem;align-items:center;border:1px solid #e5ebf7;border-radius:14px;padding:8px;background:#fff}
+  .thumb{width:56px;height:56px;border-radius:10px;background:#f0f3fa;display:grid;place-items:center;color:#9cb1d9;font-weight:800}
+  .stat{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+  @media (max-width:600px){.stat{grid-template-columns:1fr 1fr}}
+  .stat .card{padding:12px}
+  .kvs{display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:start}
+  .kvs b{font-variant-numeric:tabular-nums}
+  .cmp-grid{display:grid;grid-template-columns:40px 1fr 1fr;gap:6px;align-items:center}
+  .cmp-grid .badge{min-width:auto}
+  .cmp-ok{background:#eaf8f0;color:#147c46}
+  .cmp-miss{background:#fff3f3;color:#b3261e}
+  .cmp-diff{background:#fff7e5;color:#8a6400}
+  /* Werkzeugliste */
   .print-wrap{background:#fff;border:1px solid #e7eef9;border-radius:14px;box-shadow:var(--shadow);padding:16px}
   .wl-head{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 12px}
   .wl-head h3{margin:0;font-size:20px}
@@ -30,8 +38,9 @@
   .wl-table tbody tr:nth-child(odd){background:#fafcff}
   .wl-table .nr{white-space:nowrap;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
   .wl-remark{min-height:32px;border:1px dashed #dfe6f7;border-radius:8px;padding:6px}
+  .no-print{}
 
-  /* ---------- Печать ---------- */
+  /* print */
   @media print{
     header.appbar, .dock, .section:first-of-type, .tabs, .no-print{display:none!important}
     body{background:#fff}
@@ -61,7 +70,7 @@
 <div class="searchbar collapsed"><input class="field" type="search" placeholder="Suchen…" id="s"></div>
 
 <main class="container">
-  <!-- G-code input -->
+  <!-- Ввод программы -->
   <section class="section">
     <h2>G-Code</h2>
     <div class="row">
@@ -79,36 +88,58 @@
     </div>
   </section>
 
-  <!-- Tabs -->
+  <!-- Результаты -->
   <section class="section hidden" id="res">
     <div class="tabs">
-      <button class="tab active" data-tab="prog">Programm anlegen</button>
-      <button class="tab" data-tab="tools">Werkzeuge anlegen</button>
-      <button class="tab" data-tab="list">Werkzeugliste</button>
+      <button class="tab active" data-tab="an">Analyse</button>
+      <button class="tab" data-tab="tw">Werkzeuge</button>
+      <button class="tab" data-tab="su">Setup</button>
+      <button class="tab" data-tab="wl">Werkzeugliste</button>
+      <button class="tab" data-tab="hi">Historie</button>
     </div>
 
-    <!-- TAB: Programm anlegen -->
-    <div id="tab-prog">
+    <!-- Analyse -->
+    <div id="tab-an">
       <div class="grid2">
         <label class="fld">Programm-Titel<input id="pTitle" placeholder="—"></label>
         <label class="fld">Programm-Nr.<input id="pNum" placeholder="—"></label>
         <label class="fld">Koordinatensystem<input id="pWCS" readonly></label>
         <label class="fld">Status<input id="pStatus" value="Entwurf" readonly></label>
       </div>
-      <div class="muted" id="tCount" style="margin:.5rem 0">Tools: —</div>
-      <label class="chk"><input type="checkbox" id="assignLive" checked> Auch ins Live-Setup einfügen</label>
+      <div class="stat mt">
+        <div class="card"><div class="muted-sm">Tools</div><div style="font-size:24px;font-weight:800" id="stTools">0</div></div>
+        <div class="card"><div class="muted-sm">Kommentare</div><div style="font-size:24px;font-weight:800" id="stCom">0</div></div>
+        <div class="card"><div class="muted-sm">M1 Pausen</div><div style="font-size:24px;font-weight:800" id="stM1">0</div></div>
+      </div>
+      <div class="section mt">
+        <h2>G/M Übersicht</h2>
+        <div class="kvs" id="gmList"></div>
+      </div>
       <div class="row mt">
+        <label class="chk"><input type="checkbox" id="assignLive" checked> Auch ins Live-Setup einfügen</label>
         <button class="btn brand" id="createDraft">Als Programm anlegen (Entwurf)</button>
         <button class="btn" id="openSetup">In Setup öffnen</button>
         <button class="btn" id="addAll">Fehlende Tools → hinzufügen</button>
       </div>
     </div>
 
-    <!-- TAB: Werkzeuge anlegen -->
-    <div id="tab-tools" class="hidden"><div id="list"></div></div>
+    <!-- Werkzeuge -->
+    <div id="tab-tw" class="hidden"><div id="list"></div></div>
 
-    <!-- TAB: Werkzeugliste -->
-    <div id="tab-list" class="hidden">
+    <!-- Setup (Vergleich & Anwenden) -->
+    <div id="tab-su" class="hidden">
+      <div class="row">
+        <div class="pill" id="suSide">Side: —</div>
+        <button class="btn" id="btnCompare">Live vergleichen</button>
+        <button class="btn ok" id="btnApply">Setup aktualisieren</button>
+      </div>
+      <div class="cmp-grid mt" id="cmpGrid">
+        <!-- rows: slot | import T | live state -->
+      </div>
+    </div>
+
+    <!-- Werkzeugliste -->
+    <div id="tab-wl" class="hidden">
       <div class="print-wrap">
         <div class="wl-head">
           <h3>Werkzeugliste</h3>
@@ -122,9 +153,20 @@
         </table>
       </div>
       <div class="row mt no-print">
+        <button class="btn" id="btnSaveDoc">Als Notiz speichern</button>
+        <button class="btn" id="btnCSV">CSV exportieren</button>
         <button class="btn" id="btnPrint">Drucken / PDF</button>
       </div>
     </div>
+
+    <!-- Historie -->
+    <div id="tab-hi" class="hidden">
+      <ul id="hist" class="cards"></ul>
+      <div class="row mt">
+        <button class="btn warn" id="histClear">Historie löschen</button>
+      </div>
+    </div>
+
   </section>
 </main>
 
@@ -135,9 +177,11 @@
 <script>
 CT.ready(()=>{
   CT.ensureSeeds();
+  const LOG_KEY = 'ct_import_log_v1';
+
+  // ---------- helpers ----------
   const readFileAsText = f => new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result||''); r.onerror=rej; r.readAsText(f); });
 
-  // ==== parsing helpers ====
   function parseOLine(src){
     const m = src.match(/^\s*O(\d+)\s*\(([^)]*)\)/mi);
     if(!m) return { num:null, comment:null, side:null, raw:null };
@@ -147,13 +191,12 @@ CT.ready(()=>{
     return { num: extNum, comment, side, raw: m[0] };
   }
   function detectWCS(txt, sideHint){
-    if(sideHint==='RO') return { text:'RO (G54)', raw:'G54' };
-    if(sideHint==='RU') return { text:'RU (G55)', raw:'G55' };
+    if(sideHint==='RO') return { text:'RO (G54)', raw:'G54', short:'RO' };
+    if(sideHint==='RU') return { text:'RU (G55)', raw:'G55', short:'RU' };
     const m = txt.match(/\bG5([45])\b/i);
-    if(!m) return { text:'—', raw:'' };
-    return m[1]==='4' ? { text:'RO (G54)', raw:'G54' } : { text:'RU (G55)', raw:'G55' };
+    if(!m) return { text:'—', raw:'', short:'' };
+    return m[1]==='4' ? { text:'RO (G54)', raw:'G54', short:'RO' } : { text:'RU (G55)', raw:'G55', short:'RU' };
   }
-  function sideShortFromRaw(raw){ return raw==='G54'?'RO':(raw==='G55'?'RU':''); }
   function parseToolsWithIndices(txt){
     const out=[]; const seen=new Set(); let m;
     const rePair=/T\s*([0-9]{2})[\s,.;:_-]*([0-9]{2})/ig;
@@ -166,6 +209,7 @@ CT.ready(()=>{
   }
   function collectComments(txt){ const res=[]; const re=/\(([^)]+)\)/g; let m; while((m=re.exec(txt))!==null){ res.push({text:(m[1]||'').trim(),index:m.index}); } return res; }
   function nearestComment(comments, startIdx, nextIdx){ for(const c of comments){ if(c.index>startIdx && (nextIdx==null || c.index<nextIdx)) return c.text; } return ''; }
+  function countCodes(txt, prefix){ const re=new RegExp('\\b'+prefix+'(\\d+)\\b','ig'); const map={}; let m; while((m=re.exec(txt))!==null){ const k=prefix+m[1]; map[k]=(map[k]||0)+1; } return map; }
 
   function buildParsed(txt){
     const O=parseOLine(txt);
@@ -179,15 +223,37 @@ CT.ready(()=>{
       const start=tools[i].index, end=(i<tools.length-1)?tools[i+1].index:null;
       tools[i].titleBase = nearestComment(comments,start,end) || progTitle || '';
     }
-    return { number:O.num||'', title:progTitle, wcsText:wcs.text, wcsRaw:wcs.raw, tools };
+    const G=countCodes(txt,'G'), M=countCodes(txt,'M');
+    const m1=(M['M1']||0);
+    return { number:O.num||'', title:progTitle, wcsText:wcs.text, wcsRaw:wcs.raw, wcsShort:wcs.short, tools, comments, G, M, m1 };
   }
 
-  // ==== render ====
+  // ---------- render: Analyse ----------
+  function renderAnalyse(p){
+    pTitle.value = p.title||'';
+    pNum.value   = p.number||'';
+    pWCS.value   = p.wcsText||'—';
+    pStatus.value= 'Entwurf';
+
+    stTools.textContent = p.tools.length;
+    stCom.textContent   = p.comments.length;
+    stM1.textContent    = p.m1;
+
+    const gm = document.getElementById('gmList'); gm.innerHTML='';
+    const toList = (obj, lbl) => {
+      const keys=Object.keys(obj).sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
+      if(keys.length===0) return '';
+      return `<div style="grid-column:1/-1"><b>${lbl}</b></div>` +
+             keys.map(k=>`<div>${k}</div><b>${obj[k]}</b>`).join('');
+    };
+    gm.innerHTML = toList(p.G,'G-Codes') + toList(p.M,'M-Codes');
+  }
+
+  // ---------- render: Werkzeuge ----------
   function findExistingToolByCode(code){
     const tools=CT.storage.read(CT_KEYS.TOOLS,[]);
     return tools.find(t => (t.code||'').toLowerCase()===(code||'').toLowerCase());
   }
-
   function renderToolsTab(parsed){
     const cats=CT.storage.read(CT_KEYS.CATS,[]); const defCat=cats[0]?.id;
     const root=document.getElementById('list'); root.innerHTML='';
@@ -219,33 +285,6 @@ CT.ready(()=>{
       root.appendChild(el);
     });
   }
-
-  function renderProgTab(parsed){
-    pTitle.value = parsed.title||'';
-    pNum.value   = parsed.number||'';
-    pWCS.value   = parsed.wcsText;
-    pStatus.value= 'Entwurf';
-    tCount.textContent = `Tools: ${parsed.tools.length}`;
-  }
-
-  function renderListTab(parsed){
-    const sideShort = sideShortFromRaw(parsed.wcsRaw); // RO/RU
-    const progLine = (parsed.number ? parsed.number : '—') + (sideShort ? '.'+sideShort : '');
-    const el = document.getElementById('pl-progline');
-    el.textContent = progLine;
-
-    const tbody=document.querySelector('#pl-table tbody'); tbody.innerHTML='';
-    parsed.tools.forEach(t=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML = `
-        <td class="nr" contenteditable="true">${CT.escape(t.t)}</td>
-        <td class="wname" contenteditable="true">${CT.escape(t.titleBase||parsed.title||'—')}</td>
-        <td><div class="wl-remark" contenteditable="true"></div></td>`;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // ==== actions ====
   function addOneTool(i, parsed){
     const t = parsed.tools[i];
     const name = document.getElementById('nm_'+i).value || (t.titleBase||parsed.title||'Werkzeug')+' • '+t.t;
@@ -259,7 +298,6 @@ CT.ready(()=>{
       tools.push(tool);
       CT.storage.write(CT_KEYS.TOOLS, tools);
     }
-
     if(assignLive.checked){
       const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
       const side = parsed.wcsRaw==='G54' ? 'ro' : (parsed.wcsRaw==='G55' ? 'ru' : null);
@@ -274,15 +312,114 @@ CT.ready(()=>{
     CT.toast('OK','ok');
   }
 
+  // ---------- render: Setup Vergleich ----------
+  function renderSetupTab(parsed){
+    suSide.textContent = 'Side: ' + (parsed.wcsShort||'—');
+    const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
+    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    const side = parsed.wcsRaw==='G55' ? 'ru' : 'ro';
+    const plan = Array(12).fill(null);
+    parsed.tools.forEach(t=>{ const s=Math.max(1,Math.min(12,t.pos))-1; plan[s]=t; });
+
+    const grid=document.getElementById('cmpGrid'); grid.innerHTML='';
+    for(let i=0;i<12;i++){
+      const imp = plan[i]?.t || '—';
+      const liveCell = live[side][i];
+      const liveTool = liveCell ? tools.find(x=>x.id===liveCell.toolId) : null;
+      const liveCode = liveTool?.code || '—';
+      let cls='cmp-miss', lab='leer';
+      if(imp==='—' && liveCode==='—'){ cls=''; lab='—'; }
+      else if(imp!=='—' && liveCode==='—'){ cls='cmp-miss'; lab='fehlt'; }
+      else if(imp===liveCode){ cls='cmp-ok'; lab='ok'; }
+      else { cls='cmp-diff'; lab='anders'; }
+      const row=document.createElement('div'); row.className='row' ;
+      row.innerHTML = `
+        <span class="badge">#${i+1}</span>
+        <div class="card" style="flex:1"><div class="muted-sm">Import</div><b>${CT.escape(imp)}</b></div>
+        <div class="card ${cls}" style="flex:1"><div class="muted-sm">Live</div><b>${CT.escape(liveCode)}</b> <span class="pill" style="margin-left:6px">${lab}</span></div>
+      `;
+      grid.appendChild(row);
+    }
+  }
+  function applySetupFromParsed(parsed){
+    const side = parsed.wcsRaw==='G55' ? 'ru' : 'ro';
+    const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
+    const tools = CT.storage.read(CT_KEYS.TOOLS, []);
+    parsed.tools.forEach(t=>{
+      const idx=Math.max(1,Math.min(12,t.pos))-1;
+      const found = tools.find(x => (x.code||'').toLowerCase() === t.t.toLowerCase());
+      if(found) live[side][idx]={toolId:found.id, note:''};
+    });
+    CT.storage.write(CT_KEYS.SETUP, live);
+    CT.toast('Live aktualisiert','ok');
+    renderSetupTab(parsed);
+  }
+
+  // ---------- render: Werkzeugliste ----------
+  function renderListTab(parsed){
+    const progLine = (parsed.number ? parsed.number : '—') + (parsed.wcsShort ? '.'+parsed.wcsShort : '');
+    pl_progline.textContent = progLine;
+    const tbody=document.querySelector('#pl-table tbody'); tbody.innerHTML='';
+    parsed.tools.forEach(t=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td class="nr" contenteditable="true">${CT.escape(t.t)}</td>
+        <td class="wname" contenteditable="true">${CT.escape(t.titleBase||parsed.title||'—')}</td>
+        <td><div class="wl-remark" contenteditable="true"></div></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+  function saveListToDocs(){
+    const prog = pl_progline.textContent.trim() || 'Werkzeugliste';
+    const rows = Array.from(document.querySelectorAll('#pl-table tbody tr')).map(tr=>{
+      const t = tr.querySelector('.nr').textContent.trim();
+      const n = tr.querySelector('.wname').textContent.trim();
+      const r = tr.querySelector('.wl-remark').textContent.trim();
+      return {t,n,r};
+    });
+    const body = rows.map(r=>`${r.t} — ${r.n}${r.r?` — ${r.r}`:''}`).join('\n');
+    const docs = CT.storage.read(CT_KEYS.DOCS, []);
+    docs.push({id:CT.uid(), title:`Werkzeugliste ${prog}`, category:'Programme', tags:['liste'], body, favorite:false});
+    CT.storage.write(CT_KEYS.DOCS, docs);
+    CT.toast('In Docs gespeichert','ok');
+  }
+  function exportCSV(){
+    const prog = pl_progline.textContent.trim() || 'Werkzeugliste';
+    const rows = Array.from(document.querySelectorAll('#pl-table tbody tr')).map(tr=>{
+      const t = tr.querySelector('.nr').textContent.replace(/"/g,'""');
+      const n = tr.querySelector('.wname').textContent.replace(/"/g,'""');
+      const r = tr.querySelector('.wl-remark').textContent.replace(/"/g,'""');
+      return `"${t}","${n}","${r}"`;
+    });
+    const csv = `Nr,Werkzeug,Bemerkungen\n` + rows.join('\n');
+    CT.exportJSON(`${prog}.csv`, csv); // маленький трюк: экспорт тем же helper (MIME не критичен в Safari)
+  }
+
+  // ---------- render: Historie ----------
+  function pushHistory(parsed){
+    const log = CT.storage.read(LOG_KEY, []);
+    log.unshift({id:CT.uid(), time:Date.now(), num:parsed.number||'—', side:parsed.wcsShort||'—', tools:parsed.tools.length, title:parsed.title||''});
+    CT.storage.write(LOG_KEY, log.slice(0,50));
+  }
+  function renderHistory(){
+    const list = CT.storage.read(LOG_KEY, []);
+    const ul=document.getElementById('hist'); ul.innerHTML='';
+    if(!list.length){ ul.innerHTML = '<li class="muted">Keine Einträge</li>'; return; }
+    list.forEach(it=>{
+      const li=document.createElement('li'); li.className='card';
+      li.innerHTML = `<b>#${CT.escape(it.num)}.${CT.escape(it.side)}</b><div class="muted-sm">${new Date(it.time).toLocaleString()} • Tools: ${it.tools}</div><div>${CT.escape(it.title)}</div>`;
+      ul.appendChild(li);
+    });
+  }
+
+  // ---------- Draft Programm ----------
   function createDraftProgram(parsed){
     const progs = CT.storage.read(CT_KEYS.PROGS, []);
     const number = (pNum.value || parsed.number || '').trim();
     const title  = (pTitle.value || parsed.title || 'Programm').trim();
     if(!number){ CT.toast('Programm-Nr. fehlt','err'); return; }
-
     const ro = Array(12).fill(null), ru = Array(12).fill(null);
     const side = parsed.wcsRaw==='G55' ? 'ru' : 'ro';
-
     const tools = CT.storage.read(CT_KEYS.TOOLS, []);
     parsed.tools.forEach(t=>{
       const slot = Math.max(1, Math.min(12, t.pos)) - 1;
@@ -291,41 +428,54 @@ CT.ready(()=>{
       if(side==='ro' && !ro[slot]) ro[slot]=cell;
       if(side==='ru' && !ru[slot]) ru[slot]=cell;
     });
-
     const draft = { id:CT.uid(), number, title, date:Date.now(), status:'draft', ro, ru, drawing:null };
     progs.push(draft);
     CT.storage.write(CT_KEYS.PROGS, progs);
     CT.toast(`Programm #${number} als Entwurf angelegt`, 'ok');
   }
 
-  // ==== tabs / UI ====
+  // ---------- UI wiring ----------
   function showTab(key){
     document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===key));
-    document.getElementById('tab-prog').classList.toggle('hidden', key!=='prog');
-    document.getElementById('tab-tools').classList.toggle('hidden', key!=='tools');
-    document.getElementById('tab-list').classList.toggle('hidden', key!=='list');
+    ['an','tw','su','wl','hi'].forEach(k=>document.getElementById('tab-'+k).classList.toggle('hidden', k!==key));
   }
 
+  // input
   file.onchange = async ()=>{ const f=file.files?.[0]; if(!f) return; code.value = await readFileAsText(f); };
   fromClip.onclick = async ()=>{ try{ code.value = await navigator.clipboard.readText(); CT.toast('Eingefügt','ok'); }catch{ CT.toast('Clipboard nicht verfügbar','err'); } };
   clear.onclick = ()=>{ code.value=''; res.classList.add('hidden'); };
 
   parse.onclick = ()=>{
     const txt = code.value||''; if(!txt.trim()) return CT.toast('Kein Text','err');
-    const parsed = buildParsed(txt);
+    const p = buildParsed(txt);
     res.classList.remove('hidden');
-    renderProgTab(parsed);
-    renderToolsTab(parsed);
-    renderListTab(parsed);
-    res._parsed = parsed;
+    renderAnalyse(p);
+    renderToolsTab(p);
+    renderSetupTab(p);
+    renderListTab(p);
+    res._parsed = p;
+    pushHistory(p);
+    renderHistory();
   };
 
-  document.getElementById('addAll').onclick   = ()=>{ const p=res._parsed; if(!p) return; p.tools.forEach((_,i)=>addOneTool(i,p)); CT.toast('Tools übernommen','ok'); };
-  document.getElementById('createDraft').onclick = ()=>{ const p=res._parsed; if(!p) return; createDraftProgram(p); };
+  // buttons
+  document.getElementById('addAll').onclick    = ()=>{ const p=res._parsed; if(!p) return; p.tools.forEach((_,i)=>addOneTool(i,p)); CT.toast('Tools übernommen','ok'); };
+  document.getElementById('createDraft').onclick= ()=>{ const p=res._parsed; if(!p) return; createDraftProgram(p); };
   document.getElementById('openSetup').onclick  = ()=>{ location.href='./setup.html'; };
-  document.getElementById('btnPrint').onclick  = ()=>{ window.print(); };
+
+  document.getElementById('btnCompare').onclick = ()=>{ const p=res._parsed; if(!p) return; renderSetupTab(p); CT.toast('Verglichen','ok'); };
+  document.getElementById('btnApply').onclick   = ()=>{ const p=res._parsed; if(!p) return; applySetupFromParsed(p); };
+
+  document.getElementById('btnPrint').onclick   = ()=>{ window.print(); };
+  document.getElementById('btnSaveDoc').onclick = ()=>saveListToDocs();
+  document.getElementById('btnCSV').onclick     = ()=>exportCSV();
+
+  document.getElementById('histClear').onclick  = ()=>{ CT.storage.write(LOG_KEY, []); renderHistory(); CT.toast('Historie gelöscht','ok'); };
 
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+  // start with Analyse
+  showTab('an'); renderHistory();
 });
 </script>
 </body>
