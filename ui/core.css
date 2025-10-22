@@ -1,0 +1,258 @@
+/* =========================================================
+   CitiTool UI • Pro Design (iOS-like, glass, subtle shadows)
+   ========================================================= */
+:root{
+  /* Цвета */
+  --bg:#f6f8fb;
+  --fg:#0e1726;
+  --muted:#6b7a90;
+  --brand:#2f6ee9;
+  --brand-2:#4d8dff;
+  --ok:#1e9c57;
+  --warn:#e5a100;
+  --err:#d64545;
+
+  /* Поверхности */
+  --card:#ffffff;
+  --hair:#e7edf6;
+  --dock:#ffffffcc;
+
+  /* Радиусы/тени */
+  --br:16px;
+  --btnr:14px;
+  --shadow:0 10px 28px rgba(14,23,38,.10);
+
+  /* Эффекты */
+  --tap:translateY(1px);
+
+  /* Типографика */
+  --h2:20px;
+  --small:12px;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--fg);
+  font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+}
+img{max-width:100%;display:block}
+a{color:inherit}
+.muted{color:var(--muted)}
+.mt{margin-top:.75rem}
+.hidden{display:none}
+
+/* =========================
+   AppBar (стекло + бейдж CT)
+   ========================= */
+.appbar{
+  position:sticky; top:0; z-index:40;
+  background:linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.88));
+  border-bottom:1px solid var(--hair);
+  backdrop-filter:saturate(1.2) blur(10px);
+}
+.appbar .wrap{
+  display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+  padding:10px env(safe-area-inset-right) 10px env(safe-area-inset-left);
+}
+.logo{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:inherit}
+
+/* Бейдж-логотип (можно использовать вместо PNG) */
+.ct-badge{
+  --g1:#9fbfe5; --g2:#4f8fda;
+  width:30px; height:30px; border-radius:10px;
+  display:grid; place-items:center;
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  color:#fff; font-weight:800; font-size:14px; letter-spacing:.3px;
+  box-shadow:inset 0 0 0 1px #dbe5ff;
+  user-select:none;
+}
+/* Если используешь <img class="badge"> — тоже будет аккуратно */
+.logo .badge{
+  width:30px;height:30px;border-radius:10px;
+  box-shadow:inset 0 0 0 1px #dbe5ff; object-fit:cover;
+}
+
+/* Заголовки в шапке */
+.tit .title{font-weight:800;line-height:1}
+.tit .subtitle{font-size:var(--small);color:var(--muted);line-height:1.2;margin-top:2px}
+
+/* Кнопки-иконки в шапке */
+.appbar .actions{display:flex;gap:.45rem;align-items:center}
+
+/* =========================
+   Кнопки
+   ========================= */
+.icon-btn{
+  display:inline-grid; place-items:center;
+  width:40px; height:40px; border:0; background:transparent; border-radius:12px;
+}
+.icon-btn:active{transform:var(--tap)}
+.icon-btn svg{width:22px;height:22px;fill:currentColor}
+.icon-btn.sm{width:32px;height:32px;border-radius:10px}
+.icon-btn.info{color:var(--muted)}
+
+.btn{
+  height:44px; border-radius:var(--btnr);
+  border:1px solid #dbe5ff; background:#fff; padding:0 14px; font-weight:700;
+  box-shadow:0 0 0 rgba(0,0,0,0);
+}
+.btn:active{transform:var(--tap)}
+.btn:hover{box-shadow:0 6px 18px rgba(47,110,233,.08)}
+.btn.brand{background:linear-gradient(180deg,var(--brand),var(--brand-2));border-color:transparent;color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.warn{background:var(--warn);border-color:var(--warn);color:#fff}
+.btn.ghost{background:rgba(255,255,255,.55);backdrop-filter:blur(6px)}
+.btn.sm{height:34px;padding:0 10px;font-weight:700}
+
+/* =========================
+   Контейнер/Секции/Карточки
+   ========================= */
+.container{
+  padding:12px env(safe-area-inset-right) calc(72px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  display:grid; gap:12px;
+}
+.section{
+  background:var(--card); border-radius:var(--br); box-shadow:var(--shadow); padding:16px;
+}
+.section h2{margin:2px 2px 10px; font-size:var(--h2); font-weight:800}
+
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.row.between{justify-content:space-between}
+.stack{display:grid;gap:.6rem}
+
+.card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:12px}
+
+/* =========================
+   Поля ввода
+   ========================= */
+.field, .fld input, .fld select, .fld textarea{
+  width:100%; height:44px; border-radius:12px;
+  border:1px solid #d9e2f3; background:#fff; padding:0 12px;
+}
+.fld{display:grid;gap:.35rem;margin:.45rem 0}
+.fld textarea{height:auto;padding:10px;min-height:84px}
+.chk{display:flex;align-items:center;gap:.5rem;margin:.5rem 0}
+
+/* =========================
+   Поиск (под шапкой)
+   ========================= */
+.searchbar{
+  position:sticky; top:56px; z-index:39;
+  background:linear-gradient(180deg,rgba(255,255,255,.98),rgba(255,255,255,.88));
+  padding:8px 12px; border-bottom:1px solid var(--hair);
+  backdrop-filter:blur(8px)
+}
+.searchbar.collapsed{display:none}
+
+/* =========================
+   Dock
+   ========================= */
+.dock{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  background:var(--dock); backdrop-filter:blur(10px);
+  border-top:1px solid var(--hair);
+  padding:4px env(safe-area-inset-right) calc(4px + env(safe-area-inset-bottom)) env(safe-area-inset-left)
+}
+.dock .wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+.dock a{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px;border-radius:12px;color:inherit;text-decoration:none
+}
+.dock a.active{background:#eef3ff;color:var(--brand)}
+.dock svg{width:22px;height:22px}
+
+/* =========================
+   Списки Tools/Notes
+   ========================= */
+.list-tools{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+.list-tools li{
+  display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:.6rem;
+  border:1px solid #e5ebf7;border-radius:14px;padding:10px;background:#fff
+}
+.list-tools .thumb{
+  width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa
+}
+.badge{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:800;padding:0 10px}
+.badge.err{background:#ffe8e8;color:#c21e1e}
+
+.cards{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+.card.note{
+  display:grid;grid-template-columns:56px 1fr auto;gap:.6rem;align-items:center
+}
+.card.note .thumb{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f0f3fa}
+.tags span{
+  display:inline-block;background:#eef3ff;border-radius:10px;padding:2px 8px;margin-right:6px;
+  font-size:var(--small);color:var(--brand)
+}
+
+/* =========================
+   Прогресс-бар с % по центру
+   ========================= */
+.bar{
+  position:relative; height:10px; background:#eef3ff; border-radius:6px; overflow:hidden; margin:10px 0
+}
+.bar>div{height:100%; background:linear-gradient(90deg,var(--brand),var(--brand-2))}
+.bar .label{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  font-size:12px; font-weight:800; color:#1f3a72
+}
+
+/* =========================
+   Setup: вкладки и слоты
+   ========================= */
+.tabs{display:flex;gap:.6rem;margin:.6rem 0}
+.tab{
+  border:1px solid #dbe5ff;background:#fff;border-radius:12px;padding:8px 12px;font-weight:700
+}
+.tab.active{background:#eef3ff;color:var(--brand);border-color:#cfe0ff}
+
+.slots{display:grid;gap:.6rem}
+.slot{border:1px solid #e5ebf7;border-radius:14px;padding:10px;background:#fff}
+.slot-empty{display:flex;justify-content:space-between;align-items:center}
+.slot-full{
+  display:grid;grid-template-columns:72px 56px 1fr auto;gap:.6rem;align-items:center
+}
+.slot .thumb{
+  width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f0f3fa
+}
+.tnum-btn{min-width:64px;font-weight:800}
+
+/* Компакт на маленьких экранах */
+@media (max-width:520px){
+  .slot-full{grid-template-columns:72px 1fr auto}
+  .slot-full .thumb{display:none}
+}
+
+/* =========================
+   Modal / Drawer / Toast
+   ========================= */
+.modal,.drawer,.toast{position:fixed;inset:0;z-index:100;display:none}
+.modal.show,.drawer.show,.toast.show{display:block}
+.modal .overlay,.drawer .overlay{position:absolute;inset:0;background:rgba(0,0,0,.25)}
+.modal .card{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(92vw,640px);max-height:86vh;overflow:auto;
+  background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:14px
+}
+.modal .card .footer{display:flex;justify-content:flex-end;gap:.6rem;margin-top:12px}
+
+.drawer .panel{
+  position:absolute;right:0;top:0;bottom:0;width:min(92vw,560px);
+  background:#fff;border-left:1px solid var(--hair);box-shadow:var(--shadow);padding:12px;overflow:auto
+}
+.drawer .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.drawer .list{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+.drawer .list li{
+  display:flex;justify-content:space-between;gap:.6rem;border:1px solid #e5ebf7;border-radius:12px;padding:10px
+}
+
+.toast .inner{
+  position:absolute;left:50%;bottom:84px;transform:translateX(-50%);
+  background:#111;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25)
+}
+
+body.noscroll{overflow:hidden;height:100%}
