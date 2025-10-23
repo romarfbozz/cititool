@@ -5,109 +5,109 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>CitiTool • Hero AppBar Demo</title>
 <style>
-/* ---------- Base (без /ui) ---------- */
 :root{
   --fg:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --ok:#1e9c57;
-  --glass:rgba(255,255,255,.14); --hair:rgba(255,255,255,.4);
+  --veil1:rgba(6,14,24,.25); --veil2:rgba(6,14,24,.38);
+  --glass:rgba(255,255,255,.14); --hair:rgba(255,255,255,.42);
 }
 *{box-sizing:border-box} html,body{height:100%}
 body{margin:0;color:var(--fg);font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif;background:#f6f8fc}
 a,button{cursor:pointer}
-.btn{height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.3);backdrop-filter:blur(10px);padding:0 14px;font-weight:700}
+.btn{height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.32);backdrop-filter:blur(10px);padding:0 14px;font-weight:700}
 .btn.brand{background:var(--brand);color:#fff;border-color:var(--brand)}
 .btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
 .btn.ghost{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff}
-.icon-btn{display:inline-grid;place-items:center;width:44px;height:44px;border:0;background:transparent;border-radius:12px;color:#fff}
+.icon-btn{display:inline-grid;place-items:center;width:44px;height:44px;border:0;background:transparent;border-radius:12px;color:#fff;transition:transform .08s}
+.icon-btn:active{transform:translateY(1px)}
 .icon-btn svg{width:22px;height:22px;fill:currentColor}
 
-/* ---------- Hero AppBar ---------- */
-.hero{
-  position:relative;
-  height:100svh; height:100vh; /* fallback */
-  overflow:hidden;
-  color:#fff;
+/* ---------- HERO ---------- */
+.hero{position:relative;height:100svh;height:100vh;overflow:hidden;color:#fff}
+.hero::before{
+  content:"";position:absolute;inset:-10%;
+  background:conic-gradient(from 120deg,#2d6cdf,#76a7ff,#92e0ff,#2d6cdf);
+  filter:blur(44px) saturate(1.15);
+  animation:spin 36s linear infinite;
 }
-.hero::before{ /* animated gradient */
-  content:""; position:absolute; inset:-10%;
-  background:conic-gradient(from 120deg, #2d6cdf, #76a7ff, #92e0ff, #2d6cdf);
-  filter:blur(40px) saturate(1.2);
-  animation:spin 28s linear infinite;
-}
-@keyframes spin{ to{ transform:rotate(1turn); } }
-.hero::after{ /* glass veil */
-  content:""; position:absolute; inset:0; backdrop-filter:blur(12px) saturate(1.2);
-  background:linear-gradient(180deg, rgba(6,14,24,.25), rgba(6,14,24,.35));
-}
+@keyframes spin{to{transform:rotate(1turn)}}
+.hero::after{content:"";position:absolute;inset:0;backdrop-filter:blur(12px) saturate(1.2);
+  background:linear-gradient(180deg,var(--veil1),var(--veil2))}
 
-/* content */
+/* top bar */
 .hero .bar{
-  position:sticky; top:0; z-index:10;
-  display:flex; align-items:center; justify-content:space-between;
-  gap:.5rem; padding:12px env(safe-area-inset-right) 12px env(safe-area-inset-left);
+  position:sticky;top:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;gap:.5rem;
+  padding:12px calc(16px + env(safe-area-inset-right)) 12px calc(30px + env(safe-area-inset-left));
 }
-.hero .brand{display:flex;align-items:center;gap:.75rem;text-decoration:none;color:#fff}
+.hero .brand{display:flex;align-items:center;gap:.9rem;text-decoration:none;color:#fff}
 .ct-badge{
-  width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
-  color:#fff;font-weight:900;letter-spacing:.2px;
-  background:linear-gradient(135deg,#99c0ff,#2d6cdf);
-  box-shadow:0 6px 24px rgba(45,108,223,.35), inset 0 0 0 1px rgba(255,255,255,.35);
+  width:48px;height:48px;border-radius:16px;display:grid;place-items:center;
+  margin-left:12px; /* правее, как просил */
+  color:#fff;font-weight:900;letter-spacing:.2px;font-size:20px;
+  background:
+    radial-gradient(130px 120px at 20% 18%, rgba(255,255,255,.42), transparent 45%),
+    linear-gradient(135deg,#a8ceff,#2d6cdf);
+  box-shadow:0 12px 28px rgba(45,108,223,.35), inset 0 0 0 1px rgba(255,255,255,.5);
+  position:relative; overflow:hidden;
 }
-.tit .title{font-weight:900}
-.tit .subtitle{font-size:12px;opacity:.8}
+/* лёгкий «блик» */
+.ct-badge::after{
+  content:"";position:absolute;top:-120%;left:-40%;width:40%;height:260%;
+  transform:rotate(25deg);background:linear-gradient(180deg,transparent,rgba(255,255,255,.45),transparent);
+  animation:sheen 4.8s ease-in-out infinite;
+}
+@keyframes sheen{0%{transform:translateX(-160%) rotate(25deg)} 35%{transform:translateX(280%) rotate(25deg)} 100%{transform:translateX(280%) rotate(25deg)}}
 
-.hero .hero-body{
-  position:absolute; inset:0;
-  display:grid; place-items:center;
-  padding:72px 16px 24px;
-}
-.hero .stack{display:grid; gap:14px; place-items:center; text-align:center; z-index:2}
-.hero h1{margin:0;font-size:34px;letter-spacing:.2px}
+.tit .title{font-weight:900;font-size:19px;letter-spacing:.2px}
+.tit .subtitle{font-size:12px;opacity:.85}
+
+/* hero body */
+.hero .hero-body{position:absolute;inset:0;display:grid;place-items:center;padding:72px 16px 24px}
+.hero .stack{display:grid;gap:14px;place-items:center;text-align:center;z-index:2}
+.hero h1{margin:0;font-size:36px;letter-spacing:.2px}
 .hero p{margin:0;color:#edf3ffcc}
-.hero .actions{display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center}
+.hero .actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
 
+/* search panel */
 .search-wrap{
-  position:absolute; left:50%; transform:translateX(-50%);
-  bottom:22px; width:min(680px,92vw);
-  display:grid; grid-template-columns:1fr auto; gap:.5rem; z-index:2;
+  position:absolute;left:50%;transform:translateX(-50%) translateY(12px);
+  bottom:22px;width:min(720px,92vw);
+  display:grid;grid-template-columns:1fr auto;gap:.5rem;z-index:2;
+  transition:opacity .2s, transform .2s;
 }
 .search{height:44px;border-radius:12px;border:1px solid var(--hair);background:var(--glass);color:#fff;padding:0 12px;backdrop-filter:blur(10px)}
 .search::placeholder{color:#ffffffcc}
+.search-wrap[hidden]{opacity:0;transform:translateX(-50%) translateY(22px)}
 
-/* ---------- Compact on scroll ---------- */
-.hero.compact{
-  height:64px; color:#fff;
-}
-.hero.compact .hero-body{opacity:0; pointer-events:none}
+/* compact state */
+.hero.compact{height:64px}
+.hero.compact .hero-body{opacity:0;pointer-events:none}
 .hero.compact .search-wrap{display:none}
 .hero.compact::before{filter:blur(22px)}
-.hero.compact::after{background:linear-gradient(180deg, rgba(6,14,24,.45), rgba(6,14,24,.45));}
+.hero.compact::after{background:linear-gradient(180deg,rgba(6,14,24,.55),rgba(6,14,24,.55))}
 
-/* ---------- Parallax bg under content ---------- */
-.parallax{
-  position:relative; z-index:0; height:46vh; min-height:220px; overflow:hidden;
-  margin-top:-6px; /* смачиваем стык */
-}
-.parallax img{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:140%; height:auto; opacity:.9; filter:saturate(1.1) contrast(1.05);
-}
-.parallax .mask{
-  position:absolute; inset:0;
-  background:linear-gradient(180deg, rgba(255,255,255,0) 0%, #f6f8fc 85%);
-}
+/* ---------- PARALLAX ---------- */
+.parallax{position:relative;z-index:0;height:48vh;min-height:240px;overflow:hidden;margin-top:-6px}
+.parallax img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:150%;height:auto;opacity:.92;filter:saturate(1.05) contrast(1.06)}
+.parallax .mask{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,#f6f8fc 85%)}
 
-/* ---------- Content ---------- */
-.container{position:relative; z-index:1; padding:16px; display:grid; gap:14px}
+/* ---------- CONTENT ---------- */
+.container{position:relative;z-index:1;padding:16px;display:grid;gap:14px}
 .section{background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(13,27,42,.08);padding:14px}
 .section h2{margin:4px 2px 10px}
+.grid{display:grid;gap:.6rem}
+@media(min-width:700px){ .grid.cols3{grid-template-columns:repeat(3,1fr)} .grid.cols2{grid-template-columns:repeat(2,1fr)} }
+.card{background:#fff;border:1px solid #e6ecf7;border-radius:14px;padding:12px}
+.card h3{margin:0 0 6px 0}
+small.muted{color:#6b7a90}
 
-/* ---------- small svg sprite ---------- */
-svg{display:inline-block}
+/* длинный список чтобы точно было что скроллить */
+.list{display:grid;gap:.5rem}
+.list li{list-style:none;background:#fff;border:1px solid #e6ecf7;border-radius:12px;padding:10px}
 </style>
 </head>
 <body>
 
-<!-- HERO APPBAR -->
 <header class="hero" id="hero">
   <div class="bar">
     <a class="brand" href="#">
@@ -119,8 +119,12 @@ svg{display:inline-block}
     </a>
     <div class="bar-actions">
       <button class="btn ghost" id="btnNew">Neues Programm</button>
-      <button class="icon-btn" id="btnSearch" aria-label="Suchen"><svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.3 14.3l4.7 4.7 1.4-1.4-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg></button>
-      <button class="icon-btn" id="btnMenu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"/></svg></button>
+      <button class="icon-btn" id="btnSearch" aria-label="Suchen">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.3 14.3l4.7 4.7 1.4-1.4-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+      </button>
+      <button class="icon-btn" id="btnMenu" aria-label="Menu">
+        <svg viewBox="0 0 24 24"><path d="M3 6h18v2H3zM3 11h18v2H3zM3 16h18v2H3z"/></svg>
+      </button>
     </div>
   </div>
 
@@ -141,66 +145,74 @@ svg{display:inline-block}
   </div>
 </header>
 
-<!-- PARALLAX LAYER -->
 <div class="parallax" id="px">
   <img id="pxImg" src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1400&auto=format&fit=crop" alt="">
   <div class="mask"></div>
 </div>
 
-<!-- DEMO CONTENT -->
 <main class="container">
   <section class="section">
     <h2>Schnellaktionen</h2>
-    <div class="row">
-      <button class="btn brand">Neues Setup</button>
-      <button class="btn">Neues Werkzeug</button>
-      <button class="btn">Material-Assist</button>
+    <div class="grid cols3">
+      <div class="card"><h3>Neues Setup</h3><small class="muted">Lege ein neues Live-Setup an.</small></div>
+      <div class="card"><h3>Neues Werkzeug</h3><small class="muted">Füge ein Werkzeug in den Schrank.</small></div>
+      <div class="card"><h3>Material-Assist</h3><small class="muted">Schnittdaten schnell berechnen.</small></div>
     </div>
   </section>
 
   <section class="section">
-    <h2>Produktion</h2>
-    <p class="muted">Demo-Inhalt… (ваш основной контент идёт тут)</p>
+    <h2>Produktion (Demo)</h2>
+    <ul class="list">
+      <li>Los 123 • 20 / 100 • Heute</li>
+      <li>Los 124 • 58 / 200 • Heute</li>
+      <li>Los 125 • 0 / 150 • Morgen</li>
+      <li>Los 126 • 90 / 120 • Morgen</li>
+      <li>Los 127 • 10 / 80 • Morgen</li>
+      <li>Los 128 • 44 / 300 • Morgen</li>
+      <li>Los 129 • 12 / 60 • Morgen</li>
+      <li>Los 130 • 0 / 90 • Morgen</li>
+      <li>Los 131 • 5 / 70 • Morgen</li>
+      <li>Los 132 • 33 / 100 • Morgen</li>
+      <li>Los 133 • 12 / 120 • Diese Woche</li>
+      <li>Los 134 • 77 / 140 • Diese Woche</li>
+      <li>Los 135 • 5 / 200 • Diese Woche</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>Dokumente (Demo)</h2>
+    <div class="grid cols2">
+      <div class="card"><h3>Aufspann-Check</h3><small class="muted">Schrauben, Anschläge, Reitstock…</small></div>
+      <div class="card"><h3>Werkstoff Notiz</h3><small class="muted">ISO-P • Kühlung…</small></div>
+      <div class="card"><h3>NC-Programm Tipps</h3><small class="muted">G-Codes, Unterprogramme…</small></div>
+      <div class="card"><h3>Messmittel</h3><small class="muted">Kaliber, Prüfstifte…</small></div>
+    </div>
   </section>
 </main>
 
 <script>
-/* ===== Hero logic (без /ui) ===== */
 const hero  = document.getElementById('hero');
 const pxImg = document.getElementById('pxImg');
 const searchWrap = document.getElementById('searchWrap');
 const searchField= document.getElementById('searchField');
 
-let lastY = 0;
 function onScroll(){
   const y = window.scrollY || window.pageYOffset;
-  // сжатие шапки
-  if(y > 48) hero.classList.add('compact'); else hero.classList.remove('compact');
-
-  // параллакс — двигаем картинку медленнее скролла
-  const dy = y * 0.25; // глубина
-  pxImg.style.transform = `translate(-50%, calc(-50% + ${dy}px))`;
-  lastY = y;
+  hero.classList.toggle('compact', y > 48);
+  pxImg.style.transform = `translate(-50%, calc(-50% + ${y*0.25}px))`;
 }
 onScroll();
 window.addEventListener('scroll', onScroll, {passive:true});
 
 // поиск
-document.getElementById('btnSearch').onclick = ()=>{
-  searchWrap.hidden = false;
-  searchField.focus();
-};
-document.getElementById('searchClose').onclick = ()=>{
-  searchWrap.hidden = true;
-  searchField.value = '';
-};
-// демо-кнопки (замените действия на свои)
+document.getElementById('btnSearch').onclick = ()=>{ searchWrap.hidden=false; searchField.focus(); };
+document.getElementById('searchClose').onclick = ()=>{ searchWrap.hidden=true; searchField.value=''; };
+
+// демо-cta
 document.getElementById('btnNew').onclick = ()=> alert('Neues Programm');
 document.getElementById('cta1').onclick  = ()=> alert('Neues Programm (CTA)');
 document.getElementById('cta2').onclick  = ()=> alert('Neues Werkzeug');
-// меню
 document.getElementById('btnMenu').onclick = ()=> alert('Menu…');
-
 </script>
 </body>
 </html>
