@@ -6,10 +6,10 @@
   <title>CitiTool • Setup</title>
   <link rel="stylesheet" href="./ui/core.css">
   <style>
-    .hero-drawing{display:grid;place-items:center;width:100%;height:200px;border:1px dashed #dfe6f7;border-radius:14px;background:#fafcff;overflow:hidden}
+    .hero-drawing{display:grid;place-items:center;width:100%;height:140px;border:1px dashed #dfe6f7;border-radius:14px;background:#fafcff;overflow:hidden;margin-top:.4rem}
     .hero-drawing img{width:100%;height:100%;object-fit:contain}
     .hero-placeholder{display:grid;place-items:center;gap:.4rem;color:#8aa0c5}
-    .hero-placeholder .ct-badge{width:44px;height:44px;border-radius:12px;font-size:16px}
+    .hero-placeholder .ct-badge{width:40px;height:40px;border-radius:12px;font-size:14px}
     .prog-title{display:flex;align-items:center;gap:.4rem}
     .prog-title .name{font-size:20px;font-weight:800}
 
@@ -23,6 +23,8 @@
     .tnum-btn{min-width:64px;font-weight:800}
     .slot-left .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .slot-left .muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .slot-actions{display:flex;gap:.25rem}
+    .icon-btn.info{width:36px;height:36px;border-radius:10px;background:transparent;color:#6b7a90}
   </style>
 </head>
 <body data-active="programme">
@@ -48,7 +50,7 @@
     </div>
     <div class="muted" id="progMeta">Nr — • Seite —</div>
 
-    <div class="hero-drawing mt" id="drawingWrap" role="button" aria-label="Zeichnung wählen">
+    <div class="hero-drawing" id="drawingWrap" role="button" aria-label="Zeichnung wählen">
       <div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>
     </div>
     <input type="file" id="drawingFile" accept="image/*" class="hidden"/>
@@ -73,7 +75,7 @@
 <script src="./ui/dock.js"></script>
 <script>
 (function(){
-  /* ---------- Совместимость и утилиты ---------- */
+  // ---------- совместимость ----------
   const KEYS = window.CT_KEYS || {
     TOOLS:'ct_tools_v2', CATS:'ct_cats_v1', SETUP:'ct_setup_live',
     PROGS:'ct_programs_v1', DASH:'ct_dash_v1', DOCS:'ct_docs_v3'
@@ -88,29 +90,25 @@
     escape:s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])),
     openModal:null, openDrawer:null, toast:(t)=>alert(t),
     readFileAsDataURL:(f)=>new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f);}),
-    ensureSeeds:null
   };
-
-  // прокси UI (используем /ui если есть, иначе — простые фоллбеки)
   const UI = {
-    toast: (txt,type='info') => (CTX.toast ? CTX.toast(txt,type,2000) : alert(txt)),
-    modal: ({title,html,okText='OK',cancelText='Abbrechen',onOk})=>{
+    toast:(txt,type='info')=> (CTX.toast ? CTX.toast(txt,type,2000) : alert(txt)),
+    modal:({title,html,okText='OK',cancelText='Abbrechen',onOk})=>{
       if(CTX.openModal) return CTX.openModal({title,html,okText,cancelText,onOk});
-      const ok = confirm(title + '\n\n' + (html.replace(/<[^>]+>/g,'')||'')); if(ok && onOk) onOk();
+      const ok=confirm(title+'\n\n'+(html.replace(/<[^>]+>/g,'')||'')); if(ok&&onOk) onOk();
     },
-    drawer: ({title,items,onSelect,html})=>{
+    drawer:({title,items,onSelect,html})=>{
       if(CTX.openDrawer) return CTX.openDrawer({title,items,onSelect,html});
-      const names = (items||[]).map((x,i)=>`${i+1}. ${x.title} ${x.meta?('('+x.meta+')'):''}`).join('\n');
-      const idx = prompt(`${title}\n\n${names}\n\nNummer wählen:`); 
-      const i = parseInt(idx,10)-1; if(items && items[i]) onSelect(items[i].id);
+      const names=(items||[]).map((x,i)=>`${i+1}. ${x.title} ${x.meta?('('+x.meta+')'):''}`).join('\n');
+      const idx=prompt(`${title}\n\n${names}\n\nNummer:`); const i=parseInt(idx,10)-1; if(items&&items[i]) onSelect(items[i].id);
     }
   };
 
-  // гарантируем структуру live и хотя бы одну программу
+  // ---------- данные ----------
   function ensureLive(){
     let live = CTX.storage.read(KEYS.SETUP);
     if(!live || !Array.isArray(live.ro) || !Array.isArray(live.ru) || live.ro.length!==12 || live.ru.length!==12){
-      live = { ro:Array(12).fill(null), ru:Array(12).fill(null) };
+      live = {ro:Array(12).fill(null), ru:Array(12).fill(null)};
       CTX.storage.write(KEYS.SETUP, live);
     }
     return live;
@@ -127,10 +125,10 @@
     let tools = CTX.storage.read(KEYS.TOOLS, []);
     if(!Array.isArray(tools) || !tools.length){
       tools = [
-        {id:CTX.uid(), name:'VDI30 Halter Rechts', code:'VDI30-R', catId:'', iso:'', maker:'', note:'', imgData:''},
-        {id:CTX.uid(), name:'ER32 Ø8',            code:'ER32-8',  catId:'', iso:'', maker:'', note:'', imgData:''},
-        {id:CTX.uid(), name:'CNMG120408-PM 4325', code:'CNMG120408-PM', catId:'', iso:'CNMG120408', maker:'Sandvik', note:'', imgData:''},
-        {id:CTX.uid(), name:'Bohrer Ø10',         code:'DR-10',   catId:'', iso:'', maker:'', note:'', imgData:''}
+        {id:CTX.uid(), name:'VDI30 Halter Rechts', code:'VDI30-R', iso:'', maker:'', note:'', imgData:''},
+        {id:CTX.uid(), name:'ER32 Ø8', code:'ER32-8', iso:'', maker:'', note:'', imgData:''},
+        {id:CTX.uid(), name:'CNMG120408-PM 4325', code:'CNMG120408-PM', iso:'CNMG120408', maker:'Sandvik', note:'', imgData:''},
+        {id:CTX.uid(), name:'Bohrer Ø10', code:'DR-10', iso:'', maker:'', note:'', imgData:''}
       ];
       CTX.storage.write(KEYS.TOOLS, tools);
     }
@@ -144,11 +142,11 @@
   let side = 'ro';
   let currentProgId = progs[0]?.id || null;
 
-  const $ = (s, r=document)=>r.querySelector(s);
-
+  const $ = (s,r=document)=>r.querySelector(s);
   function sideTitle(){ return side==='ro'?'RO (G54)':'RU (G55)'; }
   function progTitle(p){ return `${p.title||'Programm'} — ${p.number||'—'}`; }
 
+  // ---------- header ----------
   function refreshHeader(){
     progs = CTX.storage.read(KEYS.PROGS, []);
     const cur = progs.find(p=>p.id===currentProgId) || null;
@@ -160,6 +158,7 @@
       : `<div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>`;
   }
 
+  // ---------- слоты ----------
   function renderSlots(){
     const root = $('#slots'); root.innerHTML='';
     live = ensureLive();
@@ -169,14 +168,10 @@
     for(let i=0;i<12;i++){
       const v = data[i];
       const el = document.createElement('div'); el.className='slot';
-
       if(!v){
-        el.innerHTML = `<div class="slot-empty">
-            <div class="muted">#${i+1} • Frei</div>
-            <button class="btn" data-i="${i}">Hinzufügen</button>
-          </div>`;
+        el.innerHTML = `<div class="slot-empty"><div class="muted">#${i+1} • Frei</div><button class="btn" data-i="${i}">Hinzufügen</button></div>`;
         el.querySelector('button').onclick=()=>selectToolFor(i);
-      } else {
+      }else{
         const t = tools.find(x=>x.id===v.toolId);
         const label = v.tnum || `T${String(i+1).padStart(2,'0')}${String(i+1).padStart(2,'0')}`;
         el.innerHTML = `
@@ -190,57 +185,55 @@
               </div>
             </div>
             <div class="slot-actions">
-              <button class="btn ghost sm" data-i="${i}">Wechseln</button>
-              <button class="btn warn sm" id="rem_${i}">Entfernen</button>
+              <button class="icon-btn info" aria-label="Info" data-i="${i}"><svg><use href="./ui/icons.svg#info"/></svg></button>
             </div>
           </div>`;
-        el.querySelector('.btn.ghost').onclick=()=> selectToolFor(i);
-        el.querySelector(`#rem_${i}`).onclick=()=>{ const L=CTX.storage.read(KEYS.SETUP, live); L[side][i]=null; CTX.storage.write(KEYS.SETUP, L); live=L; renderSlots(); };
-        el.querySelector(`#tn_${i}`).onclick=()=> editTNum(i);
+        el.querySelector(`#tn_${i}`).onclick=()=>editTNum(i);
+        el.querySelector('.icon-btn.info').onclick=()=>openSlotInfo(i);
       }
       root.appendChild(el);
     }
   }
 
-  /* ---------- Интерактив ---------- */
-  function openProgMenu(){
-    const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date||Date.now()).toLocaleDateString()}));
-    UI.drawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; refreshHeader(); }});
-  }
-
-  function openProgEditor(pIn){
-    const p = pIn || progs.find(x=>x.id===currentProgId);
-    const isNew = !p;
-    const cur = p || {id:CTX.uid(), number:'', title:'', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawing:null};
+  // ---------- i-модалка слота ----------
+  function openSlotInfo(i){
+    const L = CTX.storage.read(KEYS.SETUP, live);
+    const cell = L[side][i]; if(!cell){ return UI.toast('Leer','info'); }
+    const tools = CTX.storage.read(KEYS.TOOLS, []);
+    const t = tools.find(x=>x.id===cell.toolId);
     const html = `
-      <label class="fld">Titel<input id="pr_t" value="${CTX.escape(cur.title)}" placeholder="Programm"></label>
-      <label class="fld">Nummer<input id="pr_n" value="${CTX.escape(cur.number)}" placeholder="123456"></label>
-      ${!isNew?'<div class="row"><button class="btn warn" id="del">Löschen</button></div>':''}
+      ${t?.imgData?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
+      <b>${CTX.escape(t?.name||'—')}</b>
+      <div class="i-row">${CTX.escape(t?.code||'')} • ${CTX.escape(t?.iso||'')}</div>
+      <div class="row">
+        <button class="btn" id="chg">Wechseln</button>
+        <button class="btn warn" id="rem">Entfernen</button>
+      </div>
     `;
-    UI.modal({title:isNew?'Neues Programm':'Programm bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
-      const up = {...cur};
-      up.title  = document.getElementById('pr_t').value || 'Programm';
-      up.number = document.getElementById('pr_n').value || '—';
-      let arr = CTX.storage.read(KEYS.PROGS, []);
-      const i = arr.findIndex(x=>x.id===up.id);
-      if(i>-1) arr[i]=up; else arr.push(up);
-      CTX.storage.write(KEYS.PROGS, arr);
-      progs=arr; currentProgId=up.id; refreshHeader(); UI.toast('Gespeichert','ok');
-    }});
-    const del=document.getElementById('del');
-    if(del) del.onclick=()=>{ progs = progs.filter(x=>x.id!==cur.id); CTX.storage.write(KEYS.PROGS, progs); currentProgId=progs[0]?.id||null; if(CT.closeModal) CT.closeModal(); refreshHeader(); UI.toast('Gelöscht','ok'); };
+    UI.modal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
+    const dlg = document.querySelector('.modal .card');
+    if(dlg){
+      const chg = dlg.querySelector('#chg');
+      const rem = dlg.querySelector('#rem');
+      if(chg) chg.onclick = ()=>{ if(window.CT?.closeModal) CT.closeModal(); selectToolFor(i); };
+      if(rem) rem.onclick = ()=>{
+        const L2 = CTX.storage.read(KEYS.SETUP, live); L2[side][i]=null; CTX.storage.write(KEYS.SETUP, L2); live=L2;
+        if(window.CT?.closeModal) CT.closeModal(); renderSlots(); UI.toast('Entfernt','ok');
+      };
+    }
   }
 
+  // ---------- выбор инструмента ----------
   function selectToolFor(idx){
     const tools = CTX.storage.read(KEYS.TOOLS, []);
     if(!tools.length){
-      // быстрый фоллбек: предложить создать простой инструмент
-      const name = prompt('Kein Tool vorhanden. Neuer Name:'); if(!name) return;
+      const name = prompt('Neues Werkzeug: Name'); if(!name) return;
       const code = prompt('Code (optional):')||'';
       const t = {id:CTX.uid(), name, code, iso:'', maker:'', note:'', imgData:''};
       const arr=CTX.storage.read(KEYS.TOOLS,[]); arr.push(t); CTX.storage.write(KEYS.TOOLS,arr);
     }
     const items = CTX.storage.read(KEYS.TOOLS,[]).map(t=>({id:t.id, title:t.name, meta:t.code}));
+    if(!items.length) return UI.toast('Keine Tools','err');
     UI.drawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
       const L=CTX.storage.read(KEYS.SETUP, live);
       L[side][idx] = {toolId:id, note:'', tnum:`T${String(idx+1).padStart(2,'0')}${String(idx+1).padStart(2,'0')}`};
@@ -248,17 +241,51 @@
     }});
   }
 
+  // ---------- редактирование T ----------
   function editTNum(i){
     const html = `<label class="fld">T-Nummer (Anzeige)<input id="t_num" placeholder="z.B. T0101"></label>`;
     UI.modal({title:`Slot #${i+1}`, html, okText:'OK', cancelText:'Abbrechen', onOk:()=>{
-      const v=document.getElementById('t_num').value||'';
-      const L=CTX.storage.read(KEYS.SETUP, live);
+      const v = document.getElementById('t_num').value||'';
+      const L = CTX.storage.read(KEYS.SETUP, live);
       if(L[side][i]){ L[side][i].tnum=v; CTX.storage.write(KEYS.SETUP, L); live=L; }
-      const btn=document.getElementById(`tn_${i}`); if(btn && v) btn.textContent=v;
+      const btn = document.getElementById(`tn_${i}`); if(btn && v) btn.textContent=v;
       UI.toast('Aktualisiert','ok');
     }});
   }
 
+  // ---------- программа ----------
+  function openProgMenu(){
+    const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date||Date.now()).toLocaleDateString()}));
+    UI.drawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; refreshHeader(); }});
+  }
+  function openProgEditor(){
+    const p = progs.find(x=>x.id===currentProgId); if(!p) return;
+    const html = `
+      <label class="fld">Titel<input id="pr_t" value="${CTX.escape(p.title)}" placeholder="Programm"></label>
+      <label class="fld">Nummer<input id="pr_n" value="${CTX.escape(p.number)}" placeholder="123456"></label>
+      <div class="row"><button class="btn warn" id="del">Löschen</button></div>`;
+    UI.modal({title:'Programm bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
+      const arr = CTX.storage.read(KEYS.PROGS, []);
+      const idx = arr.findIndex(x=>x.id===p.id);
+      arr[idx].title  = document.getElementById('pr_t').value || 'Programm';
+      arr[idx].number = document.getElementById('pr_n').value || '—';
+      CTX.storage.write(KEYS.PROGS, arr); progs=arr; refreshHeader(); UI.toast('Gespeichert','ok');
+    }});
+    const del = document.getElementById('del');
+    if(del) del.onclick = ()=>{ progs = progs.filter(x=>x.id!==p.id); CTX.storage.write(KEYS.PROGS, progs); currentProgId=progs[0]?.id||null; if(window.CT?.closeModal) CT.closeModal(); refreshHeader(); };
+  }
+  function openNewProg(){
+    const cur = {id:CTX.uid(), number:'', title:'', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawing:null};
+    const html = `
+      <label class="fld">Titel<input id="pr_t" placeholder="Programm"></label>
+      <label class="fld">Nummer<input id="pr_n" placeholder="123456"></label>`;
+    UI.modal({title:'Neues Programm', html, okText:'Anlegen', cancelText:'Abbrechen', onOk:()=>{
+      cur.title  = document.getElementById('pr_t').value || 'Programm';
+      cur.number = document.getElementById('pr_n').value || '—';
+      const arr = CTX.storage.read(KEYS.PROGS, []); arr.push(cur); CTX.storage.write(KEYS.PROGS, arr);
+      progs=arr; currentProgId=cur.id; refreshHeader(); UI.toast('Angelegt','ok');
+    }});
+  }
   function applyToLive(){
     const cur = CTX.storage.read(KEYS.PROGS, []).find(x=>x.id===currentProgId);
     if(!cur) return UI.toast('Programm fehlt','err');
@@ -266,14 +293,14 @@
     CTX.storage.write(KEYS.SETUP, L); live=L; UI.toast('In Live angewendet','ok'); renderSlots();
   }
 
-  /* ---------- Handlers ---------- */
+  // ---------- события ----------
   document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; refreshHeader(); renderSlots();});
   document.getElementById('progSwitch').onclick = openProgMenu;
   document.getElementById('applyLive').onclick = applyToLive;
-  document.getElementById('editProg').onclick = ()=>openProgEditor();
-  document.getElementById('newProgTop').onclick = ()=>openProgEditor(null);
+  document.getElementById('editProg').onclick = openProgEditor;
+  document.getElementById('newProgTop').onclick = openNewProg;
 
-  // Zeichnung upload
+  // Zeichnung
   document.getElementById('drawingWrap').onclick = ()=> document.getElementById('drawingFile').click();
   document.getElementById('drawingFile').onchange = ()=>{
     const f = document.getElementById('drawingFile').files?.[0]; if(!f) return;
@@ -284,7 +311,7 @@
     });
   };
 
-  /* ---------- init ---------- */
+  // init
   refreshHeader();
   renderSlots();
 })();
