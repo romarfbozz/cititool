@@ -3,153 +3,140 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>CitiTool • Glass-Neon Hero (CNC)</title>
+<title>CitiTool • Pro Surface (Glass-Neon CNC)</title>
 <style>
 :root{
-  --fg:#0e1621; --muted:#6b7a90; --brand:#2d6cdf; --ok:#1e9c57;
-  --bg:#0b121a; --page:#f6f8fc;
-  --hair:#e7edf7;
+  --page:#f6f8fc;
+  --fg:#0e1621; --muted:#6b7a90;
+  --brand:#2d6cdf; --brand2:#4fa3ff;
+  --ok:#1e9c57; --hair:#e6ecf7;
 }
-/* Reset */
 *{box-sizing:border-box} html,body{height:100%}
-body{margin:0;color:var(--fg);font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif;background:var(--page)}
+body{margin:0;background:var(--page);color:var(--fg);font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
 a,button{cursor:pointer}
 
-/* ===== Global CNC Backdrop (fixed, below all) ===== */
-.backdrop{
-  position:fixed; inset:-20vh -10vw 0 -10vw; z-index:-1;
-  /* Глубокая графитовая сталь + голубой неон на краю */
-  background:
-    radial-gradient(1200px 600px at 70% -10%, rgba(90,150,255,.35), transparent 60%),
-    radial-gradient(900px 520px at -10% 110%, rgba(40,90,200,.22), transparent 60%),
-    linear-gradient(180deg, #0b121a 0%, #0f1722 45%, #0b121a 100%);
+/* ───────── GLOBAL DYNAMIC BACKDROP (under everything) ───────── */
+#backdrop{
+  position:fixed; inset:-40vh -20vw -40vh -20vw; z-index:-1;
+  background: radial-gradient(1800px 800px at 80% -10%, rgba(70,120,255,.30), transparent 60%),
+              radial-gradient(1400px 700px at -10% 110%, rgba(40,90,200,.22), transparent 60%),
+              linear-gradient(180deg,#0b121a 0%,#0f1722 48%,#0b121a 100%);
   overflow:hidden;
 }
-/* микро-штриховка, имитация токарной фактуры */
-.backdrop::before{
-  content:""; position:absolute; inset:-200% -200%;
-  background:
-    repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 1px, transparent 1px 6px);
-  filter:blur(0.6px) saturate(1.05);
-  opacity:.45;
-  transform:translate3d(0,0,0);
-  animation:swipe 30s linear infinite;
+/* cnc-turning micro hatching */
+#backdrop .hatch{
+  position:absolute; inset:-200% -200%;
+  background: repeating-linear-gradient(115deg, rgba(255,255,255,.035) 0 1px, transparent 1px 6px);
+  filter:blur(.6px) saturate(1.05); opacity:.42;
+  animation:swipe 36s linear infinite;
 }
-@keyframes swipe{ to{ transform:translate3d(-6%,3%,0); } }
-
-/* мягкое «световое пятно» — будет сдвигаться при скролле */
-.backdrop .glow{
-  position:absolute; width:120vmax; height:120vmax; left:50%; top:0;
-  transform:translate(-50%,-30%);
-  background:radial-gradient(closest-side, rgba(120,180,255,.22), rgba(0,0,0,0));
-  filter:blur(28px);
-  will-change:transform;
+@keyframes swipe{to{transform:translate3d(-8%,4%,0)}}
+/* moving specular lights (toolpath vibe) */
+#backdrop .light,
+#backdrop .light2{
+  position:absolute; width:130vmax; height:130vmax; left:50%; top:0; translate:-50% -30%;
+  filter:blur(32px); opacity:.85; will-change:transform;
 }
+#backdrop .light{ background:radial-gradient(closest-side, rgba(130,190,255,.20), rgba(0,0,0,0)); }
+#backdrop .light2{ background:radial-gradient(closest-side, rgba(40,220,255,.08), rgba(0,0,0,0)); mix-blend-mode:screen }
 
-/* ===== Buttons / icon buttons ===== */
-.btn{height:44px;border-radius:14px;padding:0 14px;font-weight:700;border:1px solid rgba(255,255,255,.28);color:#fff;
-     background:rgba(255,255,255,.12); backdrop-filter:blur(10px)}
-.btn.brand{background:linear-gradient(180deg,#3a7bff,#2d6cdf);border-color:#2d6cdf}
-.btn.ok{background:#1e9c57;border-color:#1e9c57}
-.btn.ghost{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28)}
+/* ───────── Buttons ───────── */
+.btn{height:44px;border-radius:14px;padding:0 14px;font-weight:700;border:1px solid rgba(255,255,255,.30);color:#fff;
+     background:rgba(255,255,255,.14);backdrop-filter:blur(10px)}
+.btn.brand{background:linear-gradient(180deg,var(--brand2),var(--brand));border-color:var(--brand)}
+.btn.ok{background:var(--ok);border-color:var(--ok)}
+.btn.ghost{background:rgba(255,255,255,.14)}
 .icon-btn{display:inline-grid;place-items:center;width:44px;height:44px;border:0;background:transparent;border-radius:12px;color:#fff;transition:transform .08s}
 .icon-btn:active{transform:translateY(1px)}
 .icon-btn svg{width:22px;height:22px;fill:currentColor}
 
-/* ===== Hero AppBar ===== */
-.hero{position:relative;height:60vh;min-height:360px;color:#fff;overflow:hidden}
+/* ───────── HERO APPBAR ───────── */
+.hero{position:relative;height:62vh;min-height:380px;color:#fff;overflow:hidden}
 .hero .bar{
   position:sticky; top:0; z-index:10;
-  display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+  display:flex; align-items:center; justify-content:space-between; gap:.6rem;
   padding:12px calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left));
 }
-/* Glass-Neon CT badge */
-.ct-badge{
-  display:grid; place-items:center; width:44px; height:44px; border-radius:14px;
+/* Glass-Neon CT logo */
+.ct{
+  display:flex;align-items:center;gap:.8rem;color:#fff;text-decoration:none
+}
+.ct .badge{
+  position:relative; width:48px; height:48px; border-radius:16px; overflow:hidden; isolation:isolate;
   background:
-    radial-gradient(120px 80px at 30% 20%, rgba(255,255,255,.55), transparent 45%),
-    linear-gradient(135deg, #9ec4ff 0%, #2d6cdf 70%, #1a4fe6 100%);
+    radial-gradient(120px 90px at 30% 20%, rgba(255,255,255,.55), transparent 45%),
+    linear-gradient(135deg, #a9d0ff 0%, #4fa3ff 55%, #2d6cdf 85%, #1a4fe6 100%);
   box-shadow:
-    0 14px 28px rgba(45,108,223,.35),
+    0 14px 30px rgba(45,108,223,.35),
     inset 0 0 0 1px rgba(255,255,255,.55);
-  color:#fff; font-weight:900; letter-spacing:.4px; font-size:18px;
-  margin-left:4px; /* ЧУТЬ левее */
-  position:relative; overflow:hidden; isolation:isolate;
 }
-.ct-badge .inner{
-  position:absolute; inset:2px; border-radius:12px;
+.ct .badge::before{ /* inner glass */
+  content:""; position:absolute; inset:2px; border-radius:14px;
   background:linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,.06));
-  box-shadow: inset 0 10px 24px rgba(255,255,255,.18), inset 0 -10px 24px rgba(0,0,0,.22);
+  box-shadow: inset 0 12px 26px rgba(255,255,255,.18), inset 0 -12px 26px rgba(0,0,0,.22);
 }
-.ct-badge .label{
-  position:relative; z-index:1; text-shadow:0 2px 12px rgba(60,130,255,.65);
-}
-.ct-badge::after{ /* тонкий бегущий блик */
+.ct .badge::after{ /* sheen */
   content:""; position:absolute; left:-40%; top:-160%; width:40%; height:300%;
   transform:rotate(22deg); background:linear-gradient(180deg,transparent,rgba(255,255,255,.6),transparent);
-  animation:sheen 5s ease-in-out infinite;
+  animation:sheen 5.2s ease-in-out infinite;
 }
-@keyframes sheen{0%{transform:translateX(-140%) rotate(22deg)} 35%{transform:translateX(260%) rotate(22deg)} 100%{transform:translateX(260%) rotate(22deg)}}
-
-.brand-link{display:flex;align-items:center;gap:.8rem;text-decoration:none;color:#fff}
-.tit .title{font-weight:900;font-size:19px;letter-spacing:.2px}
-.tit .subtitle{font-size:12px;opacity:.88}
-
-/* hero body */
-.hero .hero-body{
-  position:absolute; inset:0; display:grid; place-items:center; padding:72px 16px 24px;
+@keyframes sheen{0%{transform:translateX(-140%) rotate(22deg)}35%{transform:translateX(260%) rotate(22deg)}100%{transform:translateX(260%) rotate(22deg)}}
+.ct .letters{
+  position:absolute; inset:0; display:grid; place-items:center;
+  font-weight:900; letter-spacing:.4px; font-size:18px; text-shadow:0 2px 14px rgba(60,130,255,.65)
 }
-.hero .stack{display:grid; gap:14px; place-items:center; text-align:center; z-index:2}
-.hero h1{margin:0;font-size:36px;letter-spacing:.2px}
+.ct .tit .title{font-weight:900;font-size:19px;letter-spacing:.2px}
+.ct .tit .subtitle{font-size:12px;opacity:.88}
+
+/* hero center */
+.hero .hero-body{position:absolute; inset:0; display:grid; place-items:center; padding:72px 16px 24px}
+.hero .stack{display:grid;gap:14px;place-items:center;text-align:center}
+.hero h1{margin:0;font-size:36px}
 .hero p{margin:0;color:#eaf2ffcc}
-.hero .actions{display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center}
+.hero .actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
 
-/* search panel */
-.search-wrap{
-  position:absolute; left:50%; transform:translateX(-50%) translateY(12px);
-  bottom:22px; width:min(720px,92vw);
-  display:grid; grid-template-columns:1fr auto; gap:.5rem; z-index:2;
-  transition:opacity .2s, transform .2s;
-}
-.search{height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;padding:0 12px;backdrop-filter:blur(10px)}
+/* search */
+.search-wrap{position:absolute;left:50%;transform:translateX(-50%) translateY(12px);bottom:22px;width:min(720px,92vw);display:grid;grid-template-columns:1fr auto;gap:.5rem;z-index:2;transition:opacity .2s,transform .2s}
+.search{height:44px;border-radius:12px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.14);color:#fff;padding:0 12px;backdrop-filter:blur(10px)}
 .search::placeholder{color:#ffffffcc}
 .search-wrap[hidden]{opacity:0;transform:translateX(-50%) translateY(22px)}
 
-/* compact on scroll */
+/* compact */
 .compact{height:64px}
 .compact .hero-body{opacity:0;pointer-events:none}
 .compact .search-wrap{display:none}
 
-/* ===== Content ===== */
-.container{position:relative; z-index:1; padding:16px; display:grid; gap:14px}
+/* ───────── CONTENT ───────── */
+.container{position:relative;z-index:1;padding:16px;display:grid;gap:14px}
 .section{background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(13,27,42,.08);padding:14px}
 .section h2{margin:4px 2px 10px}
-.grid{display:grid; gap:.6rem}
+.grid{display:grid;gap:.6rem}
 @media(min-width:700px){ .grid.cols3{grid-template-columns:repeat(3,1fr)} .grid.cols2{grid-template-columns:repeat(2,1fr)} }
-.card{background:#fff;border:1px solid #e6ecf7;border-radius:14px;padding:12px}
+.card{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:12px}
 .card h3{margin:0 0 6px 0}
-small.muted{color:#6b7a90}
-
+small.muted{color:var(--muted)}
 .list{display:grid;gap:.5rem}
-.list li{list-style:none;background:#fff;border:1px solid #e6ecf7;border-radius:12px;padding:10px}
+.list li{list-style:none;background:#fff;border:1px solid var(--hair);border-radius:12px;padding:10px}
+
+/* subtle motion on cards (depth) */
+.card, .list li{transition:transform .12s ease, box-shadow .12s ease}
+.card:active, .list li:active{transform:translateY(1px)}
 </style>
 </head>
 <body>
 
-<!-- Глобальный фон под всем контентом -->
-<div class="backdrop" aria-hidden="true"><div class="glow" id="glow"></div></div>
+<!-- DYNAMIC BACKDROP -->
+<div id="backdrop" aria-hidden="true">
+  <div class="hatch"></div>
+  <div class="light" id="glow1"></div>
+  <div class="light2" id="glow2"></div>
+</div>
 
 <header class="hero" id="hero">
   <div class="bar">
-    <a class="brand-link" href="#">
-      <span class="ct-badge" aria-label="CitiTool Logo">
-        <span class="inner"></span>
-        <span class="label">CT</span>
-      </span>
-      <div class="tit">
-        <div class="title">CitiTool</div>
-        <div class="subtitle">Setup</div>
-      </div>
+    <a class="ct" href="#">
+      <span class="badge"><span class="letters">CT</span></span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup</div></div>
     </a>
     <div class="bar-actions">
       <button class="btn ghost" id="btnNew">Neues Programm</button>
@@ -164,8 +151,8 @@ small.muted{color:#6b7a90}
 
   <div class="hero-body">
     <div class="stack">
-      <h1>Glass-Neon CNC</h1>
-      <p>Präzise Optik • iPhone-first • ohne Ruckeln</p>
+      <h1>CitiTool Pro Surface</h1>
+      <p>Glass-Neon • CNC-Drehen • iPhone-first</p>
       <div class="actions">
         <button class="btn brand" id="cta1">Neues Programm</button>
         <button class="btn" id="cta2">Neues Werkzeug</button>
@@ -197,9 +184,9 @@ small.muted{color:#6b7a90}
       <li>Los 127 • 10 / 80 • Morgen</li><li>Los 128 • 44 / 300 • Morgen</li>
       <li>Los 129 • 12 / 60 • Morgen</li><li>Los 130 • 0 / 90 • Morgen</li>
       <li>Los 131 • 5 / 70 • Morgen</li><li>Los 132 • 33 / 100 • Morgen</li>
-      <li>Los 133 • 12 / 120 • Diese Woche</li><li>Los 134 • 77 / 140 • Diese Woche</li>
-      <li>Los 135 • 5 / 200 • Diese Woche</li><li>Los 136 • 20 / 220 • Diese Woche</li>
-      <li>Los 137 • 15 / 60 • Diese Woche</li><li>Los 138 • 46 / 90 • Diese Woche</li>
+      <li>Los 133 • 12 / 120 • Woche</li><li>Los 134 • 77 / 140 • Woche</li>
+      <li>Los 135 • 5 / 200 • Woche</li><li>Los 136 • 20 / 220 • Woche</li>
+      <li>Los 137 • 15 / 60 • Woche</li><li>Los 138 • 46 / 90 • Woche</li>
     </ul>
   </section>
 
@@ -215,25 +202,44 @@ small.muted{color:#6b7a90}
 </main>
 
 <script>
-/* compact + плавный фон без «прыжков» */
+/* compact hero + background motion (no jumps on iOS) */
 const hero = document.getElementById('hero');
-const glow = document.getElementById('glow');
+const glow1 = document.getElementById('glow1');
+const glow2 = document.getElementById('glow2');
 function onScroll(){
   const y = window.scrollY || 0;
   hero.classList.toggle('compact', y > 48);
-  // слегка подвигаем световое пятно — параллакс
-  glow.style.transform = `translate(-50%, calc(-30% + ${y * 0.18}px))`;
+  glow1.style.transform = `translate3d(0, ${y*0.16}px, 0)`;
+  glow2.style.transform = `translate3d(0, ${y*0.10}px, 0)`;
 }
 onScroll();
 window.addEventListener('scroll', onScroll, {passive:true});
 
-/* поиск */
+/* slight gyro parallax (CNC live feel) */
+if(window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function'){
+  // iOS: enable by tap (optional)
+  document.addEventListener('click', function once(){
+    DeviceOrientationEvent.requestPermission().then(state=>{
+      if(state==='granted') window.addEventListener('deviceorientation', gyro, {passive:true});
+    }).catch(()=>{});
+    document.removeEventListener('click', once);
+  });
+}else if(window.DeviceOrientationEvent){
+  window.addEventListener('deviceorientation', gyro, {passive:true});
+}
+function gyro(e){
+  const dx = (e.gamma||0)/45, dy = (e.beta||0)/45;
+  glow1.style.transform = `translate3d(${dx*12}px, calc(${window.scrollY*0.16}px + ${dy*10}px), 0)`;
+  glow2.style.transform = `translate3d(${dx*20}px, calc(${window.scrollY*0.10}px + ${dy*14}px), 0)`;
+}
+
+/* search */
 const searchWrap = document.getElementById('searchWrap');
 const searchField= document.getElementById('searchField');
 document.getElementById('btnSearch').onclick = ()=>{ searchWrap.hidden=false; searchField.focus(); };
 document.getElementById('searchClose').onclick = ()=>{ searchWrap.hidden=true; searchField.value=''; };
 
-/* демо */
+/* demo actions */
 document.getElementById('btnNew').onclick = ()=> alert('Neues Programm');
 document.getElementById('cta1').onclick  = ()=> alert('Neues Programm (CTA)');
 document.getElementById('cta2').onclick  = ()=> alert('Neues Werkzeug');
