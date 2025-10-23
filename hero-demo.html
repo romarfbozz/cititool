@@ -3,76 +3,96 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>CitiTool • Hero AppBar Demo</title>
+<title>CitiTool • Hero AppBar (CNC)</title>
 <style>
 :root{
-  --fg:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --ok:#1e9c57;
-  --veil1:rgba(6,14,24,.25); --veil2:rgba(6,14,24,.38);
-  --glass:rgba(255,255,255,.14); --hair:rgba(255,255,255,.42);
+  --fg:#0e1621; --muted:#6b7a90; --brand:#2d6cdf; --ok:#1e9c57;
+  --veil1:rgba(8,12,18,.25); --veil2:rgba(8,12,18,.40);
+  --glass:rgba(255,255,255,.10); --hair:rgba(255,255,255,.38);
+  --bg:#f5f7fb;
 }
 *{box-sizing:border-box} html,body{height:100%}
-body{margin:0;color:var(--fg);font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif;background:#f6f8fc}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
 a,button{cursor:pointer}
-.btn{height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.32);backdrop-filter:blur(10px);padding:0 14px;font-weight:700}
-.btn.brand{background:var(--brand);color:#fff;border-color:var(--brand)}
-.btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
-.btn.ghost{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.35);color:#fff}
+
+/* buttons / icons */
+.btn{height:44px;border-radius:14px;border:1px solid rgba(255,255,255,.38);background:rgba(255,255,255,.18);backdrop-filter:blur(10px);padding:0 14px;font-weight:700;color:#fff}
+.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.ghost{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.32)}
 .icon-btn{display:inline-grid;place-items:center;width:44px;height:44px;border:0;background:transparent;border-radius:12px;color:#fff;transition:transform .08s}
 .icon-btn:active{transform:translateY(1px)}
 .icon-btn svg{width:22px;height:22px;fill:currentColor}
 
 /* ---------- HERO ---------- */
 .hero{position:relative;height:100svh;height:100vh;overflow:hidden;color:#fff}
-.hero::before{
-  content:"";position:absolute;inset:-10%;
-  background:conic-gradient(from 120deg,#2d6cdf,#76a7ff,#92e0ff,#2d6cdf);
-  filter:blur(44px) saturate(1.15);
-  animation:spin 36s linear infinite;
+.hero::before{ /* металл перелив */
+  content:"";position:absolute;inset:-12%;
+  background:
+    radial-gradient(1200px 800px at 20% 10%, rgba(255,255,255,.35), transparent 45%),
+    linear-gradient(120deg,#1a3560,#2d6cdf 45%,#8fb8ff 60%,#2d6cdf 80%,#1b3055);
+  filter:blur(40px) saturate(1.05);
+  transform:translateZ(0);
+  animation:metalShift 24s ease-in-out infinite alternate;
 }
-@keyframes spin{to{transform:rotate(1turn)}}
-.hero::after{content:"";position:absolute;inset:0;backdrop-filter:blur(12px) saturate(1.2);
-  background:linear-gradient(180deg,var(--veil1),var(--veil2))}
+@keyframes metalShift{
+  0%{transform:translate3d(0,0,0)}
+  100%{transform:translate3d(-6%,4%,0)}
+}
+.hero::after{ /* стеклянная вуаль */
+  content:"";position:absolute;inset:0;backdrop-filter:blur(12px) saturate(1.15);
+  background:linear-gradient(180deg,var(--veil1),var(--veil2));
+}
 
 /* top bar */
 .hero .bar{
-  position:sticky;top:0;z-index:10;
-  display:flex;align-items:center;justify-content:space-between;gap:.5rem;
-  padding:12px calc(16px + env(safe-area-inset-right)) 12px calc(30px + env(safe-area-inset-left));
+  position:sticky; top:0; z-index:10;
+  display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+  padding:12px calc(16px + env(safe-area-inset-right)) 12px calc(20px + env(safe-area-inset-left)); /* ЧУТЬ ЛЕВЕЕ */
 }
-.hero .brand{display:flex;align-items:center;gap:.9rem;text-decoration:none;color:#fff}
+.hero .brand{display:flex;align-items:center;gap:.8rem;text-decoration:none;color:#fff}
+
+/* CNC-premium badge */
 .ct-badge{
-  width:48px;height:48px;border-radius:16px;display:grid;place-items:center;
-  margin-left:12px; /* правее, как просил */
-  color:#fff;font-weight:900;letter-spacing:.2px;font-size:20px;
+  width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+  color:#eaf2ff;font-weight:900;letter-spacing:.4px;font-size:18px;
   background:
-    radial-gradient(130px 120px at 20% 18%, rgba(255,255,255,.42), transparent 45%),
-    linear-gradient(135deg,#a8ceff,#2d6cdf);
-  box-shadow:0 12px 28px rgba(45,108,223,.35), inset 0 0 0 1px rgba(255,255,255,.5);
+    linear-gradient(160deg,#5b6a7b 0%,#9aa6b3 35%,#cad3dc 55%,#7c8a98 75%,#5f6f81 100%);
+  box-shadow:
+    0 10px 26px rgba(20,32,48,.28),
+    inset 0 0 0 1px rgba(255,255,255,.35),
+    inset 0 30px 60px rgba(255,255,255,.14);
+  border:1px solid rgba(0,0,0,.08);
   position:relative; overflow:hidden;
 }
-/* лёгкий «блик» */
-.ct-badge::after{
-  content:"";position:absolute;top:-120%;left:-40%;width:40%;height:260%;
-  transform:rotate(25deg);background:linear-gradient(180deg,transparent,rgba(255,255,255,.45),transparent);
-  animation:sheen 4.8s ease-in-out infinite;
+.ct-badge::before{ /* тонкая гравировка  */
+  content:"CT"; position:absolute; inset:0; display:grid; place-items:center;
+  font-weight:900; letter-spacing:.4px; color:transparent;
+  -webkit-text-stroke: 1px rgba(255,255,255,.42);
+  text-stroke: 1px rgba(255,255,255,.42);
 }
-@keyframes sheen{0%{transform:translateX(-160%) rotate(25deg)} 35%{transform:translateX(280%) rotate(25deg)} 100%{transform:translateX(280%) rotate(25deg)}}
+.ct-badge::after{ /* лёгкий блик */
+  content:""; position:absolute; left:-40%; top:-160%; width:40%; height:300%;
+  transform:rotate(22deg); background:linear-gradient(180deg,transparent,rgba(255,255,255,.5),transparent);
+  animation:sheen 5.6s ease-in-out infinite;
+}
+@keyframes sheen{0%{transform:translateX(-140%) rotate(22deg)} 35%{transform:translateX(260%) rotate(22deg)} 100%{transform:translateX(260%) rotate(22deg)}}
 
 .tit .title{font-weight:900;font-size:19px;letter-spacing:.2px}
-.tit .subtitle{font-size:12px;opacity:.85}
+.tit .subtitle{font-size:12px;opacity:.88}
 
 /* hero body */
-.hero .hero-body{position:absolute;inset:0;display:grid;place-items:center;padding:72px 16px 24px}
-.hero .stack{display:grid;gap:14px;place-items:center;text-align:center;z-index:2}
+.hero .hero-body{position:absolute; inset:0; display:grid; place-items:center; padding:72px 16px 24px}
+.hero .stack{display:grid; gap:14px; place-items:center; text-align:center; z-index:2}
 .hero h1{margin:0;font-size:36px;letter-spacing:.2px}
-.hero p{margin:0;color:#edf3ffcc}
-.hero .actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
+.hero p{margin:0;color:#eaf2ffcc}
+.hero .actions{display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center}
 
 /* search panel */
 .search-wrap{
-  position:absolute;left:50%;transform:translateX(-50%) translateY(12px);
-  bottom:22px;width:min(720px,92vw);
-  display:grid;grid-template-columns:1fr auto;gap:.5rem;z-index:2;
+  position:absolute; left:50%; transform:translateX(-50%) translateY(12px);
+  bottom:22px; width:min(720px,92vw);
+  display:grid; grid-template-columns:1fr auto; gap:.5rem; z-index:2;
   transition:opacity .2s, transform .2s;
 }
 .search{height:44px;border-radius:12px;border:1px solid var(--hair);background:var(--glass);color:#fff;padding:0 12px;backdrop-filter:blur(10px)}
@@ -84,24 +104,25 @@ a,button{cursor:pointer}
 .hero.compact .hero-body{opacity:0;pointer-events:none}
 .hero.compact .search-wrap{display:none}
 .hero.compact::before{filter:blur(22px)}
-.hero.compact::after{background:linear-gradient(180deg,rgba(6,14,24,.55),rgba(6,14,24,.55))}
+.hero.compact::after{background:linear-gradient(180deg,rgba(8,12,18,.56),rgba(8,12,18,.56))}
 
-/* ---------- PARALLAX ---------- */
-.parallax{position:relative;z-index:0;height:48vh;min-height:240px;overflow:hidden;margin-top:-6px}
-.parallax img{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:150%;height:auto;opacity:.92;filter:saturate(1.05) contrast(1.06)}
-.parallax .mask{position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,#f6f8fc 85%)}
+/* ---------- PARALLAX (без прыжков) ---------- */
+.parallax{position:relative; z-index:0; height:48vh; min-height:240px; overflow:hidden; margin-top:-6px; background:#0e1621}
+.px-layer{position:absolute; inset:-10% -10% -10% -10%; will-change:transform}
+.px-img{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:160%; height:auto; opacity:.95; filter:saturate(1.06) contrast(1.05)}
+.parallax .mask{position:absolute; inset:0; background:linear-gradient(180deg, rgba(255,255,255,0) 0%, var(--bg) 85%)}
 
 /* ---------- CONTENT ---------- */
-.container{position:relative;z-index:1;padding:16px;display:grid;gap:14px}
+.container{position:relative; z-index:1; padding:16px; display:grid; gap:14px}
 .section{background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(13,27,42,.08);padding:14px}
 .section h2{margin:4px 2px 10px}
-.grid{display:grid;gap:.6rem}
+.grid{display:grid; gap:.6rem}
 @media(min-width:700px){ .grid.cols3{grid-template-columns:repeat(3,1fr)} .grid.cols2{grid-template-columns:repeat(2,1fr)} }
 .card{background:#fff;border:1px solid #e6ecf7;border-radius:14px;padding:12px}
 .card h3{margin:0 0 6px 0}
 small.muted{color:#6b7a90}
 
-/* длинный список чтобы точно было что скроллить */
+/* длинный список для скролла */
 .list{display:grid;gap:.5rem}
 .list li{list-style:none;background:#fff;border:1px solid #e6ecf7;border-radius:12px;padding:10px}
 </style>
@@ -111,7 +132,7 @@ small.muted{color:#6b7a90}
 <header class="hero" id="hero">
   <div class="bar">
     <a class="brand" href="#">
-      <span class="ct-badge">CT</span>
+      <span class="ct-badge" aria-label="CitiTool Logo"></span>
       <div class="tit">
         <div class="title">CitiTool</div>
         <div class="subtitle">Setup</div>
@@ -130,8 +151,8 @@ small.muted{color:#6b7a90}
 
   <div class="hero-body">
     <div class="stack">
-      <h1>Premium Setup</h1>
-      <p>iPhone-first • Glas • sanfte Animationen</p>
+      <h1>Premium CNC Setup</h1>
+      <p>iPhone-first • Glas • präzise Metall-Optik</p>
       <div class="actions">
         <button class="btn brand" id="cta1">Neues Programm</button>
         <button class="btn" id="cta2">Neues Werkzeug</button>
@@ -145,8 +166,13 @@ small.muted{color:#6b7a90}
   </div>
 </header>
 
+<!-- Параллакс: стабильный слой (не пропадает) -->
 <div class="parallax" id="px">
-  <img id="pxImg" src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=1400&auto=format&fit=crop" alt="">
+  <div class="px-layer" id="pxLayer">
+    <img class="px-img" id="pxImg"
+         src="https://images.unsplash.com/photo-1581091870698-7eec7d20c8c5?q=80&w=1600&auto=format&fit=crop"
+         alt="CNC Metal Background">
+  </div>
   <div class="mask"></div>
 </div>
 
@@ -163,19 +189,14 @@ small.muted{color:#6b7a90}
   <section class="section">
     <h2>Produktion (Demo)</h2>
     <ul class="list">
-      <li>Los 123 • 20 / 100 • Heute</li>
-      <li>Los 124 • 58 / 200 • Heute</li>
-      <li>Los 125 • 0 / 150 • Morgen</li>
-      <li>Los 126 • 90 / 120 • Morgen</li>
-      <li>Los 127 • 10 / 80 • Morgen</li>
-      <li>Los 128 • 44 / 300 • Morgen</li>
-      <li>Los 129 • 12 / 60 • Morgen</li>
-      <li>Los 130 • 0 / 90 • Morgen</li>
-      <li>Los 131 • 5 / 70 • Morgen</li>
-      <li>Los 132 • 33 / 100 • Morgen</li>
-      <li>Los 133 • 12 / 120 • Diese Woche</li>
-      <li>Los 134 • 77 / 140 • Diese Woche</li>
-      <li>Los 135 • 5 / 200 • Diese Woche</li>
+      <li>Los 123 • 20 / 100 • Heute</li><li>Los 124 • 58 / 200 • Heute</li>
+      <li>Los 125 • 0 / 150 • Morgen</li><li>Los 126 • 90 / 120 • Morgen</li>
+      <li>Los 127 • 10 / 80 • Morgen</li><li>Los 128 • 44 / 300 • Morgen</li>
+      <li>Los 129 • 12 / 60 • Morgen</li><li>Los 130 • 0 / 90 • Morgen</li>
+      <li>Los 131 • 5 / 70 • Morgen</li><li>Los 132 • 33 / 100 • Morgen</li>
+      <li>Los 133 • 12 / 120 • Diese Woche</li><li>Los 134 • 77 / 140 • Diese Woche</li>
+      <li>Los 135 • 5 / 200 • Diese Woche</li><li>Los 136 • 20 / 220 • Diese Woche</li>
+      <li>Los 137 • 15 / 60 • Diese Woche</li><li>Los 138 • 46 / 90 • Diese Woche</li>
     </ul>
   </section>
 
@@ -191,24 +212,27 @@ small.muted{color:#6b7a90}
 </main>
 
 <script>
+/* компактная шапка при скролле */
 const hero  = document.getElementById('hero');
-const pxImg = document.getElementById('pxImg');
-const searchWrap = document.getElementById('searchWrap');
-const searchField= document.getElementById('searchField');
+const pxLayer = document.getElementById('pxLayer');
 
 function onScroll(){
   const y = window.scrollY || window.pageYOffset;
   hero.classList.toggle('compact', y > 48);
-  pxImg.style.transform = `translate(-50%, calc(-50% + ${y*0.25}px))`;
+  // плавный параллакс (transform, iOS-safe)
+  // двигаем слой чуть медленнее скролла
+  pxLayer.style.transform = `translate3d(0, ${y * 0.22}px, 0)`;
 }
 onScroll();
 window.addEventListener('scroll', onScroll, {passive:true});
 
-// поиск
+/* Поиск */
+const searchWrap = document.getElementById('searchWrap');
+const searchField= document.getElementById('searchField');
 document.getElementById('btnSearch').onclick = ()=>{ searchWrap.hidden=false; searchField.focus(); };
 document.getElementById('searchClose').onclick = ()=>{ searchWrap.hidden=true; searchField.value=''; };
 
-// демо-cta
+/* Демо-CTA/меню */
 document.getElementById('btnNew').onclick = ()=> alert('Neues Programm');
 document.getElementById('cta1').onclick  = ()=> alert('Neues Programm (CTA)');
 document.getElementById('cta2').onclick  = ()=> alert('Neues Werkzeug');
