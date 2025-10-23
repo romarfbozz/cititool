@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>CitiTool • Setup</title>
+  <link rel="stylesheet" href="./ui/core.css">
+  <style>
+    /* hero drawing */
+    .hero-drawing{display:grid;place-items:center;width:100%;height:140px;border:1px dashed #dfe6f7;border-radius:14px;background:#fafcff;overflow:hidden;margin-top:.4rem}
+    .hero-drawing img{width:100%;height:100%;object-fit:contain}
+    .hero-placeholder{display:grid;place-items:center;gap:.4rem;color:#8aa0c5}
+    .hero-placeholder .ct-badge{width:40px;height:40px;border-radius:12px;font-size:14px}
+    .prog-title{display:flex;align-items:center;gap:.4rem}
+    .prog-title .name{font-size:20px;font-weight:800}
+
+    /* slots */
+    .slots{display:grid;gap:.6rem}
+    @media (min-width:560px){ .slots{grid-template-columns:1fr 1fr} }
+    .slot{border:1px solid #e5ebf7;border-radius:14px;padding:10px;background:#fff}
+    .slot-empty{display:flex;align-items:center;justify-content:space-between}
+    .slot-full{display:flex;align-items:center;justify-content:space-between;gap:.8rem}
+    .slot-left{display:flex;align-items:center;gap:.6rem;min-width:0}
+    .slot .thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f0f3fa}
+    .thumb.no{display:grid;place-items:center;color:#9cb1d9;background:#f0f3fa}
+    .tnum-btn{min-width:64px;font-weight:800}
+    .slot-left .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .slot-left .muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .icon-btn.info{width:36px;height:36px;border-radius:10px;background:transparent;color:#6b7a90}
+  </style>
+</head>
+<body data-active="programme">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html">
+      <span class="ct-badge">CT</span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup</div></div>
+    </a>
+    <div class="actions">
+      <button class="btn brand sm" id="newProgTop">Neues Programm</button>
+      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
+    </div>
+  </div>
+</header>
+<div class="searchbar collapsed"><input class="field" type="search" placeholder="Im Setup suchen…" id="setupSearch"></div>
+
+<main class="container">
+  <section class="section" id="progHeader">
+    <div class="prog-title">
+      <div class="name" id="progTitleText">Programm wählen…</div>
+      <button class="icon-btn sm" id="editProg" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>
+    </div>
+    <div class="muted" id="progMeta">Nr — • Seite —</div>
+
+    <!-- Просмотр Zeichnung (только просмотр) -->
+    <div class="hero-drawing" id="drawingWrap" role="button" aria-label="Zeichnung ansehen">
+      <div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>
+    </div>
+
+    <div class="row mt">
+      <button class="tab active" data-side="ro">RO (G54)</button>
+      <button class="tab" data-side="ru">RU (G55)</button>
+      <span style="flex:1"></span>
+      <button class="btn" id="progSwitch">Wechseln</button>
+      <button class="btn ok" id="applyLive">In Live anwenden</button>
+    </div>
+  </section>
+
+  <section class="section">
+    <div id="slots" class="slots"></div>
+  </section>
+</main>
+
+<nav class="dock" id="dock"></nav>
+
+<script src="./ui/core.js"></script>
+<script src="./ui/dock.js"></script>
+<script>
+(function(){
+  // --- compat / helpers ---
+  const KEYS = window.CT_KEYS || {
+    TOOLS:'ct_tools_v2', CATS:'ct_cats_v1', SETUP:'ct_setup_live',
+    PROGS:'ct_programs_v1', DASH:'ct_dash_v1', DOCS:'ct_docs_v3'
+  };
+  const CTX = window.CT || {
+    storage:{ read:(k,d)=>{try{const r=localStorage.getItem(k);return r?JSON.parse(r):d}catch{ return d}}, write:(k,v)=>localStorage.setItem(k,JSON.stringify(v)) },
+    uid:()=>Math.random().toString(36).slice(2,9),
+    escape:s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])),
+    openModal:null, openDrawer:null, closeModal:null, closeDrawer:null,
+    readFileAsDataURL:(f)=>new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f);}),
+    toast:(t)=>alert(t)
+  };
+  const UI = {
+    toast:(t,tp='info')=> (CTX.toast? CTX.toast(t,tp,2000) : alert(t)),
+    modal:({title,html,okText='OK',cancelText='Abbrechen',onOk})=>{
+      if(CTX.openModal) return CTX.openModal({title,html,okText,cancelText,onOk:()=>{onOk&&onOk(); CTX.closeModal&&CTX.closeModal();}});
+      const ok=confirm(title+'\n\n'+(html.replace(/<[^>]+>/g,'')||'')); if(ok&&onOk) onOk();
+    },
+    drawer:({title,items,onSelect,html})=>{
+      if(CTX.openDrawer) return CTX.openDrawer({title,items,html,onSelect:(id)=>{onSelect&&onSelect(id); CTX.closeDrawer&&CTX.closeDrawer();}});
+      const list=(items||[]).map((x,i)=>`${i+1}. ${x.title} ${x.meta?('('+x.meta+')'):''}`).join('\n');
+      const idx=prompt(`${title}\n\n${list}\n\nNummer:`); const n=parseInt(idx,10)-1; if(items&&items[n]) onSelect(items[n].id);
+    }
+  };
+  const $=(s,r=document)=>r.querySelector(s);
+
+  // --- seeds/ensure ---
+  function ensureLive(){
+    let live = CTX.storage.read(KEYS.SETUP);
+    if(!live || !Array.isArray(live.ro) || !Array.isArray(live.ru) || live.ro.length!==12 || live.ru.length!==12){
+      live = {ro:Array(12).fill(null), ru:Array(12).fill(null)};
+      CTX.storage.write(KEYS.SETUP, live);
+    }
+    return live;
+  }
+  function ensureProgs(){
+    let progs = CTX.storage.read(KEYS.PROGS, []);
+    if(!Array.isArray(progs) || !progs.length){
+      progs = [{id:CTX.uid(), number:'1001', title:'Grundsetup', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawing:null}];
+      CTX.storage.write(KEYS.PROGS, progs);
+    }
+    return progs;
+  }
+  function ensureTools(){
+    let tools = CTX.storage.read(KEYS.TOOLS, []);
+    if(!Array.isArray(tools) || !tools.length){
+      tools = [
+        {id:CTX.uid(), name:'VDI30 Halter Rechts', code:'VDI30-R', iso:'', maker:'', note:'', imgData:''},
+        {id:CTX.uid(), name:'ER32 Ø8', code:'ER32-8', iso:'', maker:'', note:'', imgData:''},
+        {id:CTX.uid(), name:'CNMG120408-PM 4325', code:'CNMG120408-PM', iso:'CNMG120408', maker:'Sandvik', note:'', imgData:''},
+        {id:CTX.uid(), name:'Bohrer Ø10', code:'DR-10', iso:'', maker:'', note:'', imgData:''}
+      ];
+      CTX.storage.write(KEYS.TOOLS, tools);
+    }
+    return tools;
+  }
+
+  let live = ensureLive();
+  let progs = ensureProgs();
+  ensureTools();
+
+  let side='ro';
+  let currentProgId = progs[0]?.id || null;
+
+  function sideTitle(){ return side==='ro'?'RO (G54)':'RU (G55)'; }
+  function progTitle(p){ return `${p.title||'Programm'} — ${p.number||'—'}`; }
+
+  // --- header ---
+  function refreshHeader(){
+    progs = CTX.storage.read(KEYS.PROGS, []);
+    const cur = progs.find(p=>p.id===currentProgId) || null;
+    $('#progTitleText').textContent = cur ? progTitle(cur) : 'Programm wählen…';
+    $('#progMeta').textContent = cur ? `Nr ${cur.number||'—'} • Seite ${sideTitle()}` : 'Nr — • Seite —';
+    const dw = $('#drawingWrap');
+    dw.innerHTML = cur?.drawing
+      ? `<img src="${cur.drawing}" alt="Zeichnung">`
+      : `<div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>`;
+  }
+
+  // --- slots ---
+  function hasImg(t){ return !!(t && t.imgData && String(t.imgData).length>10); }
+  function renderSlots(){
+    const root=$('#slots'); root.innerHTML='';
+    live = ensureLive();
+    const tools = CTX.storage.read(KEYS.TOOLS, []);
+    const data = live[side] || Array(12).fill(null); // гарант
+
+    for(let i=0;i<12;i++){
+      const v = data[i];
+      const el = document.createElement('div'); el.className='slot';
+      if(!v){
+        el.innerHTML = `<div class="slot-empty"><div class="muted">#${i+1} • Frei</div><button class="btn" data-i="${i}">Hinzufügen</button></div>`;
+        el.querySelector('button').onclick=()=>selectToolFor(i);
+      }else{
+        const t = tools.find(x=>x.id===v.toolId);
+        const label = v.tnum || `T${String(i+1).padStart(2,'0')}${String(i+1).padStart(2,'0')}`;
+        el.innerHTML = `
+          <div class="slot-full">
+            <div class="slot-left">
+              <button class="btn tnum-btn" id="tn_${i}">${label}</button>
+              ${
+                hasImg(t)
+                ? `<img class="thumb" src="${t.imgData}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'"><div class='thumb no' style="display:none">No</div>`
+                : `<div class="thumb no">No</div>`
+              }
+              <div class="meta">
+                <div class="name">${CTX.escape(t?t.name:'—')}</div>
+                <div class="muted">${CTX.escape(t?t.code:'')}</div>
+              </div>
+            </div>
+            <button class="icon-btn info" aria-label="Info" data-i="${i}"><svg><use href="./ui/icons.svg#info"/></svg></button>
+          </div>`;
+        el.querySelector(`#tn_${i}`).onclick=()=>editTNum(i);
+        el.querySelector('.icon-btn.info').onclick=()=>openSlotInfo(i);
+      }
+      root.appendChild(el);
+    }
+  }
+
+  // --- slot modal ---
+  function openSlotInfo(i){
+    const L = CTX.storage.read(KEYS.SETUP, live);
+    const cell = L[side][i]; if(!cell){ return UI.toast('Leer','info'); }
+    const tools = CTX.storage.read(KEYS.TOOLS, []);
+    const t = tools.find(x=>x.id===cell.toolId);
+    const html = `
+      ${hasImg(t)?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
+      <b>${CTX.escape(t?.name||'—')}</b>
+      <div class="i-row">${CTX.escape(t?.code||'')} • ${CTX.escape(t?.iso||'')}</div>
+      <div class="row">
+        <button class="btn" id="chg">Wechseln</button>
+        <button class="btn warn" id="rem">Entfernen</button>
+      </div>`;
+    UI.modal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
+    const dlg=document.querySelector('.modal .card');
+    if(dlg){
+      dlg.querySelector('#chg').onclick=()=>{ CTX.closeModal&&CTX.closeModal(); selectToolFor(i); };
+      dlg.querySelector('#rem').onclick=()=>{ const L2=CTX.storage.read(KEYS.SETUP,live); L2[side][i]=null; CTX.storage.write(KEYS.SETUP,L2); live=L2; CTX.closeModal&&CTX.closeModal(); renderSlots(); UI.toast('Entfernt','ok'); };
+    }
+  }
+
+  // --- choose tool ---
+  function selectToolFor(idx){
+    let items = CTX.storage.read(KEYS.TOOLS,[]).map(t=>({id:t.id,title:t.name,meta:t.code}));
+    if(!items.length){
+      const name=prompt('Neues Werkzeug: Name'); if(!name) return;
+      const code=prompt('Code (optional):')||''; const t={id:CTX.uid(),name,code,imgData:'',iso:'',maker:'',note:''};
+      const arr=CTX.storage.read(KEYS.TOOLS,[]); arr.push(t); CTX.storage.write(KEYS.TOOLS,arr);
+      items=[{id:t.id,title:t.name,meta:t.code}];
+    }
+    UI.drawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
+      const L=CTX.storage.read(KEYS.SETUP, live);
+      L[side][idx]={toolId:id, note:'', tnum:`T${String(idx+1).padStart(2,'0')}${String(idx+1).padStart(2,'0')}`};
+      CTX.storage.write(KEYS.SETUP,L); live=L; UI.toast('Aktualisiert','ok'); renderSlots();
+    }});
+  }
+
+  // --- edit T ---
+  function editTNum(i){
+    const html = `<label class="fld">T-Nummer (Anzeige)<input id="t_num" placeholder="z.B. T0101"></label>`;
+    UI.modal({title:`Slot #${i+1}`, html, okText:'OK', cancelText:'Abbrechen', onOk:()=>{
+      const v=$('#t_num').value||''; const L=CTX.storage.read(KEYS.SETUP,live);
+      if(L[side][i]){ L[side][i].tnum=v; CTX.storage.write(KEYS.SETUP,L); live=L; }
+      const btn=document.getElementById(`tn_${i}`); if(btn&&v) btn.textContent=v; UI.toast('Aktualisiert','ok');
+    }});
+  }
+
+  // --- programme ---
+  function openProgMenu(){
+    const items=progs.map(p=>({id:p.id,title:progTitle(p),meta:new Date(p.date||Date.now()).toLocaleDateString()}));
+    UI.drawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; refreshHeader(); }});
+  }
+  function openProgEditor(){
+    const p=progs.find(x=>x.id===currentProgId); if(!p) return;
+    const html=`
+      ${p.drawing?`<div class="imgwrap"><img src="${p.drawing}" alt="" style="max-height:30vh;object-fit:contain;border-radius:12px"></div>`:''}
+      <label class="fld">Titel<input id="pr_t" value="${CTX.escape(p.title)}" placeholder="Programm"></label>
+      <label class="fld">Nummer<input id="pr_n" value="${CTX.escape(p.number)}" placeholder="123456"></label>
+      <label class="fld file">Zeichnung<input id="pr_img" type="file" accept="image/*"></label>
+      <div class="row"><button class="btn warn" id="del">Löschen</button></div>`;
+    UI.modal({title:'Programm bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
+      const arr=CTX.storage.read(KEYS.PROGS,[]); const idx=arr.findIndex(x=>x.id===p.id);
+      arr[idx].title=$('#pr_t').value||'Programm'; arr[idx].number=$('#pr_n').value||'—';
+      const f=$('#pr_img').files?.[0]; const commit=(img)=>{ if(img)arr[idx].drawing=img; CTX.storage.write(KEYS.PROGS,arr); progs=arr; refreshHeader(); UI.toast('Gespeichert','ok'); };
+      if(f){ (window.CT?.readFileAsDataURL?CT.readFileAsDataURL(f):CTX.readFileAsDataURL(f)).then(commit); } else commit();
+    }});
+    const del=document.getElementById('del'); if(del) del.onclick=()=>{ progs=progs.filter(x=>x.id!==p.id); CTX.storage.write(KEYS.PROGS,progs); currentProgId=progs[0]?.id||null; CTX.closeModal&&CTX.closeModal(); refreshHeader(); };
+  }
+  function openNewProg(){
+    const cur={id:CTX.uid(), number:'', title:'', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawing:null};
+    const html=`
+      <label class="fld">Titel<input id="pr_t" placeholder="Programm"></label>
+      <label class="fld">Nummer<input id="pr_n" placeholder="123456"></label>
+      <label class="fld file">Zeichnung<input id="pr_img" type="file" accept="image/*"></label>`;
+    UI.modal({title:'Neues Programm', html, okText:'Anlegen', cancelText:'Abbrechen', onOk:()=>{
+      cur.title=$('#pr_t').value||'Programm'; cur.number=$('#pr_n').value||'—';
+      const f=$('#pr_img').files?.[0]; const commit=(img)=>{ if(img)cur.drawing=img; const arr=CTX.storage.read(KEYS.PROGS,[]); arr.push(cur); CTX.storage.write(KEYS.PROGS,arr); progs=arr; currentProgId=cur.id; refreshHeader(); UI.toast('Angelegt','ok'); };
+      if(f){ (window.CT?.readFileAsDataURL?CT.readFileAsDataURL(f):CTX.readFileAsDataURL(f)).then(commit); } else commit();
+    }});
+  }
+  function applyToLive(){
+    const cur=CTX.storage.read(KEYS.PROGS,[]).find(x=>x.id===currentProgId);
+    if(!cur) return UI.toast('Programm fehlt','err');
+    const L={ro:cur.ro||Array(12).fill(null), ru:cur.ru||Array(12).fill(null)}; CTX.storage.write(KEYS.SETUP,L); live=L; UI.toast('In Live angewendet','ok'); renderSlots();
+  }
+
+  // Zeichnung — fullscreen просмотр
+  document.getElementById('drawingWrap').onclick=()=>{
+    const p=CTX.storage.read(KEYS.PROGS,[]).find(x=>x.id===currentProgId); if(!p||!p.drawing) return;
+    const html=`<div class="imgwrap"><img src="${p.drawing}" alt="" style="max-height:80vh;max-width:90vw;border-radius:12px;object-fit:contain"></div>`;
+    UI.modal({title:'Zeichnung', html, okText:'OK', cancelText:'Schließen'});
+  };
+
+  // events
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; refreshHeader(); renderSlots();});
+  document.getElementById('progSwitch').onclick=openProgMenu;
+  document.getElementById('applyLive').onclick=applyToLive;
+  document.getElementById('editProg').onclick=openProgEditor;
+  document.getElementById('newProgTop').onclick=openNewProg;
+
+  // init
+  refreshHeader();
+  renderSlots();
+})();
+</script>
+</body>
+</html>
