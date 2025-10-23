@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>CitiTool • Setup (failsafe)</title>
+  <link rel="stylesheet" href="./ui/core.css">
+  <style>
+    .hero-drawing{display:grid;place-items:center;width:100%;height:180px;border:1px dashed #dfe6f7;border-radius:14px;background:#fafcff;overflow:hidden}
+    .hero-drawing img{width:100%;height:100%;object-fit:contain}
+    .hero-placeholder{display:grid;place-items:center;gap:.4rem;color:#8aa0c5}
+    .hero-placeholder .ct-badge{width:44px;height:44px;border-radius:12px;font-size:16px}
+    .prog-title{display:flex;align-items:center;gap:.4rem}
+    .prog-title .name{font-size:20px;font-weight:800}
+    /* сетка слотов: 1 колонка на телефоне, шире — 2 */
+    .slots{display:grid;gap:.6rem}
+    @media (min-width:560px){ .slots{grid-template-columns:1fr 1fr} }
+    .slot-full{display:flex;align-items:center;justify-content:space-between;gap:.8rem}
+    .slot-left{display:flex;align-items:center;gap:.6rem;min-width:0}
+    .slot .thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f0f3fa}
+    .thumb.no{display:grid;place-items:center;color:#9cb1d9;background:#f0f3fa}
+    .tnum-btn{min-width:64px;font-weight:800}
+    .slot-left .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .slot-left .muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  </style>
+</head>
+<body data-active="programme">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html">
+      <span class="ct-badge">CT</span>
+      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup</div></div>
+    </a>
+    <div class="actions">
+      <button class="btn brand sm" id="newProgTop">Neues Programm</button>
+      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
+    </div>
+  </div>
+</header>
+<div class="searchbar collapsed"><input class="field" type="search" placeholder="Im Setup suchen…" id="setupSearch"></div>
+
+<main class="container">
+  <section class="section" id="progHeader">
+    <div class="prog-title">
+      <div class="name" id="progTitleText">Programm wählen…</div>
+      <button class="icon-btn sm" id="editProg" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>
+    </div>
+    <div class="muted" id="progMeta">Nr — • Seite —</div>
+
+    <div class="hero-drawing mt" id="drawingWrap" role="button" aria-label="Zeichnung wählen">
+      <div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div id="slots" class="slots"></div>
+  </section>
+</main>
+
+<nav class="dock" id="dock"></nav>
+
+<script src="./ui/core.js"></script>
+<script src="./ui/dock.js"></script>
+<script>
+(function(){
+  // --- ключи по умолчанию (если старый core.js)
+  const KEYS = (window.CT_KEYS) ? window.CT_KEYS : {
+    TOOLS:'ct_tools_v2', CATS:'ct_cats_v1', SETUP:'ct_setup_live',
+    PROGS:'ct_programs_v1', DASH:'ct_dash_v1', DOCS:'ct_docs_v3'
+  };
+
+  // --- безопасные обёртки (если CT не прогрузился)
+  const CTsafe = window.CT || {
+    storage:{
+      read:(k, def)=>{ try{const raw=localStorage.getItem(k); return raw?JSON.parse(raw):def;}catch(e){return def;} },
+      write:(k,v)=>localStorage.setItem(k, JSON.stringify(v)),
+      clear:(k)=>localStorage.removeItem(k)
+    },
+    uid(){ return Math.random().toString(36).slice(2,9); },
+    escape(s){ return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); },
+    openModal:()=>{}, openDrawer:()=>{}, toast:()=>{},
+    ensureSeeds:()=>{}
+  };
+
+  // --- гарантия валидной структуры live + хотя бы 1 программы
+  function ensureLive(){
+    let live = CTsafe.storage.read(KEYS.SETUP);
+    if(!live || !Array.isArray(live.ro) || !Array.isArray(live.ru) || live.ro.length!==12 || live.ru.length!==12){
+      live = { ro:Array(12).fill(null), ru:Array(12).fill(null) };
+      CTsafe.storage.write(KEYS.SETUP, live);
+    }
+    return live;
+  }
+  function ensureProgs(){
+    let progs = CTsafe.storage.read(KEYS.PROGS, []);
+    if(!Array.isArray(progs) || !progs.length){
+      progs = [{id:CTsafe.uid(), number:'1001', title:'Grundsetup', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawing:null}];
+      CTsafe.storage.write(KEYS.PROGS, progs);
+    }
+    return progs;
+  }
+
+  // --- состояние
+  let live = ensureLive();
+  let progs = ensureProgs();
+  let side  = 'ro';
+  let currentProgId = progs[0]?.id || null;
+
+  // --- рендер заголовка
+  function titleOf(p){ return `${p.title||'Programm'} — ${p.number||'—'}`; }
+  function sideTitle(){ return side==='ro'?'RO (G54)':'RU (G55)'; }
+  function refreshHeader(){
+    progs = CTsafe.storage.read(KEYS.PROGS, []);
+    const cur = progs.find(p=>p.id===currentProgId) || null;
+    document.getElementById('progTitleText').textContent = cur ? titleOf(cur) : 'Programm wählen…';
+    document.getElementById('progMeta').textContent = cur ? `Nr ${cur.number||'—'} • Seite ${sideTitle()}` : 'Nr — • Seite —';
+    const dw = document.getElementById('drawingWrap');
+    dw.innerHTML = cur?.drawing
+      ? `<img src="${cur.drawing}" alt="Zeichnung">`
+      : `<div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>`;
+  }
+
+  // --- рендер слотов (всегда 12)
+  function renderSlots(){
+    const root=document.getElementById('slots'); root.innerHTML='';
+    live = ensureLive(); // перечитать на всякий случай
+    const tools = CTsafe.storage.read(KEYS.TOOLS, []);
+    const data  = live[side];
+
+    for(let i=0;i<12;i++){
+      const v = data[i];
+      const el = document.createElement('div'); el.className='slot';
+
+      if(!v){
+        el.innerHTML = `<div class="slot-empty">
+          <div class="muted">#${i+1} • Frei</div>
+        </div>`;
+      }else{
+        const t = tools.find(x=>x.id===v.toolId);
+        const label = v.tnum || `T${String(i+1).padStart(2,'0')}${String(i+1).padStart(2,'0')}`;
+        el.innerHTML = `
+          <div class="slot-full">
+            <div class="slot-left">
+              <button class="btn tnum-btn" id="tn_${i}" disabled>${label}</button>
+              ${t?.imgData?`<img class="thumb" src="${t.imgData}" alt="">`:`<div class="thumb no">No</div>`}
+              <div class="meta">
+                <div class="name">${CTsafe.escape(t?t.name:'—')}</div>
+                <div class="muted">${CTsafe.escape(t?t.code:'')}</div>
+              </div>
+            </div>
+            <div class="slot-actions">
+              <span class="badge">${i+1}</span>
+            </div>
+          </div>`;
+      }
+      root.appendChild(el);
+    }
+  }
+
+  // --- табы RO/RU
+  document.addEventListener('click', (e)=>{
+    const b = e.target.closest('.tab'); if(!b) return;
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    side = b.dataset.side || 'ro';
+    refreshHeader(); renderSlots();
+  });
+
+  // --- модалка программы (минимальная, только чтобы было куда кликнуть)
+  document.getElementById('newProgTop').onclick = ()=>{
+    const cur = {id:CTsafe.uid(), number:'', title:'', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawing:null};
+    const html = `
+      <label class="fld">Titel<input id="pr_t" placeholder="Programm"></label>
+      <label class="fld">Nummer<input id="pr_n" placeholder="123456"></label>`;
+    (CT.openModal||CTsafe.openModal)({title:'Neues Programm', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
+      cur.title  = document.getElementById('pr_t').value || 'Programm';
+      cur.number = document.getElementById('pr_n').value || '—';
+      const arr = CTsafe.storage.read(KEYS.PROGS, []);
+      arr.push(cur); CTsafe.storage.write(KEYS.PROGS, arr);
+      currentProgId = cur.id; refreshHeader(); renderSlots();
+      (CT.toast||CTsafe.toast)('Gespeichert','ok');
+    }});
+  };
+
+  // --- первичный рендер
+  try{
+    refreshHeader();
+    renderSlots();
+  }catch(err){
+    console.error(err);
+    // аварийная инициализация
+    CTsafe.storage.write(KEYS.SETUP, {ro:Array(12).fill(null), ru:Array(12).fill(null)});
+    refreshHeader(); renderSlots();
+  }
+})();
+</script>
+</body>
+</html>
