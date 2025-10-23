@@ -256,3 +256,36 @@ a{color:inherit}
 }
 
 body.noscroll{overflow:hidden;height:100%}
+
+/* --- Премиум AppBar & CT badge --- */
+.appbar{
+  position:sticky;top:0;z-index:20;
+  background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,255,255,.84));
+  border-bottom:1px solid var(--hair);
+  backdrop-filter:saturate(1.25) blur(10px);
+}
+.logo .badge, .ct-badge{
+  --g1:#a9c6ff; --g2:#2d6cdf;
+  width:32px;height:32px;border-radius:10px;
+  display:grid;place-items:center;color:#fff;font-weight:800;letter-spacing:.3px;
+  background:linear-gradient(135deg,var(--g1),var(--g2));
+  box-shadow:inset 0 0 0 1px #dbe5ff, 0 8px 20px rgba(45,108,223,.18);
+  user-select:none;
+}
+.ct-badge.lg{width:64px;height:64px;border-radius:16px;font-size:24px}
+
+/* --- Иконкo-кнопка "info" нормального вида --- */
+.icon-btn.info{width:36px;height:36px;border-radius:10px;background:transparent;color:#6b7a90}
+.icon-btn.info:active{transform:translateY(1px)}
+
+/* --- Dock премиум --- */
+.dock{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:rgba(255,255,255,.75);backdrop-filter:blur(14px);
+  border-top:1px solid var(--hair);
+  padding:6px env(safe-area-inset-right) calc(6px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+}
+.dock .wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.dock a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 10px;border-radius:12px;text-decoration:none;color:inherit;transition:background .2s,transform .05s}
+.dock a:active{transform:translateY(1px)}
+.dock a.active{background:#eef3ff;color:var(--brand);box-shadow:0 6px 16px rgba(45,108,223,.12)}
