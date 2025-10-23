@@ -6,7 +6,6 @@
   <title>CitiTool • Setup</title>
   <link rel="stylesheet" href="./ui/core.css">
   <style>
-    /* Верхний блок с Zeichnung */
     .hero-drawing{display:grid;place-items:center;width:100%;height:180px;border:1px dashed #dfe6f7;border-radius:14px;background:#fafcff;overflow:hidden}
     .hero-drawing img{width:100%;height:100%;object-fit:contain}
     .hero-placeholder{display:grid;place-items:center;gap:.4rem;color:#8aa0c5}
@@ -14,17 +13,13 @@
     .prog-title{display:flex;align-items:center;gap:.35rem}
     .prog-title .name{font-size:20px;font-weight:800}
 
-    /* Слот — переписан на flex, чтобы не было огромной пустоты */
-    .slot-full{
-      display:flex; align-items:center; justify-content:space-between; gap:.8rem;
-    }
-    .slot-left{display:flex; align-items:center; gap:.6rem; min-width:0}
-    .slot-left .meta{min-width:0}
-    .slot-left .name{font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-    .slot-left .muted{white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .slot-full{display:flex;align-items:center;justify-content:space-between;gap:.8rem}
+    .slot-left{display:flex;align-items:center;gap:.6rem;min-width:0}
     .slot .thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f0f3fa}
-    .tnum-btn{min-width:64px;font-weight:800}
     .thumb.no{display:grid;place-items:center;color:#9cb1d9;background:#f0f3fa}
+    .tnum-btn{min-width:64px;font-weight:800}
+    .slot-left .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .slot-left .muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   </style>
 </head>
 <body data-active="programme">
@@ -35,7 +30,6 @@
       <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Setup</div></div>
     </a>
     <div class="actions">
-      <!-- ОСТАВЛЯЕМ ТОЛЬКО ЭТУ КНОПКУ -->
       <button class="btn brand sm" id="newProgTop">Neues Programm</button>
       <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
     </div>
@@ -61,7 +55,6 @@
       <button class="tab" data-side="ru">RU (G55)</button>
       <span style="flex:1"></span>
       <button class="btn" id="progSwitch">Wechseln</button>
-      <!-- нижнюю кнопку Neues Programm УДАЛИЛ -->
       <button class="btn ok" id="applyLive">In Live anwenden</button>
     </div>
   </section>
@@ -77,35 +70,57 @@
 <script src="./ui/dock.js"></script>
 <script>
 CT.ready(()=>{
-  // Гарантируем структуру live
-  CT.ensureSeeds();
-  let live = CT.storage.read(CT.CT_KEYS.SETUP);
-  if(!live || !Array.isArray(live.ro) || !Array.isArray(live.ru)){
-    live = {ro:Array(12).fill(null), ru:Array(12).fill(null)};
-    CT.storage.write(CT.CT_KEYS.SETUP, live);
+  // --- Ключи: берём из window.CT_KEYS, либо подставляем дефолтные
+  const KEYS = (window.CT_KEYS) ? window.CT_KEYS : {
+    TOOLS:'ct_tools_v2',
+    CATS :'ct_cats_v1',
+    SETUP:'ct_setup_live',
+    PROGS:'ct_programs_v1',
+    DASH :'ct_dash_v1',
+    DOCS :'ct_docs_v3'
+  };
+
+  // --- Гарантируем сиды и валидную структуру live
+  if(CT.ensureSeeds) CT.ensureSeeds();
+  let live = CT.storage.read(KEYS.SETUP);
+  if(!live || !Array.isArray(live.ro) || !Array.isArray(live.ru) || live.ro.length!==12 || live.ru.length!==12){
+    live = { ro:Array(12).fill(null), ru:Array(12).fill(null) };
+    CT.storage.write(KEYS.SETUP, live);
   }
 
-  let progs = CT.storage.read(CT.CT_KEYS.PROGS, []);
-  let side  = 'ro';
+  let progs = CT.storage.read(KEYS.PROGS, []);
+  if(!Array.isArray(progs)) progs = [];
+  if(progs.length===0){
+    progs = [{id:CT.uid(), number:'1001', title:'Grundsetup', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null)}];
+    CT.storage.write(KEYS.PROGS, progs);
+  }
+
+  let side = 'ro';
   let currentProgId = progs[0]?.id || null;
+
   const $ = (s, r=document)=>r.querySelector(s);
 
-  function progTitle(p){ return `#${p.number||'—'} — ${p.title||'Programm'}`; }
+  function titleOf(p){ return `#${p.number||'—'} — ${p.title||'Programm'}`; }
 
   function refreshHeader(){
-    progs = CT.storage.read(CT.CT_KEYS.PROGS, []);
+    progs = CT.storage.read(KEYS.PROGS, []);
     const cur = progs.find(p=>p.id===currentProgId) || null;
-    $('#progTitleText').textContent = cur ? progTitle(cur) : 'Programm wählen…';
+
+    $('#progTitleText').textContent = cur ? titleOf(cur) : 'Programm wählen…';
     $('#progMeta').textContent = cur ? `Nr ${cur.number||'—'} • Seite ${side==='ro'?'RO (G54)':'RU (G55)'}` : 'Nr — • Seite —';
+
     const dw = $('#drawingWrap');
-    if(cur?.drawing){ dw.innerHTML = `<img src="${cur.drawing}" alt="Zeichnung">`; }
-    else { dw.innerHTML = `<div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>`; }
+    if(cur?.drawing){
+      dw.innerHTML = `<img src="${cur.drawing}" alt="Zeichnung">`;
+    } else {
+      dw.innerHTML = `<div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>`;
+    }
   }
 
-  function render(){
-    const root=$('#slots'); root.innerHTML='';
-    const data = live[side] || Array(12).fill(null);
-    const tools = CT.storage.read(CT.CT_KEYS.TOOLS, []);
+  function renderSlots(){
+    const root = $('#slots'); root.innerHTML='';
+    const tools = CT.storage.read(KEYS.TOOLS, []);
+    const data  = live[side] || Array(12).fill(null);
 
     for(let i=0;i<12;i++){
       const v = data[i];
@@ -113,14 +128,13 @@ CT.ready(()=>{
 
       if(!v){
         el.innerHTML = `<div class="slot-empty">
-          <div class="muted">#${i+1} • Frei</div>
-          <button class="btn" data-i="${i}">Hinzufügen</button>
-        </div>`;
+            <div class="muted">#${i+1} • Frei</div>
+            <button class="btn" data-i="${i}">Hinzufügen</button>
+          </div>`;
         el.querySelector('button').onclick=()=>selectToolFor(i);
-      }else{
+      } else {
         const t = tools.find(x=>x.id===v.toolId);
         const label = v.tnum || `T${String(i+1).padStart(2,'0')}${String(i+1).padStart(2,'0')}`;
-
         el.innerHTML = `
           <div class="slot-full">
             <div class="slot-left">
@@ -137,17 +151,17 @@ CT.ready(()=>{
             </div>
           </div>`;
         el.querySelector('.btn.ghost').onclick=()=> selectToolFor(i);
-        el.querySelector(`#rem_${i}`).onclick=()=>{ live[side][i]=null; CT.storage.write(CT.CT_KEYS.SETUP,live); render(); };
+        el.querySelector(`#rem_${i}`).onclick=()=>{ live[side][i]=null; CT.storage.write(KEYS.SETUP, live); renderSlots(); };
         el.querySelector(`#tn_${i}`).onclick=()=> editTNum(i);
       }
+
       root.appendChild(el);
     }
   }
 
-  /* ---- Programme ---- */
   function openProgMenu(){
-    const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date||Date.now()).toLocaleDateString()}));
-    CT.openDrawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; CT.closeDrawer(); refreshHeader(); render(); }});
+    const items = progs.map(p=>({id:p.id, title:titleOf(p), meta:new Date(p.date||Date.now()).toLocaleDateString()}));
+    CT.openDrawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; CT.closeDrawer(); refreshHeader(); }});
   }
 
   function openProgEditor(pIn){
@@ -161,66 +175,68 @@ CT.ready(()=>{
     `;
     CT.openModal({title:isNew?'Neues Programm':'Programm bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
       const up = {...cur};
-      up.title = document.getElementById('pr_t').value || 'Programm';
-      up.number= document.getElementById('pr_n').value || '—';
-      let arr=CT.storage.read(CT.CT_KEYS.PROGS,[]);
-      const i=arr.findIndex(x=>x.id===up.id);
-      if(i>-1)arr[i]=up; else arr.push(up);
-      CT.storage.write(CT.CT_KEYS.PROGS, arr);
-      currentProgId=up.id; refreshHeader(); CT.toast('Gespeichert','ok'); render();
+      up.title  = document.getElementById('pr_t').value || 'Programm';
+      up.number = document.getElementById('pr_n').value || '—';
+      let arr = CT.storage.read(KEYS.PROGS, []);
+      const i = arr.findIndex(x=>x.id===up.id);
+      if(i>-1) arr[i]=up; else arr.push(up);
+      CT.storage.write(KEYS.PROGS, arr);
+      currentProgId=up.id; refreshHeader(); CT.toast('Gespeichert','ok'); renderSlots();
     }});
     const del=document.getElementById('del');
-    if(del) del.onclick=()=>{ progs = progs.filter(x=>x.id!==cur.id); CT.storage.write(CT.CT_KEYS.PROGS,progs); currentProgId=progs[0]?.id||null; CT.closeModal(); refreshHeader(); render(); CT.toast('Gelöscht','ok'); };
+    if(del) del.onclick=()=>{ progs = progs.filter(x=>x.id!==cur.id); CT.storage.write(KEYS.PROGS, progs); currentProgId=progs[0]?.id||null; CT.closeModal(); refreshHeader(); renderSlots(); CT.toast('Gelöscht','ok'); };
   }
 
   function applyToLive(){
-    const cur = progs.find(x=>x.id===currentProgId); if(!cur) return;
+    const cur = CT.storage.read(KEYS.PROGS, []).find(x=>x.id===currentProgId);
+    if(!cur) return;
     live = { ro: cur.ro||Array(12).fill(null), ru: cur.ru||Array(12).fill(null) };
-    CT.storage.write(CT.CT_KEYS.SETUP, live);
+    CT.storage.write(KEYS.SETUP, live);
     CT.toast('In Live angewendet','ok');
-    render();
+    renderSlots();
   }
 
   function editTNum(i){
     const html = `<label class="fld">T-Nummer (Anzeige)<input id="t_num" placeholder="z.B. T0101"></label>`;
     CT.openModal({title:`Slot #${i+1}`, html, okText:'OK', onOk:()=>{
       const v=document.getElementById('t_num').value||'';
-      const btn=document.getElementById(\`tn_\${i}\`);
-      if(v) btn.textContent=v;
-      if(live[side][i]){ live[side][i].tnum=v; CT.storage.write(CT.CT_KEYS.SETUP, live); }
+      if(live[side][i]){ live[side][i].tnum=v; CT.storage.write(KEYS.SETUP, live); }
+      const btn=document.getElementById(`tn_${i}`); if(btn && v) btn.textContent=v;
       CT.toast('Aktualisiert','ok');
     }});
   }
 
   function selectToolFor(idx){
-    const tools = CT.storage.read(CT.CT_KEYS.TOOLS, []);
+    const tools = CT.storage.read(KEYS.TOOLS, []);
     if(!tools.length){ return CT.toast('Keine Tools','err'); }
     const items = tools.map(t=>({id:t.id, title:t.name, meta:t.code}));
     CT.openDrawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
       live[side][idx] = {toolId:id, note:'', tnum:`T${String(idx+1).padStart(2,'0')}${String(idx+1).padStart(2,'0')}`};
-      CT.storage.write(CT.CT_KEYS.SETUP, live); CT.closeDrawer(); CT.toast('Aktualisiert','ok'); render();
+      CT.storage.write(KEYS.SETUP, live); CT.closeDrawer(); CT.toast('Aktualisiert','ok'); renderSlots();
     }});
   }
 
-  /* --- Привязки --- */
-  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; refreshHeader(); render();});
+  // Bindings
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; refreshHeader(); renderSlots();});
   document.getElementById('progSwitch').onclick = openProgMenu;
   document.getElementById('applyLive').onclick = applyToLive;
   document.getElementById('editProg').onclick = ()=>openProgEditor();
-  document.getElementById('newProgTop').onclick = ()=>openProgEditor(null); // только эта кнопка создаёт новое
+  document.getElementById('newProgTop').onclick = ()=>openProgEditor(null);
 
-  // Zeichnung выбор по клику
+  // Zeichnung upload
   document.getElementById('drawingWrap').onclick = ()=> document.getElementById('drawingFile').click();
   document.getElementById('drawingFile').onchange = ()=>{
     const f = document.getElementById('drawingFile').files?.[0]; if(!f) return;
     CT.readFileAsDataURL(f).then(data=>{
-      progs = CT.storage.read(CT.CT_KEYS.PROGS, []);
+      progs = CT.storage.read(KEYS.PROGS, []);
       const cur = progs.find(p=>p.id===currentProgId); if(!cur) return CT.toast('Programm fehlt','err');
-      cur.drawing = data; CT.storage.write(CT.CT_KEYS.PROGS, progs); refreshHeader(); CT.toast('Zeichnung gespeichert','ok');
+      cur.drawing = data; CT.storage.write(KEYS.PROGS, progs);
+      refreshHeader(); CT.toast('Zeichnung gespeichert','ok');
     });
   };
 
-  refreshHeader(); render();
+  refreshHeader();
+  renderSlots();
 });
 </script>
 </body>
