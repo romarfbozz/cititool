@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>CitiTool • Premium CNC Light</title>
+<style>
+:root{
+  --fg:#0e1526; --muted:#6b7a90;
+  --brand:#2d6cdf; --brand2:#6eb0ff; --accent:#19b4ff;
+  --glass:#ffffffb2;      /* стекло для карточек */
+  --glass-hi:#ffffffd0;   /* чуть плотнее */
+  --tint:#eaf2ff;         /* холодный оттенок */
+  --hair:#e6edf8;
+  --shadow:0 22px 48px rgba(12,25,42,.12);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; color:var(--fg);
+  font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif;
+  background:#eff4fb; overscroll-behavior-y:none;
+}
+
+/* ============ BACKDROP (lathe blueprint + brushed metal + depth) ============ */
+#backdrop{
+  position:fixed; inset:-140dvh -40vw -140dvh -40vw; z-index:-3; overflow:hidden;
+  background:
+    radial-gradient(1200px 520px at 78% -10%, rgba(120,170,255,.26), transparent 60%),
+    radial-gradient(900px 520px  at -6% 110%, rgba(150,210,255,.22), transparent 60%),
+    linear-gradient(180deg,#f8fbff 0%, #f2f7ff 40%, #edf4ff 100%);
+}
+#backdrop .brush{
+  position:absolute; inset:-200%;
+  background:
+    repeating-linear-gradient(90deg, rgba(155,175,205,.06) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(180deg, rgba(155,175,205,.05) 0 1px, transparent 1px 6px);
+  filter:blur(.45px); opacity:.65; animation:metal 55s linear infinite;
+}
+@keyframes metal{to{transform:translateX(6%)}}
+#backdrop .grain{
+  position:absolute; inset:-120%; opacity:.10; pointer-events:none;
+  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="2" stitchTiles="stitch"/></filter><rect width="120" height="120" filter="url(%23n)" opacity=".5"/></svg>');
+  mix-blend-mode:multiply;
+}
+
+/* «чертёж токарки»: концентрические окружности + разметка углов */
+.blueprint{
+  position:absolute; inset:-2% -2% 42% -2%;
+  opacity:.48; transform:translate3d(0,0,0); will-change:transform;
+  background:
+    radial-gradient(circle at 50% 52%, rgba(70,130,255,.14) 0 43%, transparent 44%),
+    radial-gradient(circle at 50% 52%, rgba(70,130,255,.12) 0 28%, transparent 29%),
+    radial-gradient(circle at 50% 52%, rgba(70,130,255,.10) 0 16%, transparent 17%),
+    conic-gradient(from -90deg at 50% 52%, rgba(70,130,255,.14) 0 2deg, transparent 2deg 30deg, rgba(70,130,255,.14) 30deg 32deg, transparent 32deg 60deg, rgba(70,130,255,.14) 60deg 62deg, transparent 62deg 90deg, rgba(70,130,255,.14) 90deg 92deg, transparent 92deg 120deg, rgba(70,130,255,.14) 120deg 122deg, transparent 122deg 150deg, rgba(70,130,255,.14) 150deg 152deg, transparent 152deg 180deg, rgba(70,130,255,.14) 180deg 182deg, transparent 182deg 210deg, rgba(70,130,255,.14) 210deg 212deg, transparent 212deg 240deg, rgba(70,130,255,.14) 240deg 242deg, transparent 242deg 270deg, rgba(70,130,255,.14) 270deg 272deg, transparent 272deg 300deg, rgba(70,130,255,.14) 300deg 302deg, transparent 302deg 330deg, rgba(70,130,255,.14) 330deg 332deg, transparent 332deg 360deg);
+}
+
+/* «траектории инструмента» — тонкие пунктирные дуги */
+.paths{position:absolute; inset:0; pointer-events:none; mix-blend-mode:multiply; opacity:.9}
+.paths svg{width:150vmax; height:150vmax; position:absolute; left:50%; top:-26%; transform:translateX(-50%)}
+.paths path{ fill:none; stroke:#3788ff; stroke-width:2; stroke-linecap:round; stroke-dasharray:4 11; animation:path 8s linear infinite }
+.paths path:nth-child(2){ stroke:#19b4ff; stroke-dasharray:3 13; animation-duration:10s }
+@keyframes path{ to{ stroke-dashoffset:-280 } }
+
+/* ===================== HERO (collapsible) ===================== */
+.hero{position:relative;height:58dvh;min-height:360px}
+.hero .bar{
+  position:sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; gap:.6rem;
+  padding:12px calc(16px + env(safe-area-inset-right)) 12px calc(16px + env(safe-area-inset-left));
+  background:linear-gradient(180deg,#ffffffdd,#ffffff99);
+  backdrop-filter:blur(12px) saturate(1.15);
+  border-bottom:1px solid var(--hair);
+}
+
+/* ===== Premium логотип (SVG, металл + эмблема CT) ===== */
+.ct{display:flex;align-items:center;gap:.8rem;color:inherit;text-decoration:none}
+.logo{
+  width:64px;height:64px;display:grid;place-items:center;border-radius:20px;overflow:hidden;
+  background:linear-gradient(135deg,#d9eaff,#a9d3ff 50%,#5aa6ff 90%,#2d6cdf);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.9), 0 16px 32px rgba(45,108,223,.28);
+}
+.logo svg{width:64px;height:64px;display:block}
+.tit .title{font-weight:900;font-size:20px}
+.tit .subtitle{font-size:12px;color:var(--muted)}
+
+.icon-btn{display:inline-grid;place-items:center;width:44px;height:44px;border:0;background:transparent;border-radius:12px;color:var(--fg);transition:transform .08s}
+.icon-btn:active{transform:translateY(1px)}
+.icon-btn svg{width:22px;height:22px;fill:currentColor}
+
+.hero-body{position:absolute; inset:0; display:grid; place-items:center; text-align:center; padding:72px 16px}
+.hero .stack{display:grid;gap:12px}
+.hero h1{margin:0;font-size:34px}
+.hero p{margin:0;color:var(--muted)}
+.actions{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center}
+.btn{
+  height:44px;border-radius:14px;padding:0 14px;font-weight:800;border:1px solid var(--hair);
+  background:linear-gradient(180deg,var(--glass-hi),var(--glass));
+  backdrop-filter:blur(10px) saturate(1.1);
+  box-shadow:var(--shadow);
+}
+.btn.brand{background:linear-gradient(180deg,var(--brand2),var(--brand));color:#fff;border-color:var(--brand)}
+.btn.ghost{background:#ffffffaa}
+
+.searchwrap{position:absolute;left:50%;transform:translateX(-50%) translateY(8px);bottom:16px;width:min(720px,92vw);display:grid;grid-template-columns:1fr auto;gap:.5rem}
+.searchwrap[hidden]{display:none}
+.search{height:44px;border-radius:12px;border:1px solid var(--hair);background:#ffffffc4;padding:0 12px;outline:none}
+
+/* compact (после скролла) */
+.compact{height:64px}
+.compact .hero-body{opacity:0;pointer-events:none}
+.compact .searchwrap{display:none}
+
+/* ===================== CONTENT ===================== */
+.container{
+  position:relative;z-index:1;
+  padding:16px 16px calc(96px + env(safe-area-inset-bottom));
+  display:grid;gap:16px
+}
+.section{
+  border-radius:20px; padding:14px;
+  background:linear-gradient(180deg, #ffffffcc, #f8fbffcc);
+  border:1px solid var(--hair); box-shadow:var(--shadow)
+}
+.section h2{margin:4px 2px 10px}
+.list{display:grid;gap:.6rem}
+.card{
+  border-radius:16px; padding:12px;
+  background:linear-gradient(180deg,#ffffffc8,#f6faffc0);
+  border:1px solid var(--hair);
+  backdrop-filter:blur(8px) saturate(1.1);
+}
+.card h3{margin:0 0 6px}
+small.muted{color:var(--muted)}
+
+/* Glass Dock */
+.dock{
+  position:fixed; left:12px; right:12px; bottom:12px; z-index:20;
+  padding:6px 10px; border-radius:18px;
+  background:linear-gradient(180deg, #ffffffdd, #ffffffb8);
+  border:1px solid var(--hair); backdrop-filter:blur(12px) saturate(1.15);
+  box-shadow:0 16px 36px rgba(30,50,80,.18)
+}
+.dock .wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.dock a{ text-decoration:none; color:#2a3550; display:flex; flex-direction:column; align-items:center; gap:2px; padding:8px 6px; border-radius:12px; transition:background .15s, transform .08s }
+.dock a:active{ transform:translateY(1px) }
+.dock a.active{ background:linear-gradient(180deg,#e9f2ff,#eaf3ff); color:#1b49a6; box-shadow:inset 0 0 0 1px #cfe0ff }
+.dock svg{ width:22px; height:22px; fill:currentColor }
+
+/* responsive */
+@media (min-width:720px){ .hero h1{font-size:40px} }
+</style>
+</head>
+<body>
+
+<!-- BACKGROUND -->
+<div id="backdrop" aria-hidden="true">
+  <div class="brush"></div>
+  <div class="grain"></div>
+  <div class="blueprint" id="bp"></div>
+  <div class="paths" id="paths">
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+      <path d="M160,540 A380,380 0 0 1 840,540" />
+      <path d="M230,520 A310,310 0 0 1 770,520" />
+    </svg>
+  </div>
+</div>
+
+<!-- HERO -->
+<header class="hero" id="hero">
+  <div class="bar">
+    <a class="ct" href="#" aria-label="CitiTool">
+      <!-- Премиум-логотип: металлическое кольцо + эмблема CT -->
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64">
+          <!-- внешнее «металлическое» кольцо -->
+          <defs>
+            <radialGradient id="ring" cx="50%" cy="50%" r="60%">
+              <stop offset="0%"  stop-color="#ffffff"/>
+              <stop offset="55%" stop-color="#c8d6ea"/>
+              <stop offset="100%" stop-color="#9fb7d8"/>
+            </radialGradient>
+            <linearGradient id="core" x1="0" x2="1">
+              <stop offset="0%" stop-color="#9fd0ff"/>
+              <stop offset="60%" stop-color="#5aa6ff"/>
+              <stop offset="100%" stop-color="#2d6cdf"/>
+            </linearGradient>
+          </defs>
+          <circle cx="32" cy="32" r="30" fill="url(#ring)"/>
+          <circle cx="32" cy="32" r="24" fill="url(#core)"/>
+          <!-- световой блик -->
+          <ellipse cx="22" cy="18" rx="10" ry="6" fill="#fff" opacity=".45"/>
+          <!-- CT -->
+          <g fill="#fff" font-family="SF Pro Display, Inter, Segoe UI, Arial" font-weight="900" font-size="18" text-anchor="middle">
+            <text x="27" y="38">C</text>
+            <text x="39" y="38">T</text>
+          </g>
+        </svg>
+      </span>
+      <div class="tit">
+        <div class="title">CitiTool</div>
+        <div class="subtitle">CNC Drehen • Premium Light</div>
+      </div>
+    </a>
+    <div class="actions">
+      <button class="btn ghost" id="btnNew">Neues Programm</button>
+      <button class="icon-btn" id="btnSearch" aria-label="Suchen">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.3 14.3l4.7 4.7 1.4-1.4-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="hero-body">
+    <div class="stack">
+      <h1>Glass • Metal • Blueprint</h1>
+      <p>Klarer iOS-Look mit CNC-DNA</p>
+      <div class="actions">
+        <button class="btn brand" id="cta1">Neues Programm</button>
+        <button class="btn" id="cta2">Neues Werkzeug</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="searchwrap" id="searchWrap" hidden>
+    <input class="search" id="searchField" type="search" placeholder="Suchen…">
+    <button class="btn" id="searchClose">Schließen</button>
+  </div>
+</header>
+
+<!-- CONTENT DEMO -->
+<main class="container">
+  <section class="section">
+    <h2>Schnellaktionen</h2>
+    <div class="list">
+      <div class="card"><h3>Neues Setup</h3><small class="muted">Live-Setup schnell starten.</small></div>
+      <div class="card"><h3>Neues Werkzeug</h3><small class="muted">Werkzeug in den Schrank legen.</small></div>
+      <div class="card"><h3>Material-Assist</h3><small class="muted">Schnittdaten berechnen.</small></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Produktion (Demo)</h2>
+    <div class="list">
+      <div class="card"><h3>Los 201 • 20 / 100</h3><small class="muted">Heute</small></div>
+      <div class="card"><h3>Los 202 • 58 / 200</h3><small class="muted">Heute</small></div>
+      <div class="card"><h3>Los 203 • 0 / 150</h3><small class="muted">Morgen</small></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Dokumente (Demo)</h2>
+    <div class="list">
+      <div class="card"><h3>Aufspann-Check</h3><small class="muted">Schrauben, Anschläge…</small></div>
+      <div class="card"><h3>NC-Programm Tipps</h3><small class="muted">G-Codes, Unterprogramme…</small></div>
+    </div>
+  </section>
+</main>
+
+<!-- DOCK -->
+<nav class="dock">
+  <div class="wrap">
+    <a class="active" href="#"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/></svg><small>Docs</small></a>
+  </div>
+</nav>
+
+<script>
+/* сжатие шапки и параллакс чертежа */
+const hero=document.getElementById('hero');
+const bp=document.getElementById('bp');
+function onScroll(){
+  const y=window.scrollY||0;
+  hero.classList.toggle('compact', y>56);
+  if(bp){ bp.style.transform = `translate3d(0,${y*0.14}px,0)`; }
+}
+onScroll(); addEventListener('scroll', onScroll, {passive:true});
+
+/* поиск демо */
+const wrap=document.getElementById('searchWrap'), field=document.getElementById('searchField');
+document.getElementById('btnSearch').onclick=()=>{ wrap.hidden=false; field && field.focus(); };
+document.getElementById('searchClose').onclick=()=>{ wrap.hidden=true; field.value=''; };
+
+/* CTA демо */
+document.getElementById('btnNew').onclick=()=>alert('Neues Programm');
+document.getElementById('cta1').onclick =()=>alert('Neues Programm (CTA)');
+document.getElementById('cta2').onclick =()=>alert('Neues Werkzeug');
+</script>
+</body>
+</html>
