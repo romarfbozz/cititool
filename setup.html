@@ -6,16 +6,19 @@
   <title>CitiTool • Setup</title>
   <link rel="stylesheet" href="./ui/core.css">
   <style>
+    /* hero drawing */
+    .hero{position:relative}
     .hero-drawing{display:grid;place-items:center;width:100%;height:140px;border:1px dashed #dfe6f7;border-radius:14px;background:#fafcff;overflow:hidden;margin-top:.4rem}
     .hero-drawing img{width:100%;height:100%;object-fit:contain}
     .hero-placeholder{display:grid;place-items:center;gap:.4rem;color:#8aa0c5}
     .hero-placeholder .ct-badge{width:40px;height:40px;border-radius:12px;font-size:14px}
+    .hero .edit-btn{position:absolute;right:10px;top:6px}
     .prog-title{display:flex;align-items:center;gap:.4rem}
     .prog-title .name{font-size:20px;font-weight:800}
 
+    /* slots */
     .slots{display:grid;gap:.6rem}
     @media (min-width:560px){ .slots{grid-template-columns:1fr 1fr} }
-
     .slot-full{display:flex;align-items:center;justify-content:space-between;gap:.8rem}
     .slot-left{display:flex;align-items:center;gap:.6rem;min-width:0}
     .slot .thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f0f3fa}
@@ -23,7 +26,6 @@
     .tnum-btn{min-width:64px;font-weight:800}
     .slot-left .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .slot-left .muted{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .slot-actions{display:flex;gap:.25rem}
     .icon-btn.info{width:36px;height:36px;border-radius:10px;background:transparent;color:#6b7a90}
   </style>
 </head>
@@ -50,8 +52,11 @@
     </div>
     <div class="muted" id="progMeta">Nr — • Seite —</div>
 
-    <div class="hero-drawing" id="drawingWrap" role="button" aria-label="Zeichnung wählen">
-      <div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>
+    <div class="hero">
+      <div class="hero-drawing" id="drawingWrap" role="button" aria-label="Zeichnung ansehen">
+        <div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>
+      </div>
+      <button class="icon-btn edit-btn" id="drawingEdit" aria-label="Bild ändern"><svg><use href="./ui/icons.svg#edit"/></svg></button>
     </div>
     <input type="file" id="drawingFile" accept="image/*" class="hidden"/>
 
@@ -75,7 +80,7 @@
 <script src="./ui/dock.js"></script>
 <script>
 (function(){
-  // ---------- совместимость ----------
+  /* --- compat --- */
   const KEYS = window.CT_KEYS || {
     TOOLS:'ct_tools_v2', CATS:'ct_cats_v1', SETUP:'ct_setup_live',
     PROGS:'ct_programs_v1', DASH:'ct_dash_v1', DOCS:'ct_docs_v3'
@@ -88,23 +93,24 @@
     },
     uid:()=>Math.random().toString(36).slice(2,9),
     escape:s=>(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])),
-    openModal:null, openDrawer:null, toast:(t)=>alert(t),
+    openModal:null, openDrawer:null, closeModal:null, closeDrawer:null,
+    toast:(t)=>alert(t),
     readFileAsDataURL:(f)=>new Promise((res,rej)=>{const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f);}),
   };
   const UI = {
     toast:(txt,type='info')=> (CTX.toast ? CTX.toast(txt,type,2000) : alert(txt)),
     modal:({title,html,okText='OK',cancelText='Abbrechen',onOk})=>{
-      if(CTX.openModal) return CTX.openModal({title,html,okText,cancelText,onOk});
+      if(CTX.openModal) return CTX.openModal({title,html,okText,cancelText,onOk:()=>{onOk&&onOk(); CTX.closeModal&&CTX.closeModal();}});
       const ok=confirm(title+'\n\n'+(html.replace(/<[^>]+>/g,'')||'')); if(ok&&onOk) onOk();
     },
     drawer:({title,items,onSelect,html})=>{
-      if(CTX.openDrawer) return CTX.openDrawer({title,items,onSelect,html});
+      if(CTX.openDrawer) return CTX.openDrawer({title,items,onSelect:(id)=>{onSelect&&onSelect(id); CTX.closeDrawer&&CTX.closeDrawer();},html});
       const names=(items||[]).map((x,i)=>`${i+1}. ${x.title} ${x.meta?('('+x.meta+')'):''}`).join('\n');
       const idx=prompt(`${title}\n\n${names}\n\nNummer:`); const i=parseInt(idx,10)-1; if(items&&items[i]) onSelect(items[i].id);
     }
   };
 
-  // ---------- данные ----------
+  /* --- data --- */
   function ensureLive(){
     let live = CTX.storage.read(KEYS.SETUP);
     if(!live || !Array.isArray(live.ro) || !Array.isArray(live.ru) || live.ro.length!==12 || live.ru.length!==12){
@@ -146,7 +152,7 @@
   function sideTitle(){ return side==='ro'?'RO (G54)':'RU (G55)'; }
   function progTitle(p){ return `${p.title||'Programm'} — ${p.number||'—'}`; }
 
-  // ---------- header ----------
+  /* --- header --- */
   function refreshHeader(){
     progs = CTX.storage.read(KEYS.PROGS, []);
     const cur = progs.find(p=>p.id===currentProgId) || null;
@@ -158,7 +164,8 @@
       : `<div class="hero-placeholder"><span class="ct-badge">CT</span><small>kein Foto</small></div>`;
   }
 
-  // ---------- слоты ----------
+  /* --- slots --- */
+  function hasImg(t){ return !!(t && t.imgData && String(t.imgData).length>10); }
   function renderSlots(){
     const root = $('#slots'); root.innerHTML='';
     live = ensureLive();
@@ -178,7 +185,7 @@
           <div class="slot-full">
             <div class="slot-left">
               <button class="btn tnum-btn" id="tn_${i}">${label}</button>
-              ${t?.imgData?`<img class="thumb" src="${t.imgData}" alt="">`:`<div class="thumb no">No</div>`}
+              ${hasImg(t)?`<img class="thumb" src="${t.imgData}" alt="">`:`<div class="thumb no">No</div>`}
               <div class="meta">
                 <div class="name">${CTX.escape(t?t.name:'—')}</div>
                 <div class="muted">${CTX.escape(t?t.code:'')}</div>
@@ -195,14 +202,14 @@
     }
   }
 
-  // ---------- i-модалка слота ----------
+  /* --- slot modal --- */
   function openSlotInfo(i){
     const L = CTX.storage.read(KEYS.SETUP, live);
     const cell = L[side][i]; if(!cell){ return UI.toast('Leer','info'); }
     const tools = CTX.storage.read(KEYS.TOOLS, []);
     const t = tools.find(x=>x.id===cell.toolId);
     const html = `
-      ${t?.imgData?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
+      ${hasImg(t)?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
       <b>${CTX.escape(t?.name||'—')}</b>
       <div class="i-row">${CTX.escape(t?.code||'')} • ${CTX.escape(t?.iso||'')}</div>
       <div class="row">
@@ -213,27 +220,24 @@
     UI.modal({title:`Position #${i+1}`, html, cancelText:'Schließen'});
     const dlg = document.querySelector('.modal .card');
     if(dlg){
-      const chg = dlg.querySelector('#chg');
-      const rem = dlg.querySelector('#rem');
-      if(chg) chg.onclick = ()=>{ if(window.CT?.closeModal) CT.closeModal(); selectToolFor(i); };
-      if(rem) rem.onclick = ()=>{
+      dlg.querySelector('#chg').onclick = ()=>{ CTX.closeModal&&CTX.closeModal(); selectToolFor(i); };
+      dlg.querySelector('#rem').onclick = ()=>{
         const L2 = CTX.storage.read(KEYS.SETUP, live); L2[side][i]=null; CTX.storage.write(KEYS.SETUP, L2); live=L2;
-        if(window.CT?.closeModal) CT.closeModal(); renderSlots(); UI.toast('Entfernt','ok');
+        CTX.closeModal&&CTX.closeModal(); renderSlots(); UI.toast('Entfernt','ok');
       };
     }
   }
 
-  // ---------- выбор инструмента ----------
+  /* --- tool choose --- */
   function selectToolFor(idx){
-    const tools = CTX.storage.read(KEYS.TOOLS, []);
-    if(!tools.length){
+    const items = CTX.storage.read(KEYS.TOOLS,[]).map(t=>({id:t.id, title:t.name, meta:t.code}));
+    if(!items.length){
       const name = prompt('Neues Werkzeug: Name'); if(!name) return;
       const code = prompt('Code (optional):')||'';
       const t = {id:CTX.uid(), name, code, iso:'', maker:'', note:'', imgData:''};
       const arr=CTX.storage.read(KEYS.TOOLS,[]); arr.push(t); CTX.storage.write(KEYS.TOOLS,arr);
+      items.push({id:t.id,title:t.name,meta:t.code});
     }
-    const items = CTX.storage.read(KEYS.TOOLS,[]).map(t=>({id:t.id, title:t.name, meta:t.code}));
-    if(!items.length) return UI.toast('Keine Tools','err');
     UI.drawer({title:`Werkzeug wählen (#${idx+1})`, items, onSelect:(id)=>{
       const L=CTX.storage.read(KEYS.SETUP, live);
       L[side][idx] = {toolId:id, note:'', tnum:`T${String(idx+1).padStart(2,'0')}${String(idx+1).padStart(2,'0')}`};
@@ -241,7 +245,7 @@
     }});
   }
 
-  // ---------- редактирование T ----------
+  /* --- edit T --- */
   function editTNum(i){
     const html = `<label class="fld">T-Nummer (Anzeige)<input id="t_num" placeholder="z.B. T0101"></label>`;
     UI.modal({title:`Slot #${i+1}`, html, okText:'OK', cancelText:'Abbrechen', onOk:()=>{
@@ -253,7 +257,7 @@
     }});
   }
 
-  // ---------- программа ----------
+  /* --- programme --- */
   function openProgMenu(){
     const items = progs.map(p=>({id:p.id, title:progTitle(p), meta:new Date(p.date||Date.now()).toLocaleDateString()}));
     UI.drawer({title:'Programme', items, onSelect:(id)=>{ currentProgId=id; refreshHeader(); }});
@@ -272,7 +276,7 @@
       CTX.storage.write(KEYS.PROGS, arr); progs=arr; refreshHeader(); UI.toast('Gespeichert','ok');
     }});
     const del = document.getElementById('del');
-    if(del) del.onclick = ()=>{ progs = progs.filter(x=>x.id!==p.id); CTX.storage.write(KEYS.PROGS, progs); currentProgId=progs[0]?.id||null; if(window.CT?.closeModal) CT.closeModal(); refreshHeader(); };
+    if(del) del.onclick = ()=>{ progs = progs.filter(x=>x.id!==p.id); CTX.storage.write(KEYS.PROGS, progs); currentProgId=progs[0]?.id||null; CTX.closeModal&&CTX.closeModal(); refreshHeader(); };
   }
   function openNewProg(){
     const cur = {id:CTX.uid(), number:'', title:'', date:Date.now(), ro:Array(12).fill(null), ru:Array(12).fill(null), drawing:null};
@@ -293,15 +297,13 @@
     CTX.storage.write(KEYS.SETUP, L); live=L; UI.toast('In Live angewendet','ok'); renderSlots();
   }
 
-  // ---------- события ----------
-  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; refreshHeader(); renderSlots();});
-  document.getElementById('progSwitch').onclick = openProgMenu;
-  document.getElementById('applyLive').onclick = applyToLive;
-  document.getElementById('editProg').onclick = openProgEditor;
-  document.getElementById('newProgTop').onclick = openNewProg;
-
-  // Zeichnung
-  document.getElementById('drawingWrap').onclick = ()=> document.getElementById('drawingFile').click();
+  /* --- drawing interactions --- */
+  document.getElementById('drawingWrap').onclick = ()=>{
+    const p = CTX.storage.read(KEYS.PROGS, []).find(x=>x.id===currentProgId); if(!p || !p.drawing){ return; }
+    const html = `<div class="imgwrap"><img src="${p.drawing}" alt="" style="max-height:80vh;max-width:90vw;border-radius:12px;object-fit:contain"></div>`;
+    UI.modal({title:'Zeichnung', html, okText:'OK', cancelText:'Schließen'});
+  };
+  document.getElementById('drawingEdit').onclick = ()=> document.getElementById('drawingFile').click();
   document.getElementById('drawingFile').onchange = ()=>{
     const f = document.getElementById('drawingFile').files?.[0]; if(!f) return;
     (window.CT?.readFileAsDataURL ? CT.readFileAsDataURL(f) : CTX.readFileAsDataURL(f)).then(data=>{
@@ -311,7 +313,14 @@
     });
   };
 
-  // init
+  /* --- events --- */
+  document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active')); b.classList.add('active'); side=b.dataset.side; refreshHeader(); renderSlots();});
+  document.getElementById('progSwitch').onclick = openProgMenu;
+  document.getElementById('applyLive').onclick = applyToLive;
+  document.getElementById('editProg').onclick = openProgEditor;
+  document.getElementById('newProgTop').onclick = openNewProg;
+
+  /* --- init --- */
   refreshHeader();
   renderSlots();
 })();
