@@ -158,41 +158,65 @@
   }
 
   // --- slots ---
-  function hasImg(t){ return !!(t && t.imgData && String(t.imgData).length>10); }
+function hasImg(t){
+    return !!(t && typeof t.imgData === 'string' && t.imgData.trim().length > 30);
+  }
+
   function renderSlots(){
-    const root=$('#slots'); root.innerHTML='';
-    live = ensureLive();
+    const root = document.getElementById('slots');
+    root.innerHTML = '';
+    live  = ensureLive();
     const tools = CTX.storage.read(KEYS.TOOLS, []);
-    const data = live[side] || Array(12).fill(null); // гарант
+    const data  = live[side] || Array(12).fill(null);
 
     for(let i=0;i<12;i++){
       const v = data[i];
-      const el = document.createElement('div'); el.className='slot';
+      const el = document.createElement('div');
+      el.className = 'slot';
+
       if(!v){
-        el.innerHTML = `<div class="slot-empty"><div class="muted">#${i+1} • Frei</div><button class="btn" data-i="${i}">Hinzufügen</button></div>`;
-        el.querySelector('button').onclick=()=>selectToolFor(i);
-      }else{
-        const t = tools.find(x=>x.id===v.toolId);
+        el.innerHTML = `
+          <div class="slot-empty">
+            <div class="muted">#${i+1} • Frei</div>
+            <button class="btn" data-i="${i}">Hinzufügen</button>
+          </div>`;
+        el.querySelector('button').onclick = () => selectToolFor(i);
+      } else {
+        const t = tools.find(x=>x.id===v.toolId) || null;
         const label = v.tnum || `T${String(i+1).padStart(2,'0')}${String(i+1).padStart(2,'0')}`;
+
+        // делаем блок с картинкой + фоллбеком "No"
+        const thumbBlock = hasImg(t)
+          ? `
+            <div class="thumb-wrap" style="position:relative">
+              <img class="thumb" src="${t.imgData}"
+                   alt=""
+                   onload="this.style.display='block'; const no=this.closest('.slot-left').querySelector('.thumb.no'); if(no) no.style.display='none';"
+                   onerror="this.style.display='none'; const no=this.closest('.slot-left').querySelector('.thumb.no'); if(no) no.style.display='grid';">
+              <div class="thumb no" style="display:none">No</div>
+            </div>`
+          : `<div class="thumb no">No</div>`;
+
         el.innerHTML = `
           <div class="slot-full">
             <div class="slot-left">
               <button class="btn tnum-btn" id="tn_${i}">${label}</button>
-              ${
-                hasImg(t)
-                ? `<img class="thumb" src="${t.imgData}" alt="" onerror="this.style.display='none'; this.nextElementSibling.style.display='grid'"><div class='thumb no' style="display:none">No</div>`
-                : `<div class="thumb no">No</div>`
-              }
+              ${thumbBlock}
               <div class="meta">
-                <div class="name">${CTX.escape(t?t.name:'—')}</div>
-                <div class="muted">${CTX.escape(t?t.code:'')}</div>
+                <div class="name">${CTX.escape(t ? t.name : '—')}</div>
+                <div class="muted">${CTX.escape(t ? (t.code||'') : '')}</div>
               </div>
             </div>
-            <button class="icon-btn info" aria-label="Info" data-i="${i}"><svg><use href="./ui/icons.svg#info"/></svg></button>
+            <button class="icon-btn info" aria-label="Info" data-i="${i}">
+              <svg><use href="./ui/icons.svg#info"/></svg>
+            </button>
           </div>`;
-        el.querySelector(`#tn_${i}`).onclick=()=>editTNum(i);
-        el.querySelector('.icon-btn.info').onclick=()=>openSlotInfo(i);
+
+        // действия
+        el.querySelector(`#tn_${i}`).onclick = () => editTNum(i);
+        el.querySelector('.icon-btn.info').onclick = () => openSlotInfo(i);
       }
+
       root.appendChild(el);
     }
   }
