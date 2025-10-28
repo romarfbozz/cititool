@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>CitiTool • Lernmodul</title>
+  <link rel="stylesheet" href="./ui/core.css">
+  <style>
+    /* hero-lite в духе hero-cnc-pro, но минимально и совместимо с /ui */
+    .hero-lite{
+      position:relative; overflow:hidden; border-radius:20px; padding:22px 14px 16px;
+      background:linear-gradient(180deg,#ffffffdd,#f4f8ffcc);
+      border:1px solid var(--hair); box-shadow:var(--shadow); margin-bottom:8px;
+    }
+    .hero-lite .grid{display:grid;grid-template-columns:72px 1fr auto;gap:.8rem;align-items:center}
+    .hero-lite .logo{
+      width:64px;height:64px;border-radius:20px;display:grid;place-items:center;overflow:hidden;
+      background:linear-gradient(135deg,#d9eaff,#a9d3ff 50%,#5aa6ff 90%,#2d6cdf);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.9), 0 12px 28px rgba(45,108,223,.25);
+      color:#fff;font-weight:900;font-size:20px;letter-spacing:.3px;
+    }
+    .hero-lite .meta .title{font-weight:900;font-size:20px}
+    .hero-lite .meta .subtitle{color:var(--muted);font-size:12px}
+    .hero-lite .actions .btn{height:36px}
+    .hero-lite .bg{
+      position:absolute; inset:-20% -10% auto -10%; height:120px; pointer-events:none; opacity:.18;
+      background:
+        radial-gradient(circle at 60% 40%, rgba(70,130,255,.35), transparent 45%),
+        radial-gradient(circle at 30% 70%, rgba(90,200,255,.25), transparent 45%),
+        conic-gradient(from -90deg at 50% 50%, rgba(70,130,255,.25) 0 2deg, transparent 2deg 30deg, rgba(70,130,255,.25) 30deg 32deg, transparent 32deg 60deg);
+      filter:blur(8px);
+    }
+    .list-lean{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+    .doc-card{
+      display:grid;grid-template-columns:56px 1fr auto;gap:.6rem;align-items:center;
+      border:1px solid var(--hair);border-radius:16px;padding:10px;background:linear-gradient(180deg,#ffffffc8,#f6faffc0)
+    }
+    .doc-card .thumb{width:56px;height:56px;border-radius:10px;background:#f0f3fa;object-fit:cover}
+    .doc-card .name{font-weight:800}
+    .doc-card .sub{color:var(--muted);font-size:13px}
+    .doc-card .tail{display:flex;gap:.4rem}
+    .badge.type{min-width:44px;text-align:center}
+  </style>
+</head>
+<body data-active="docs">
+<header class="appbar">
+  <div class="wrap">
+    <a class="logo" href="./index.html">
+      <img src="./ui/brand.png" alt="CT" class="badge">
+      <div class="tit">
+        <div class="title">CitiTool</div>
+        <div class="subtitle">Lernmodul</div>
+      </div>
+    </a>
+    <div class="actions">
+      <button class="btn ghost sm" id="aiAskBtn">AI-Assistent</button>
+      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
+        <svg><use href="./ui/icons.svg#search"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="searchbar collapsed">
+  <input class="field" type="search" placeholder="Themen / Dateien / Tags…" id="lernSearch">
+</div>
+
+<main class="container">
+  <!-- hero-lite (премиум, но лёгкий) -->
+  <section class="hero-lite">
+    <div class="bg"></div>
+    <div class="grid">
+      <div class="logo">CT</div>
+      <div class="meta">
+        <div class="title">Учебник DMG • CNC Drehen</div>
+        <div class="subtitle">PDF / DOC / PPT • Поиск • ИИ-помощник</div>
+      </div>
+      <div class="actions">
+        <button class="btn brand sm" id="btnAll">Alle öffnen (Index)</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Материалы</h2>
+    <ul id="docList" class="list-lean"></ul>
+  </section>
+
+  <section class="section">
+    <h2>Подсказка</h2>
+    <div class="card">
+      <div class="muted">
+        Всё рендерится из <b>ai/index.json</b>. Чтобы что-то добавить/переименовать — просто правь JSON.<br>
+        Открытие PDF идёт в новой вкладке (лёгко для телефона), DOC/PPT — скачивание. Нужна выжимка? Жми <b>AI</b>.
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="dock" id="dock"></nav>
+
+<script src="./ui/core.js"></script>
+<script src="./ui/dock.js"></script>
+<script src="./ui/ai.js"></script>
+<script>
+CT.ready(async ()=>{
+  CT.ensureSeeds();
+
+  // грузим один лёгкий JSON — и всё
+  async function loadIndex(){
+    try{
+      const res = await fetch('./ai/index.json', {cache:'no-store'});
+      return await res.json();
+    }catch(e){
+      CT.toast('Index nicht gefunden','err'); return [];
+    }
+  }
+
+  const listEl = document.getElementById('docList');
+  function typeBadge(t){ return `<span class="badge type">${(t||'').toUpperCase()}</span>`; }
+  function fileName(p){ try{ return p.split('/').pop(); }catch(e){ return p; } }
+
+  function render(docs){
+    const q = (document.getElementById('lernSearch').value||'').toLowerCase();
+    listEl.innerHTML='';
+    const data = docs.filter(d=>{
+      const hay = (d.title+' '+(d.summary||'')+' '+(d.tags||[]).join(' ')+' '+(d.path||'')).toLowerCase();
+      return !q || hay.includes(q);
+    });
+    if(!data.length){ listEl.innerHTML='<li class="muted">Nichts gefunden</li>'; return; }
+
+    data.forEach(d=>{
+      const li = document.createElement('li'); li.className='doc-card';
+      li.innerHTML = `
+        <img class="thumb" src="./ui/nofoto.png" alt="">
+        <div class="meta">
+          <div class="name">${CT.escape(d.title)}</div>
+          <div class="sub">${typeBadge(d.type)} • ${CT.escape((d.tags||[]).join(' • '))} • ${CT.escape(fileName(d.path))}</div>
+          <div class="muted">${CT.escape((d.summary||'').slice(0,120))}${(d.summary||'').length>120?'…':''}</div>
+        </div>
+        <div class="tail">
+          <a class="btn sm" href="${d.path}" target="_blank" rel="noopener">Öffnen</a>
+          <button class="btn brand sm" data-ai="1">AI</button>
+        </div>`;
+      li.querySelector('[data-ai]').onclick = ()=> CT.ai.ask(`Erkläre kurz: ${d.title}`);
+      listEl.appendChild(li);
+    });
+  }
+
+  // UI bindings
+  document.getElementById('aiAskBtn').onclick=()=>CT.ai.ask('Welche Themen gibt es und womit anfangen?');
+  document.getElementById('lernSearch').addEventListener('input', ()=>render(window.__LE_IDX||[]));
+  document.getElementById('btnAll').onclick=()=>window.open('./ai/index.json','_blank');
+
+  // старт
+  const idx = await loadIndex();
+  window.__LE_IDX = idx;
+  CT.storage.write('ct_lern_index', idx); // чтобы AI видел
+  render(idx);
+});
+</script>
+</body>
+</html>
