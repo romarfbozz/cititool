@@ -6,36 +6,42 @@
   <title>CitiTool • Lernmodul</title>
   <link rel="stylesheet" href="./ui/core.css">
   <style>
-    /* hero-lite в духе hero-cnc-pro, но минимально и совместимо с /ui */
+    /* glass-neon hero */
     .hero-lite{
-      position:relative; overflow:hidden; border-radius:20px; padding:22px 14px 16px;
-      background:linear-gradient(180deg,#ffffffdd,#f4f8ffcc);
-      border:1px solid var(--hair); box-shadow:var(--shadow); margin-bottom:8px;
+      position:relative; overflow:hidden; border-radius:22px; padding:18px 14px;
+      background:linear-gradient(180deg,#ffffffee,#f4f8ffcc);
+      border:1px solid var(--hair); box-shadow:0 18px 40px rgba(45,108,223,.08);
+      margin-bottom:10px;
     }
-    .hero-lite .grid{display:grid;grid-template-columns:72px 1fr auto;gap:.8rem;align-items:center}
+    .hero-lite .grid{display:grid;grid-template-columns:80px 1fr auto;gap:.9rem;align-items:center}
     .hero-lite .logo{
-      width:64px;height:64px;border-radius:20px;display:grid;place-items:center;overflow:hidden;
-      background:linear-gradient(135deg,#d9eaff,#a9d3ff 50%,#5aa6ff 90%,#2d6cdf);
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.9), 0 12px 28px rgba(45,108,223,.25);
-      color:#fff;font-weight:900;font-size:20px;letter-spacing:.3px;
+      width:72px;height:72px;border-radius:22px;display:grid;place-items:center;overflow:hidden;
+      background:
+        radial-gradient(120px 90px at 60% 20%, #6fb3ff, transparent 60%),
+        linear-gradient(135deg,#dbeaff,#9fcbff 55%,#5aa6ff 85%,#2d6cdf);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.95), 0 10px 30px rgba(45,108,223,.28);
+      color:#fff;font-weight:900;font-size:24px;letter-spacing:.2px;
     }
-    .hero-lite .meta .title{font-weight:900;font-size:20px}
-    .hero-lite .meta .subtitle{color:var(--muted);font-size:12px}
+    .hero-lite .meta .title{font-weight:900;font-size:22px}
+    .hero-lite .meta .subtitle{color:var(--muted);font-size:13px}
     .hero-lite .actions .btn{height:36px}
     .hero-lite .bg{
-      position:absolute; inset:-20% -10% auto -10%; height:120px; pointer-events:none; opacity:.18;
+      position:absolute; inset:-25% -15% auto -15%; height:140px; pointer-events:none; opacity:.18;
       background:
-        radial-gradient(circle at 60% 40%, rgba(70,130,255,.35), transparent 45%),
-        radial-gradient(circle at 30% 70%, rgba(90,200,255,.25), transparent 45%),
-        conic-gradient(from -90deg at 50% 50%, rgba(70,130,255,.25) 0 2deg, transparent 2deg 30deg, rgba(70,130,255,.25) 30deg 32deg, transparent 32deg 60deg);
-      filter:blur(8px);
+        radial-gradient(220px 120px at 20% 80%, rgba(90,200,255,.35), transparent 60%),
+        radial-gradient(220px 120px at 80% 30%, rgba(90,150,255,.25), transparent 60%),
+        repeating-linear-gradient(115deg, rgba(45,108,223,.12) 0 4px, transparent 4px 10px);
+      filter:blur(10px);
     }
-    .list-lean{list-style:none;margin:0;padding:0;display:grid;gap:.6rem}
+
+    /* cards */
+    .list-lean{list-style:none;margin:0;padding:0;display:grid;gap:.7rem}
     .doc-card{
-      display:grid;grid-template-columns:56px 1fr auto;gap:.6rem;align-items:center;
-      border:1px solid var(--hair);border-radius:16px;padding:10px;background:linear-gradient(180deg,#ffffffc8,#f6faffc0)
+      display:grid;grid-template-columns:56px 1fr auto;gap:.7rem;align-items:center;
+      border:1px solid var(--hair);border-radius:16px;padding:12px;
+      background:linear-gradient(180deg,#ffffffc8,#f7fbffb8)
     }
-    .doc-card .thumb{width:56px;height:56px;border-radius:10px;background:#f0f3fa;object-fit:cover}
+    .doc-card .thumb{width:56px;height:56px;border-radius:12px;background:#f0f3fa;object-fit:cover}
     .doc-card .name{font-weight:800}
     .doc-card .sub{color:var(--muted);font-size:13px}
     .doc-card .tail{display:flex;gap:.4rem}
@@ -66,7 +72,6 @@
 </div>
 
 <main class="container">
-  <!-- hero-lite (премиум, но лёгкий) -->
   <section class="hero-lite">
     <div class="bg"></div>
     <div class="grid">
@@ -90,8 +95,8 @@
     <h2>Подсказка</h2>
     <div class="card">
       <div class="muted">
-        Всё рендерится из <b>ai/index.json</b>. Чтобы что-то добавить/переименовать — просто правь JSON.<br>
-        Открытие PDF идёт в новой вкладке (лёгко для телефона), DOC/PPT — скачивание. Нужна выжимка? Жми <b>AI</b>.
+        Всё рендерится из <b>ai/index.json</b>. Чтобы добавить/переименовать — правь JSON.
+        Открытие PDF — в новой вкладке, DOC/PPT — скачивание. Нужна выжимка? Жми <b>AI</b>.
       </div>
     </div>
   </section>
@@ -104,16 +109,11 @@
 <script src="./ui/ai.js"></script>
 <script>
 CT.ready(async ()=>{
-  CT.ensureSeeds();
-
-  // грузим один лёгкий JSON — и всё
   async function loadIndex(){
     try{
-      const res = await fetch('./ai/index.json', {cache:'no-store'});
-      return await res.json();
-    }catch(e){
-      CT.toast('Index nicht gefunden','err'); return [];
-    }
+      const r = await fetch('./ai/index.json', {cache:'no-store'});
+      return await r.json();
+    }catch(e){ CT.toast('Index nicht gefunden','err'); return []; }
   }
 
   const listEl = document.getElementById('docList');
@@ -121,17 +121,16 @@ CT.ready(async ()=>{
   function fileName(p){ try{ return p.split('/').pop(); }catch(e){ return p; } }
 
   function render(docs){
-    const q = (document.getElementById('lernSearch').value||'').toLowerCase();
+    const q=(document.getElementById('lernSearch').value||'').toLowerCase();
     listEl.innerHTML='';
     const data = docs.filter(d=>{
       const hay = (d.title+' '+(d.summary||'')+' '+(d.tags||[]).join(' ')+' '+(d.path||'')).toLowerCase();
       return !q || hay.includes(q);
     });
     if(!data.length){ listEl.innerHTML='<li class="muted">Nichts gefunden</li>'; return; }
-
     data.forEach(d=>{
-      const li = document.createElement('li'); li.className='doc-card';
-      li.innerHTML = `
+      const li=document.createElement('li'); li.className='doc-card';
+      li.innerHTML=`
         <img class="thumb" src="./ui/nofoto.png" alt="">
         <div class="meta">
           <div class="name">${CT.escape(d.title)}</div>
@@ -140,22 +139,20 @@ CT.ready(async ()=>{
         </div>
         <div class="tail">
           <a class="btn sm" href="${d.path}" target="_blank" rel="noopener">Öffnen</a>
-          <button class="btn brand sm" data-ai="1">AI</button>
+          <button class="btn brand sm" data-ai>AI</button>
         </div>`;
-      li.querySelector('[data-ai]').onclick = ()=> CT.ai.ask(`Erkläre kurz: ${d.title}`);
+      li.querySelector('[data-ai]').onclick = ()=> CT.ai.open(`Erkläre kurz: ${d.title}`);
       listEl.appendChild(li);
     });
   }
 
-  // UI bindings
-  document.getElementById('aiAskBtn').onclick=()=>CT.ai.ask('Welche Themen gibt es und womit anfangen?');
+  document.getElementById('aiAskBtn').onclick=()=>CT.ai.open();
   document.getElementById('lernSearch').addEventListener('input', ()=>render(window.__LE_IDX||[]));
   document.getElementById('btnAll').onclick=()=>window.open('./ai/index.json','_blank');
 
-  // старт
   const idx = await loadIndex();
   window.__LE_IDX = idx;
-  CT.storage.write('ct_lern_index', idx); // чтобы AI видел
+  CT.storage.write('ct_lern_index', idx);
   render(idx);
 });
 </script>
