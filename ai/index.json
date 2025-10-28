@@ -1,12 +1,27 @@
 [
-  {"title":"M-Funktionsliste","type":"pdf","path":"./ai/docs/M-Funktionsliste.pdf","tags":["M","Referenz"],"summary":"Справочник M-функций DMG. Быстрый поиск, особенности для GMX."},
-  {"title":"Unterprogramm VERSCHIEBUNG","type":"doc","path":"./ai/docs/Unterprogramm VERSCHIEBUNG.doc","tags":["Subprogramm","Verschiebung"],"summary":"Подпрограмма смещения. Когда и как вызывать, типовые параметры."},
-  {"title":"Arbeitsplan (ohne B-Achse, ohne Pinole)","type":"doc","path":"./ai/docs/Arbeitspl ohne B-Achse ohne Pinole.doc","tags":["Arbeitsplan"],"summary":"Шаблон техпроцесса без оси B и пиноли. Последовательность операций."},
-  {"title":"Schlittenspindelzuordnung GMX","type":"ppt","path":"./ai/docs/03_Schlittenspindelzuordnung_GMX.ppt","tags":["GMX","Spindel"],"summary":"Соответствие суппортов и шпинделей GMX. Примеры конфигураций."},
-  {"title":"Möglichkeiten der Programmierung","type":"ppt","path":"./ai/docs/02_Möglichketen der Programmierung.ppt","tags":["Programmierung"],"summary":"Варианты программирования: структуры, подпрограммы, вызовы."},
-  {"title":"Anfahren der Werkzeugwechselpunkte","type":"ppt","path":"./ai/docs/05_Anfahren der Werkzeugwechselpunkte.ppt","tags":["Werkzeugwechselpunkte"],"summary":"Подход к точкам смены инструмента, безопасность и подсказки."},
-  {"title":"L1000 (Kapitel 04)","type":"ppt","path":"./ai/docs/04_L1000.ppt","tags":["L1000"],"summary":"Материал по L1000, раздел 04. Примеры и графика."},
-  {"title":"A-D215DE-1","type":"pdf","path":"./ai/docs/A-D215DE-1.pdf","tags":["DMG"],"summary":"DMG документ A-D215DE-1. Общие положения и справка."},
-  {"title":"A-D215DE-1PN","type":"pdf","path":"./ai/docs/A-D215DE-1PN.pdf","tags":["DMG"],"summary":"DMG документ A-D215DE-1PN. Дополнение/приложение."},
-  {"title":"Dummy Präsentation","type":"ppt","path":"./ai/docs/081208_DUMMY.ppt","tags":["Demo"],"summary":"Демо-презентация для проверки просмотра и загрузки."}
+  {
+    "title":"M-Funktionsliste",
+    "type":"pdf",
+    "path":"./ai/docs/M-Funktionsliste.pdf",
+    "text":"./ai/text/M-Funktionsliste.txt",
+    "tags":["M","Referenz"],
+    "summary":"Справочник M-функций DMG. Быстрый поиск, особенности для GMX."
+  },
+  {
+    "title":"Unterprogramm VERSCHIEBUNG",
+    "type":"doc",
+    "path":"./ai/docs/Unterprogramm VERSCHIEBUNG.doc",
+    "text":"./ai/text/Unterprogramm_VERSCHIEBUNG.txt",
+    "tags":["Subprogramm","Verschiebung"],
+    "summary":"Подпрограмма смещения. Когда и как вызывать, типовые параметры."
+  },
+  {
+    "title":"Arbeitsplan (ohne B-Achse, ohne Pinole)",
+    "type":"doc",
+    "path":"./ai/docs/Arbeitspl ohne B-Achse ohne Pinole.doc",
+    "text":"./ai/text/Arbeitsplan_ohne_B_Pinole.txt",
+    "tags":["Arbeitsplan"],
+    "summary":"Шаблон техпроцесса без оси B и пиноли. Последовательность операций."
+  }
+  /* … добавь остальные по тому же шаблону … */
 ]
