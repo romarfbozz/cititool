@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">
+  <rect width="200" height="200" fill="#f7faff"/>
+  <!-- сетка -->
+  <g stroke="#bcd4ff" stroke-width="1" opacity=".45">
+    <path d="M0 20h200M0 40h200M0 60h200M0 80h200M0 100h200M0 120h200M0 140h200M0 160h200M0 180h200"/>
+    <path d="M20 0v200M40 0v200M60 0v200M80 0v200M100 0v200M120 0v200M140 0v200M160 0v200M180 0v200"/>
+  </g>
+  <!-- дуги как лёгкие toolpaths -->
+  <circle cx="100" cy="100" r="35" stroke="#7fb3ff" stroke-width="1.5" fill="none" opacity=".6"/>
+  <circle cx="100" cy="100" r="70" stroke="#b4d4ff" stroke-width="1" fill="none" opacity=".42"/>
+</svg>
