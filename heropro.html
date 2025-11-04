@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>CitiTool • Premium Hero</title>
+<style>
+:root{
+  --ink:#0c1626; --muted:#6f7f97; --brand:#2b63d9;
+  --hair:#dbe3f0; --glass:#ffffffd9; --glass-strong:#fffffff0;
+  --shadow:0 18px 46px rgba(12,22,38,.16);
+  --r:22px; --dock:#ffffffc9;
+}
+
+/* base */
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;color:var(--ink);background:#f6f8fc;
+  font:16px -apple-system,Inter,Segoe UI,Roboto,system-ui,sans-serif}
+
+/* ===== FIXED BACKGROUND (всегда под контентом, без «рывков» iOS) ===== */
+.bg{
+  position:fixed; inset:0; z-index:-2; overflow:hidden;
+  background:linear-gradient(180deg,#eaf1ff,#f5f8ff);
+}
+.bg > img{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  min-width:100%; min-height:100%; object-fit:cover; filter:saturate(1.05) contrast(1.05);
+}
+/* мягкая вуаль и маска — читаемость контента */
+.bg::before{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(1200px 800px at 50% 15%, rgba(255,255,255,.65), rgba(255,255,255,.15) 60%, rgba(0,12,28,.25));
+  pointer-events:none;
+}
+
+/* ===== APPBAR ===== */
+.appbar{
+  position:sticky; top:0; z-index:20;
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.78));
+  backdrop-filter:saturate(1.2) blur(12px);
+  border-bottom:1px solid var(--hair);
+}
+.ct-badge{
+  width:34px; height:34px; border-radius:10px; display:grid; place-items:center;
+  background:linear-gradient(135deg,#e9f0ff,#d6e6ff 62%,#c9dcff);
+  border:1px solid #cfe0ff; color:#163984; font:900 14px/1 Inter;
+  box-shadow:inset 0 0 0 2px #ffffffa8;
+}
+.appbar .title{font:900 16px/1.1 Inter}
+.appbar .sp{opacity:.35;margin:0 6px}
+.icon-btn,.btn{height:42px;border-radius:14px;border:1px solid #cfe0ff}
+.icon-btn{display:grid;place-items:center;width:42px;background:var(--glass-strong)}
+.icon-btn svg{width:21px;height:21px;fill:none;stroke:#2b63d9;stroke-width:2}
+.btn{padding:0 14px;font-weight:800}
+.btn.brand{background:linear-gradient(180deg,#2b63d9,#285bcb);color:#fff;border-color:#285bcb;box-shadow:0 10px 22px rgba(43,99,217,.22)}
+
+/* ===== HERO CARD ===== */
+.hero{
+  min-height:72svh; display:grid; place-items:end center; padding:18px;
+}
+.hero-card{
+  width:min(980px,94vw); background:var(--glass);
+  backdrop-filter:blur(10px) saturate(1.05);
+  border:1px solid var(--hair); border-radius:var(--r); box-shadow:var(--shadow);
+  padding:18px 18px 20px;
+}
+.h-top{display:flex; align-items:center; gap:14px}
+.h-meta small{color:#7b8fb3;letter-spacing:.18px}
+.h-meta h1{margin:2px 0 0;font:900 28px/1.15 Inter}
+.h-meta h2{margin:4px 0 0;font:600 14px/1.2 Inter;color:#96a8c7}
+.h-actions{margin-left:auto;display:flex;gap:10px}
+.hero-sub{margin-top:12px;border-radius:16px;padding:14px 14px 16px;background:linear-gradient(180deg,#fffffff2,#ffffffcf);border:1px dashed #dbe6ff}
+.hero-sub .t{font-weight:900;font-size:18px;margin:2px 0 4px}
+.hero-sub .m{color:var(--muted)}
+
+/* ===== CONTENT (стеклянные карточки, полупрозрачные) ===== */
+.container{
+  padding:16px 16px calc(92px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg, transparent 0%, #f7f9ff 30%, #f7f9ff);
+}
+.grid{width:min(980px,94vw); margin:0 auto; display:grid; gap:14px}
+.card{
+  background:linear-gradient(180deg,#ffffffee,#ffffffd4);
+  border:1px solid var(--hair); border-radius:var(--r); box-shadow:var(--shadow); padding:16px
+}
+.card h3{margin:0 0 8px;font-size:18px}
+.tile{display:flex;align-items:center;justify-content:space-between;border:1px solid #e6eefb;padding:12px 14px;border-radius:14px;background:#fff}
+
+/* ===== GLASS DOCK ===== */
+.dock{
+  position:fixed; left:0; right:0; bottom:0; z-index:30;
+  background:var(--dock); backdrop-filter:saturate(1.1) blur(16px);
+  border-top:1px solid var(--hair);
+  padding:6px env(safe-area-inset-right) calc(6px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+}
+.dock .wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:min(980px,94vw);margin:0 auto}
+.dock a{display:flex;flex-direction:column;align-items:center;gap:4px;text-decoration:none;color:inherit;padding:10px;border-radius:14px}
+.dock a.active{background:linear-gradient(180deg,#eaf1ff,#e6efff);border:1px solid #cfe0ff;color:#295ed5;box-shadow:0 10px 24px rgba(41,94,213,.16)}
+.dock svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2}
+
+@media (min-width:760px){ .h-meta h1{font-size:32px} .grid{grid-template-columns:1fr 1fr} }
+@media (prefers-reduced-motion:reduce){ .bg > img{transform:none !important} }
+</style>
+</head>
+<body>
+
+<!-- Фон (картинка меняется через data-bg) -->
+<div class="bg" id="bg" data-bg="./ui/cnc-bg.jpg">
+  <img alt="CNC Turning Background"/>
+</div>
+
+<!-- Шапка -->
+<header class="appbar">
+  <div class="ct-badge">CT</div>
+  <div class="title">CitiTool<span class="sp">•</span> Premium</div>
+  <div style="margin-left:auto;display:flex;gap:8px">
+    <button class="btn brand">Neues Programm</button>
+    <button class="icon-btn" aria-label="Suchen">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- Hero -->
+<section class="hero" id="hero">
+  <div class="hero-card">
+    <div class="h-top">
+      <div class="ct-badge" style="width:56px;height:56px;font-size:20px;border-radius:14px">CT</div>
+      <div class="h-meta">
+        <small>CITITOOL</small>
+        <h1>Setup • Tools • Docs</h1>
+        <h2>Glass-Neon • CNC Drehen • Spark</h2>
+      </div>
+      <div class="h-actions">
+        <button class="btn brand">Neues Programm</button>
+        <button class="icon-btn" aria-label="Suchen">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="hero-sub">
+      <div class="m">Heute</div>
+      <div class="t">Produktion & Checkliste</div>
+      <div class="m">Скролль вниз — стеклянные карточки поверх постоянного фото-фона.</div>
+    </div>
+  </div>
+</section>
+
+<!-- Контент -->
+<main class="container">
+  <div class="grid">
+    <section class="card">
+      <h3>Schnellaktionen</h3>
+      <div class="tile">Neues Setup <button class="btn">Öffnen</button></div>
+      <div class="tile">Neues Werkzeug <button class="btn">Öffnen</button></div>
+      <div class="tile">Material-Assist <button class="btn">Öffnen</button></div>
+    </section>
+
+    <section class="card">
+      <h3>Produktion (Demo)</h3>
+      <div class="tile">Los 123 • 20 / 100 • Heute</div>
+      <div class="tile">Los 124 • 58 / 200 • Woche</div>
+      <div class="tile">Los 125 • 0 / 150 • Morgen</div>
+    </section>
+
+    <section class="card">
+      <h3>Dokumente</h3>
+      <div class="tile">Aufspann-Check <span class="muted">Schrauben, Anschläge…</span></div>
+      <div class="tile">Werkstoff Notiz <span class="muted">ISO-P • Kühlung…</span></div>
+      <div class="tile">NC-Programm Tipps <span class="muted">G-Codes…</span></div>
+    </section>
+
+    <section class="card">
+      <h3>Assist</h3>
+      <div class="tile">Material-Assistent Drehen <button class="btn">Start</button></div>
+      <div class="tile">Fasen-Assistent <button class="btn">Start</button></div>
+    </section>
+  </div>
+</main>
+
+<!-- Dock -->
+<nav class="dock">
+  <div class="wrap">
+    <a href="#" class="active"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9H3Z"/></svg><small>Dash</small></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h12M3 18h18"/></svg><small>Setup</small></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M4 15l8-8 3 3-8 8H4Z M13 7l4 4"/></svg><small>Tools</small></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M3 5h18v4H3zM3 11h18v4H3zM3 17h12v4H3z"/></svg><small>Programme</small></a>
+    <a href="#"><svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/></svg><small>Docs</small></a>
+  </div>
+</nav>
+
+<script>
+/* Загружаем фон + мягкий параллакс без «рывков» */
+(function(){
+  const bg = document.getElementById('bg');
+  const img = bg.querySelector('img');
+  const src = bg.dataset.bg || './ui/cnc-bg.jpg';
+  img.src = src;
+  function onScroll(){
+    const y = scrollY;
+    // лёгкое смещение изображения — выглядит «живее», но стабильно на iOS
+    img.style.transform = `translate(-50%, calc(-50% + ${y*0.10}px))`;
+  }
+  onScroll(); addEventListener('scroll', onScroll, {passive:true});
+})();
+</script>
+</body>
+</html>
