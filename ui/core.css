@@ -54,3 +54,24 @@ background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-top:1px solid
 
 /* фоновый градиент всей страницы */
 body.has-bg{background:linear-gradient(180deg,#f8fbff 0%,#eaf1ff 100%);background-attachment:fixed}
+
+/* === SEARCHBAR BEHAVIOR === */
+.searchbar{
+  position:absolute;top:100%;left:0;right:0;
+  background:rgba(255,255,255,.9);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid #e5eaf9;
+  padding:10px 16px;
+  display:flex;justify-content:center;
+  transition:all .3s ease;
+}
+.searchbar input{
+  width:90%;max-width:480px;height:38px;
+  border-radius:12px;border:1px solid #dbe5ff;
+  padding:0 12px;font-size:15px;
+  background:#fff;outline:none;
+}
+.searchbar.collapsed{max-height:0;opacity:0;overflow:hidden;padding:0;border:none}
+
+/* fix dock height */
+.dock{height:72px;display:flex;justify-content:space-around;align-items:center}
