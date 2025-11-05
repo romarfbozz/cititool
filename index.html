@@ -5,80 +5,102 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Dashboard</title>
   <link rel="stylesheet" href="./ui/core.css">
+  <style>
+    /* локальные акценты страницы (минимум) */
+    .panel-xl{background:var(--card);border-radius:24px;box-shadow:var(--shadow);padding:16px}
+  </style>
 </head>
 <body data-active="dash" class="has-bg">
 
-<header class="appbar">
-  <div class="wrap">
-    <a class="ct-logo" href="./index.html">
-      <span class="mark">CT</span>
-      <div class="tit">
-        <div class="title"><b>CitiTool</b></div>
-        <div class="subtitle">Dashboard</div>
+  <!-- APPBAR -->
+  <header class="appbar is-solid" id="appbar">
+    <div class="wrap">
+      <a class="ct-logo" href="./index.html" aria-label="CitiTool">
+        <span class="mark">CT</span>
+        <div class="tit">
+          <div class="title"><b>CitiTool</b></div>
+          <div class="subtitle">Dashboard</div>
+        </div>
+      </a>
+      <div class="actions">
+        <button class="btn brand" id="ctaSetup">Neues Setup</button>
+        <button class="icon-btn" id="btnSearch" title="Suchen"><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 6.01 12.02l3.74 3.74-1.42 1.42-3.74-3.74A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg></button>
       </div>
-    </a>
-    <div class="actions">
-      <button class="btn brand" id="ctaSetup">Neues Setup</button>
-      <button class="icon-btn" id="btnSearch" title="Suche"><svg><use href="./ui/icons.svg#search"/></svg></button>
     </div>
-  </div>
-  <div class="searchbar collapsed" id="searchbar">
-    <input type="search" id="globalSearch" placeholder="Suchen...">
-  </div>
-</header>
-
-<main class="container" id="dashRoot">
-  <section class="panel-xl">
-    <h1>Willkommen</h1>
-    <p class="muted">Schnellaktionen, Produktion & Checkliste – alles hier.</p>
-    <div class="row mt">
-      <button class="btn ghost sm" id="btnBackup">Backup</button>
-      <button class="btn sm" id="btnRestore">Restore</button>
+    <div class="searchbar collapsed" id="searchbar">
+      <form onsubmit="return false" class="searchform">
+        <input type="search" id="globalSearch" placeholder="Suchen…">
+      </form>
     </div>
-  </section>
+  </header>
 
-  <section class="section">
-    <h2>Schnellaktionen</h2>
-    <div class="stack grid2">
-      <button class="btn brand" onclick="location.href='./setup.html'">Neues Setup</button>
-      <button class="btn" onclick="location.href='./tools.html'">Neues Werkzeug</button>
-      <button class="btn" onclick="location.href='./assist.html'">Material-Assist</button>
-      <button class="btn" onclick="location.href='./docs.html'">Dokumente</button>
-    </div>
-  </section>
+  <!-- CONTENT -->
+  <main class="container">
+    <section class="panel-xl">
+      <h1>Willkommen</h1>
+      <p class="muted">Schnellaktionen, Produktion & Checkliste – alles hier.</p>
+      <div class="row mt">
+        <button class="btn ghost sm" id="btnBackup">Backup</button>
+        <button class="btn sm" id="btnRestore">Restore</button>
+      </div>
+    </section>
 
-  <section class="section">
-    <h2>Produktion</h2>
-    <div id="prodList" class="stack"></div>
-    <button class="btn brand mt" id="addJob">Neuer Auftrag</button>
-  </section>
+    <section class="section">
+      <h2>Schnellaktionen</h2>
+      <div class="stack">
+        <button class="btn brand" onclick="location.href='./setup.html'">Neues Setup</button>
+        <button class="btn" onclick="location.href='./tools.html'">Neues Werkzeug</button>
+        <button class="btn" onclick="location.href='./assist.html'">Material-Assist</button>
+        <button class="btn" onclick="location.href='./docs.html'">Dokumente</button>
+      </div>
+    </section>
 
-  <section class="section">
-    <h2>Setup-Checkliste</h2>
-    <ul id="checklist" class="checklist"></ul>
-    <div class="row mt">
-      <button class="btn" id="addCheck">Neuer Punkt</button>
-      <button class="btn warn" id="clearDone">Abgehakte löschen</button>
-    </div>
-  </section>
-</main>
+    <section class="section">
+      <h2>Produktion</h2>
+      <div id="prodList" class="stack"></div>
+      <button class="btn brand mt" id="addJob">Neuer Auftrag</button>
+    </section>
 
-<nav class="dock" id="dock">
-  <a href="./index.html" class="active"><svg><use href="./ui/icons.svg#home"/></svg><span>Dash</span></a>
-  <a href="./setup.html"><svg><use href="./ui/icons.svg#setup"/></svg><span>Setup</span></a>
-  <a href="./tools.html"><svg><use href="./ui/icons.svg#tools"/></svg><span>Tools</span></a>
-  <a href="./programmes.html"><svg><use href="./ui/icons.svg#list"/></svg><span>Programme</span></a>
-  <a href="./docs.html"><svg><use href="./ui/icons.svg#doc"/></svg><span>Docs</span></a>
-</nav>
+    <section class="section">
+      <h2>Setup-Checkliste</h2>
+      <ul id="checklist" class="checklist"></ul>
+      <div class="row mt">
+        <button class="btn" id="addCheck">Neuer Punkt</button>
+        <button class="btn warn" id="clearDone">Abgehakte löschen</button>
+      </div>
+    </section>
+  </main>
 
-<script src="./ui/core.js"></script>
-<script src="./ui/dock.js"></script>
-<script>
-CT.ready(()=>{
-  // Поиск плавный
-  const sb=document.getElementById('searchbar');
-  btnSearch.onclick=()=>sb.classList.toggle('collapsed');
-});
-</script>
+  <!-- DOCK -->
+  <nav class="dock">
+    <a href="./index.html" class="active"><svg><use href="./ui/icons.svg#home"/></svg><span>Dash</span></a>
+    <a href="./setup.html"><svg><use href="./ui/icons.svg#setup"/></svg><span>Setup</span></a>
+    <a href="./tools.html"><svg><use href="./ui/icons.svg#tools"/></svg><span>Tools</span></a>
+    <a href="./programmes.html"><svg><use href="./ui/icons.svg#list"/></svg><span>Programme</span></a>
+    <a href="./docs.html"><svg><use href="./ui/icons.svg#doc"/></svg><span>Docs</span></a>
+  </nav>
+
+  <script src="./ui/core.js"></script>
+  <script>
+    // ===== UX: раскрывающийся поиск, без iOS-зума, автозакрытие =====
+    const sb = document.getElementById('searchbar');
+    const btn = document.getElementById('btnSearch');
+    const inp = document.getElementById('globalSearch');
+    btn.addEventListener('click', ()=>{
+      sb.classList.toggle('collapsed');
+      if(!sb.classList.contains('collapsed')) setTimeout(()=>inp.focus(),10);
+    });
+    // закрытие по клику вне
+    document.addEventListener('click', (e)=>{
+      if(!sb.classList.contains('collapsed')){
+        const inside = sb.contains(e.target) || btn.contains(e.target);
+        if(!inside) sb.classList.add('collapsed');
+      }
+    });
+    // закрытие при скролле
+    window.addEventListener('scroll', ()=>{
+      if(!sb.classList.contains('collapsed')) sb.classList.add('collapsed');
+    });
+  </script>
 </body>
 </html>
