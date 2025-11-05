@@ -1,6 +1,5 @@
-
 <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
-  <symbol id="search" viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.293 14.293l4.707 4.707 1.414-1.414-4.707-4.707A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.3 14.3l4.7 4.7 1.4-1.4-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></symbol>
   <symbol id="info" viewBox="0 0 24 24"><path d="M11 7h2v2h-2V7zm0 4h2v6h-2v-6z"/><path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/></symbol>
   <symbol id="edit" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></symbol>
   <symbol id="close" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></symbol>
@@ -9,12 +8,4 @@
   <symbol id="setup" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></symbol>
   <symbol id="program" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></symbol>
   <symbol id="docs" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></symbol>
-<symbol id="info" viewBox="0 0 24 24">
-  <symbol id="book" viewBox="0 0 24 24"><path d="M4 4h13a3 3 0 013 3v13H7a3 3 0 01-3-3V4z"/><path d="M7 4v13a3 3 0 003 3"/></symbol>
-  <symbol id="robot" viewBox="0 0 24 24"><path d="M10 2h4v2h-4zM5 7a5 5 0 015-5h4a5 5 0 015 5v9a4 4 0 01-4 4H9a4 4 0 01-4-4V7z"/><circle cx="9" cy="10" r="1.5"/><circle cx="15" cy="10" r="1.5"/><path d="M8 14h8v2H8z"/></symbol>
-  <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
-  <line x1="12" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-  <line x1="12" y1="12" x2="12" y2="16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-</symbol>
 </svg>
-
