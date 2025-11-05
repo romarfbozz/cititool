@@ -1,3 +1,4 @@
+===== FILE: /index.html =====
 <!doctype html>
 <html lang="de">
 <head>
@@ -5,81 +6,67 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>CitiTool • Dashboard</title>
   <link rel="stylesheet" href="./ui/core.css">
-  <style>
-    /* Локальный минимум — всё остальное из /ui */
-    .tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem}
-    .tile{display:grid;place-items:center;padding:14px;border:1px solid #e5ebf7;border-radius:14px;background:#fff}
-    .tile:active{transform:translateY(1px)}
-    .tile svg{width:28px;height:28px;margin-bottom:6px}
-    .sub{font-size:12px;color:var(--muted)}
-
-    .barwrap{position:relative;margin:8px 0}
-    .barwrap .pct{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:12px;font-weight:700;color:var(--brand);pointer-events:none}
-
-    .hscroll{display:flex;gap:.6rem;overflow:auto;padding-bottom:2px}
-    .tool-chip{min-width:160px;display:grid;grid-template-columns:56px 1fr;gap:.6rem;align-items:center;border:1px solid #e5ebf7;border-radius:14px;background:#fff;padding:8px}
-    .tool-chip .thumb{width:56px;height:56px;border-radius:10px;object-fit:cover;background:#f0f3fa}
-    .thumb.ph{display:grid;place-items:center;color:#9cb1d9;font-weight:800}
-
-    .quick-note{display:grid;gap:.5rem}
-
-    /* чеклист (DnD) — базовые стили есть в /ui, тут только иконку перетягаем */
-    .checklist .drag{cursor:grab;color:#9cb1d9}
-  </style>
 </head>
-<body data-active="dash">
+<body data-active="dash" class="neo">
+<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
-    <a class="logo" href="./index.html">
-      <span class="ct-badge" aria-hidden="true">CT</span>
+    <a class="ct-logo" href="./index.html">
+      <span class="mark">CT</span>
       <div class="tit">
-        <div class="title">CitiTool</div>
+        <div class="title"><b>CitiTool</b></div>
         <div class="subtitle">Dashboard</div>
       </div>
     </a>
-    <div class="actions" style="display:flex;gap:.4rem;align-items:center">
-      <button class="btn sm" id="btnBackup">Backup</button>
-      <button class="btn ghost sm" id="btnRestore">Restore</button>
-      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
-        <svg><use href="./ui/icons.svg#search"/></svg>
-      </button>
+    <div class="row">
+      <button class="btn brand" id="ctaSetup">Neues Setup</button>
+      <form class="search-inline" onsubmit="return false;">
+        <input id="globalSearch" type="search" placeholder="Suchen…"/>
+        <button class="icon" type="button" aria-label="Suche"><svg><use href="./ui/icons.svg#search"/></svg></button>
+      </form>
     </div>
   </div>
 </header>
 
-<div class="searchbar collapsed">
-  <input class="field" type="search" placeholder="Suchen…" id="globalSearch">
-</div>
-
 <main class="container" id="dashRoot">
-  <!-- Schnellaktionen (плитки) -->
-  <section class="section">
-    <h2>Schnellaktionen</h2>
-    <div class="tiles">
-      <button class="tile" id="actNewSetup">
-        <svg><use href="./ui/icons.svg#setup"/></svg>
-        <div>Neues Setup</div>
-      </button>
-      <button class="tile" id="actNewTool">
-        <svg><use href="./ui/icons.svg#tools"/></svg>
-        <div>Neues Werkzeug</div>
-      </button>
-      <button class="tile" id="actFasen">
-        <svg><use href="./ui/icons.svg#program"/></svg>
-        <div>Fasen-Assist</div>
-      </button>
-      <button class="tile" id="actMaterial">
-        <svg><use href="./ui/icons.svg#docs"/></svg>
-        <div>Material-Assist</div>
-      </button>
+  <!-- Hero-панель -->
+  <section class="section panel-xl">
+    <h1 class="h-title">Willkommen</h1>
+    <div class="h-sub">Schnellaktionen, Produktion & Checkliste — alles hier.</div>
+
+    <div class="row" style="align-items:flex-start; gap:16px; margin-top:10px">
+      <div class="photo" id="heroImg">kein Foto</div>
+      <div class="stack" style="min-width:200px">
+        <div class="chips">
+          <button class="chip" id="actNewTool">Neues Werkzeug</button>
+          <button class="chip" id="actAssist">Material-Assist</button>
+          <button class="chip primary" id="ctaProgramme">Programme öffnen</button>
+        </div>
+        <div class="row" style="gap:.4rem">
+          <button class="btn ghost sm" id="btnBackup">Backup</button>
+          <button class="btn sm" id="btnRestore">Restore</button>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- Последние инструменты (из Live RO/RU) -->
+  <!-- Schnellaktionen плитками -->
   <section class="section">
-    <h2>Letzte Tools (Live)</h2>
-    <div id="recentTools" class="hscroll"></div>
-    <div class="sub">Aus RO/G54 und RU/G55 • Klick → Setup</div>
+    <h2>Schnellaktionen</h2>
+    <div class="stack" id="quickStack">
+      <div class="card row between">
+        <div><b>Neues Setup</b><div class="muted">Live-Setup anlegen</div></div>
+        <button class="btn brand sm" onclick="location.href='./setup.html'">Öffnen</button>
+      </div>
+      <div class="card row between">
+        <div><b>Neues Werkzeug</b><div class="muted">Zum Schrank hinzufügen</div></div>
+        <button class="btn brand sm" id="qaTool">Öffnen</button>
+      </div>
+      <div class="card row between">
+        <div><b>Material-Assist</b><div class="muted">Schnittdaten schnell berechnen</div></div>
+        <button class="btn brand sm" onclick="location.href='./assist.html'">Öffnen</button>
+      </div>
+    </div>
   </section>
 
   <!-- Produktion -->
@@ -91,26 +78,13 @@
     </div>
   </section>
 
-  <!-- Setup-Checkliste -->
+  <!-- Checkliste -->
   <section class="section">
     <h2>Setup-Checkliste</h2>
     <ul id="checklist" class="checklist"></ul>
     <div class="row mt">
       <button class="btn" id="addCheck">Neuer Punkt</button>
       <button class="btn warn" id="clearDone">Abgehakte löschen</button>
-    </div>
-  </section>
-
-  <!-- Быстрые заметки -->
-  <section class="section">
-    <h2>Schnell-Notiz</h2>
-    <div class="quick-note">
-      <input id="qnTitle" class="field" placeholder="Titel (optional)">
-      <textarea id="qnBody" class="field" rows="4" placeholder="Kurze Notiz…"></textarea>
-      <div class="row">
-        <button class="btn brand" id="qnSave">Speichern</button>
-        <button class="btn" id="qnClear">Leeren</button>
-      </div>
     </div>
   </section>
 </main>
@@ -121,107 +95,83 @@
 <script src="./ui/dock.js"></script>
 <script>
   CT.ready(() => {
+    // Splash с кодовым лого
+    CT.splash({logo:':ct', ms:500});
     CT.ensureSeeds();
 
-    // -------- Backup / Restore (весь localStorage) --------
-    function dumpAllLS(){
-      const data={};
-      for(let i=0;i<localStorage.length;i++){
-        const k=localStorage.key(i);
-        try{ data[k]=JSON.parse(localStorage.getItem(k)); }catch(e){ data[k]=localStorage.getItem(k); }
-      }
-      return data;
-    }
-    document.getElementById('btnBackup').onclick=()=>{
-      const all=dumpAllLS();
-      CT.exportJSON('citi_backup.json', all);
-      CT.toast('Backup erstellt','ok');
+    // Hero-превью: берём первую Zeichnung из Programmen, иначе "kein Foto"
+    (function(){
+      try{
+        const progs = CT.storage.read(CT_KEYS.PROGS, []);
+        const img = progs[0]?.imgData;
+        const box = document.getElementById('heroImg');
+        if(img){ box.innerHTML = '<img src="'+img+'" alt="Zeichnung">'; }
+      }catch(e){}
+    })();
+
+    // CTA в AppBar/панели
+    document.getElementById('ctaSetup').onclick = ()=> location.href='./setup.html';
+    document.getElementById('ctaProgramme').onclick = ()=> location.href='./setup.html';
+    document.getElementById('actNewTool').onclick = ()=> location.href='./tools.html';
+    document.getElementById('qaTool').onclick = ()=> location.href='./tools.html';
+    document.getElementById('actAssist').onclick = ()=> location.href='./assist.html';
+
+    // Backup / Restore всего LocalStorage
+    document.getElementById('btnBackup').onclick = ()=>{
+      const dump = {
+        tools:CT.storage.read(CT_KEYS.TOOLS,[]),
+        cats:CT.storage.read(CT_KEYS.CATS,[]),
+        setup:CT.storage.read(CT_KEYS.SETUP,{ro:Array(12).fill(null),ru:Array(12).fill(null)}),
+        progs:CT.storage.read(CT_KEYS.PROGS,[]),
+        dash:CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]}),
+        docs:CT.storage.read(CT_KEYS.DOCS,[])
+      };
+      CT.exportJSON('citi_backup.json', dump);
+      CT.toast('Backup gespeichert','ok');
     };
-    document.getElementById('btnRestore').onclick=()=>{
-      CT.importJSON().then(obj=>{
-        if(!obj || typeof obj!=='object') return CT.toast('Falsches Format','err');
+    document.getElementById('btnRestore').onclick = ()=>{
+      CT.importJSON().then(d=>{
+        if(!d || typeof d!=='object') return CT.toast('Falsches Format','err');
         CT.openModal({
-          title:'Restore bestätigen',
-          html:'Vorhandene Daten überschreiben?',
-          okText:'Überschreiben', cancelText:'Abbrechen',
+          title:'Restore',
+          html:'Aktuelle Daten ERSETZEN?',
+          okText:'Ersetzen',
+          cancelText:'Abbrechen',
           onOk:()=>{
-            Object.keys(obj).forEach(k=> localStorage.setItem(k, JSON.stringify(obj[k])));
-            CT.toast('Wiederhergestellt','ok'); location.reload();
+            if(d.tools) CT.storage.write(CT_KEYS.TOOLS,d.tools);
+            if(d.cats)  CT.storage.write(CT_KEYS.CATS,d.cats);
+            if(d.setup) CT.storage.write(CT_KEYS.SETUP,d.setup);
+            if(d.progs) CT.storage.write(CT_KEYS.PROGS,d.progs);
+            if(d.dash)  CT.storage.write(CT_KEYS.DASH,d.dash);
+            if(d.docs)  CT.storage.write(CT_KEYS.DOCS,d.docs);
+            CT.toast('Wiederhergestellt','ok'); renderProd(); renderChecklist();
           }
         });
       });
     };
 
-    // -------- Schnellaktionen плитками --------
-    document.getElementById('actNewSetup').onclick = ()=> location.href='./setup.html';
-    document.getElementById('actNewTool').onclick = ()=> {
-      CT.openModal({
-        title:'Neues Werkzeug',
-        html:'Werkzeugs­chrank öffnen?',
-        okText:'Öffnen', cancelText:'Abbrechen',
-        onOk:()=>location.href='./tools.html'
-      });
-    };
-    document.getElementById('actFasen').onclick = ()=> location.href='./assist.html';
-    document.getElementById('actMaterial').onclick = ()=> location.href='./assist.html';
-
-    // -------- Последние инструменты из Live --------
-    function renderRecentTools(){
-      const wrap = document.getElementById('recentTools');
-      wrap.innerHTML='';
-      const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
-      const tools = CT.storage.read(CT_KEYS.TOOLS, []);
-      const ids = new Set();
-      ['ro','ru'].forEach(side=>{
-        live[side].forEach(cell=>{
-          if(cell && cell.toolId) ids.add(cell.toolId);
-        });
-      });
-      const arr = [...ids].map(id=> tools.find(t=>t.id===id)).filter(Boolean);
-      if(!arr.length){ wrap.innerHTML='<div class="muted">Keine Tools in Live</div>'; return; }
-      arr.forEach(t=>{
-        const chip=document.createElement('button');
-        chip.className='tool-chip';
-        const hasImg = !!t.imgData;
-        chip.innerHTML = `
-          ${hasImg ? `<img class="thumb" src="${t.imgData}" alt="">`
-                    : `<div class="thumb ph">No</div>`}
-          <div>
-            <div class="name" style="font-weight:800">${CT.escape(t.name)}</div>
-            <div class="sub">${CT.escape(t.code||'')}</div>
-          </div>`;
-        chip.onclick=()=> location.href='./setup.html';
-        wrap.appendChild(chip);
-      });
-    }
-    renderRecentTools();
-
-    // -------- Produktion --------
+    // ===== Produktion =====
     const prodList = document.getElementById('prodList');
     function renderProd(){
       prodList.innerHTML = '';
-      const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
-      const arr = data.produktion||[];
-      if(!arr.length){
-        prodList.innerHTML = '<div class="muted">Keine Aufträge</div>';
-        return;
-      }
+      const arr = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] }).produktion;
+      if(!arr.length){ prodList.innerHTML = '<div class="muted">Keine Aufträge</div>'; return; }
       arr.forEach(item=>{
         const pct = Math.min(100, Math.round((item.madeQty / Math.max(1,item.targetQty))*100));
         const el = document.createElement('div');
         el.className='card job';
         el.innerHTML = `
-          <div class="job-hdr" style="display:flex;justify-content:space-between;align-items:center">
+          <div class="job-hdr">
             <b>${CT.escape(item.title)}</b>
-            <button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
+            <button class="icon-btn info" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
           </div>
-          <div class="barwrap">
-            <div class="bar"><div style="width:${pct}%"></div></div>
-            <div class="pct">${pct}%</div>
+          <div class="bar" style="position:relative">
+            <div style="width:${pct}%"></div>
+            <div style="position:absolute;inset:0;display:grid;place-items:center;font-weight:800;color:#20324d">${pct}%</div>
           </div>
           <div class="job-meta">${item.madeQty} / ${item.targetQty} • ${new Date(item.date).toLocaleDateString()}</div>
         `;
-        el.querySelector('button').onclick = () => editJob(item);
+        el.querySelector('.icon-btn').onclick = () => editJob(item);
         prodList.appendChild(el);
       });
     }
@@ -260,7 +210,7 @@
     };
     renderProd();
 
-    // -------- Setup-Checkliste (DnD) --------
+    // ===== Checkliste =====
     const list = document.getElementById('checklist');
     function renderChecklist(){
       const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
@@ -268,37 +218,32 @@
       if(!data.checklist.length){ list.innerHTML = '<li class="muted">Keine Punkte</li>'; return; }
       data.checklist.forEach(it=>{
         const li = document.createElement('li'); li.draggable=true; li.dataset.id=it.id;
-        li.innerHTML = `
-          <span class="drag">≡</span>
-          <label style="flex:1"><input type="checkbox" ${it.done?'checked':''}/> ${CT.escape(it.title)}</label>
+        li.innerHTML = `<span class="drag">≡</span>
+          <label><input type="checkbox" ${it.done?'checked':''}/> ${CT.escape(it.title)}</label>
           <button class="icon-btn sm" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>`;
-        // toggle done
         li.querySelector('input').onchange = ()=>{
           const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-          const idx=cur.checklist.findIndex(x=>x.id===it.id);
-          if(idx>-1){cur.checklist[idx].done=!cur.checklist[idx].done; CT.storage.write(CT_KEYS.DASH,cur);}
+          const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].done=!cur.checklist[idx].done; CT.storage.write(CT_KEYS.DASH,cur);}
         };
-        // edit/delete
         li.querySelector('button').onclick = ()=>{
           CT.openModal({title:'Punkt', html:`<input id="c_t" value="${CT.escape(it.title)}">`,
             okText:'Speichern', cancelText:'Löschen', onOk:()=>{
               const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-              const idx=cur.checklist.findIndex(x=>x.id===it.id);
-              if(idx>-1){cur.checklist[idx].title=document.getElementById('c_t').value||'Punkt'; CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); CT.toast('Gespeichert','ok');}
+              const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].title=document.getElementById('c_t').value||'Punkt'; CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); CT.toast('Gespeichert','ok');}
             }});
           const foot=document.querySelector('.modal .footer .cancel');
           foot.onclick=()=>{ const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
             cur.checklist = cur.checklist.filter(x=>x.id!==it.id); CT.storage.write(CT_KEYS.DASH,cur); CT.closeModal(); renderChecklist(); CT.toast('Gelöscht','ok'); };
         };
-        // DnD порядок
-        li.addEventListener('dragstart', e=>e.dataTransfer.setData('text/plain', it.id));
+        // DnD
+        li.addEventListener('dragstart', e=>e.dataTransfer.setData('text', it.id));
         li.addEventListener('dragover', e=>e.preventDefault());
         li.addEventListener('drop', e=>{
           e.preventDefault();
-          const from = e.dataTransfer.getData('text/plain'); const to = it.id;
+          const from = e.dataTransfer.getData('text'); const to = it.id;
           const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
           const a=cur.checklist.findIndex(x=>x.id===from), b=cur.checklist.findIndex(x=>x.id===to);
-          if(a>-1 && b>-1 && a!==b){ const [m]=cur.checklist.splice(a,1); cur.checklist.splice(b,0,m); CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); }
+          if(a>-1 && b>-1){ const [m]=cur.checklist.splice(a,1); cur.checklist.splice(b,0,m); CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); }
         });
         list.appendChild(li);
       });
@@ -312,12 +257,11 @@
     };
     document.getElementById('clearDone').onclick=()=>{
       const data=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-      data.checklist = data.checklist.filter(x=>!x.done);
-      CT.storage.write(CT_KEYS.DASH,data); renderChecklist(); CT.toast('Aufgeräumt','ok');
+      data.checklist = data.checklist.filter(x=>!x.done); CT.storage.write(CT_KEYS.DASH,data); renderChecklist(); CT.toast('Aufgeräumt','ok');
     };
     renderChecklist();
 
-    // -------- Поиск по секциям --------
+    // Поиск по карточкам разделов (демо)
     CT.bindGlobalSearch((q)=>{
       document.querySelectorAll('.section').forEach(sec=>{
         if(!q){ sec.style.display=''; return; }
