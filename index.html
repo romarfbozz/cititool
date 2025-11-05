@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="de">
 <head>
@@ -7,8 +6,8 @@
   <title>CitiTool • Dashboard</title>
   <link rel="stylesheet" href="./ui/core.css">
 </head>
-<body data-active="dash" class="neo">
-<!-- AppBar -->
+<body data-active="dash" class="has-bg">
+
 <header class="appbar">
   <div class="wrap">
     <a class="ct-logo" href="./index.html">
@@ -29,56 +28,31 @@
 </header>
 
 <main class="container" id="dashRoot">
-  <!-- Hero-панель -->
-  <section class="section panel-xl">
-    <h1 class="h-title">Willkommen</h1>
-    <div class="h-sub">Schnellaktionen, Produktion & Checkliste — alles hier.</div>
-
-    <div class="row" style="align-items:flex-start; gap:16px; margin-top:10px">
-      <div class="photo" id="heroImg">kein Foto</div>
-      <div class="stack" style="min-width:200px">
-        <div class="chips">
-          <button class="chip" id="actNewTool">Neues Werkzeug</button>
-          <button class="chip" id="actAssist">Material-Assist</button>
-          <button class="chip primary" id="ctaProgramme">Programme öffnen</button>
-        </div>
-        <div class="row" style="gap:.4rem">
-          <button class="btn ghost sm" id="btnBackup">Backup</button>
-          <button class="btn sm" id="btnRestore">Restore</button>
-        </div>
-      </div>
+  <section class="panel-xl">
+    <h1>Willkommen</h1>
+    <p class="muted">Schnellaktionen, Produktion & Checkliste – alles hier.</p>
+    <div class="row mt">
+      <button class="btn ghost sm" id="btnBackup">Backup</button>
+      <button class="btn sm" id="btnRestore">Restore</button>
     </div>
   </section>
 
-  <!-- Schnellaktionen плитками -->
   <section class="section">
     <h2>Schnellaktionen</h2>
-    <div class="stack" id="quickStack">
-      <div class="card row between">
-        <div><b>Neues Setup</b><div class="muted">Live-Setup anlegen</div></div>
-        <button class="btn brand sm" onclick="location.href='./setup.html'">Öffnen</button>
-      </div>
-      <div class="card row between">
-        <div><b>Neues Werkzeug</b><div class="muted">Zum Schrank hinzufügen</div></div>
-        <button class="btn brand sm" id="qaTool">Öffnen</button>
-      </div>
-      <div class="card row between">
-        <div><b>Material-Assist</b><div class="muted">Schnittdaten schnell berechnen</div></div>
-        <button class="btn brand sm" onclick="location.href='./assist.html'">Öffnen</button>
-      </div>
+    <div class="stack grid2">
+      <button class="btn brand" onclick="location.href='./setup.html'">Neues Setup</button>
+      <button class="btn" onclick="location.href='./tools.html'">Neues Werkzeug</button>
+      <button class="btn" onclick="location.href='./assist.html'">Material-Assist</button>
+      <button class="btn" onclick="location.href='./docs.html'">Dokumente</button>
     </div>
   </section>
 
-  <!-- Produktion -->
   <section class="section">
     <h2>Produktion</h2>
     <div id="prodList" class="stack"></div>
-    <div class="row mt">
-      <button class="btn brand" id="addJob">Neuer Auftrag</button>
-    </div>
+    <button class="btn brand mt" id="addJob">Neuer Auftrag</button>
   </section>
 
-  <!-- Checkliste -->
   <section class="section">
     <h2>Setup-Checkliste</h2>
     <ul id="checklist" class="checklist"></ul>
@@ -89,186 +63,106 @@
   </section>
 </main>
 
-<nav class="dock" id="dock"></nav>
+<nav class="dock" id="dock">
+  <a href="./index.html" class="active"><svg><use href="./ui/icons.svg#home"/></svg><span>Dash</span></a>
+  <a href="./setup.html"><svg><use href="./ui/icons.svg#setup"/></svg><span>Setup</span></a>
+  <a href="./tools.html"><svg><use href="./ui/icons.svg#tools"/></svg><span>Tools</span></a>
+  <a href="./programmes.html"><svg><use href="./ui/icons.svg#list"/></svg><span>Programme</span></a>
+  <a href="./docs.html"><svg><use href="./ui/icons.svg#doc"/></svg><span>Docs</span></a>
+</nav>
 
 <script src="./ui/core.js"></script>
 <script src="./ui/dock.js"></script>
 <script>
-  CT.ready(() => {
-    // Splash с кодовым лого
-    CT.splash({logo:':ct', ms:500});
-    CT.ensureSeeds();
+CT.ready(()=>{
+  CT.splash({logo:':ct',ms:400});
+  CT.ensureSeeds();
 
-    // Hero-превью: берём первую Zeichnung из Programmen, иначе "kein Foto"
-    (function(){
-      try{
-        const progs = CT.storage.read(CT_KEYS.PROGS, []);
-        const img = progs[0]?.imgData;
-        const box = document.getElementById('heroImg');
-        if(img){ box.innerHTML = '<img src="'+img+'" alt="Zeichnung">'; }
-      }catch(e){}
-    })();
-
-    // CTA в AppBar/панели
-    document.getElementById('ctaSetup').onclick = ()=> location.href='./setup.html';
-    document.getElementById('ctaProgramme').onclick = ()=> location.href='./setup.html';
-    document.getElementById('actNewTool').onclick = ()=> location.href='./tools.html';
-    document.getElementById('qaTool').onclick = ()=> location.href='./tools.html';
-    document.getElementById('actAssist').onclick = ()=> location.href='./assist.html';
-
-    // Backup / Restore всего LocalStorage
-    document.getElementById('btnBackup').onclick = ()=>{
-      const dump = {
-        tools:CT.storage.read(CT_KEYS.TOOLS,[]),
-        cats:CT.storage.read(CT_KEYS.CATS,[]),
-        setup:CT.storage.read(CT_KEYS.SETUP,{ro:Array(12).fill(null),ru:Array(12).fill(null)}),
-        progs:CT.storage.read(CT_KEYS.PROGS,[]),
-        dash:CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]}),
-        docs:CT.storage.read(CT_KEYS.DOCS,[])
-      };
-      CT.exportJSON('citi_backup.json', dump);
-      CT.toast('Backup gespeichert','ok');
+  // Backup / Restore
+  btnBackup.onclick=()=>{
+    const dump={
+      tools:CT.storage.read(CT_KEYS.TOOLS,[]),
+      setup:CT.storage.read(CT_KEYS.SETUP,{}),
+      progs:CT.storage.read(CT_KEYS.PROGS,[]),
+      dash:CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]})
     };
-    document.getElementById('btnRestore').onclick = ()=>{
-      CT.importJSON().then(d=>{
-        if(!d || typeof d!=='object') return CT.toast('Falsches Format','err');
-        CT.openModal({
-          title:'Restore',
-          html:'Aktuelle Daten ERSETZEN?',
-          okText:'Ersetzen',
-          cancelText:'Abbrechen',
-          onOk:()=>{
-            if(d.tools) CT.storage.write(CT_KEYS.TOOLS,d.tools);
-            if(d.cats)  CT.storage.write(CT_KEYS.CATS,d.cats);
-            if(d.setup) CT.storage.write(CT_KEYS.SETUP,d.setup);
-            if(d.progs) CT.storage.write(CT_KEYS.PROGS,d.progs);
-            if(d.dash)  CT.storage.write(CT_KEYS.DASH,d.dash);
-            if(d.docs)  CT.storage.write(CT_KEYS.DOCS,d.docs);
-            CT.toast('Wiederhergestellt','ok'); renderProd(); renderChecklist();
-          }
-        });
-      });
-    };
-
-    // ===== Produktion =====
-    const prodList = document.getElementById('prodList');
-    function renderProd(){
-      prodList.innerHTML = '';
-      const arr = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] }).produktion;
-      if(!arr.length){ prodList.innerHTML = '<div class="muted">Keine Aufträge</div>'; return; }
-      arr.forEach(item=>{
-        const pct = Math.min(100, Math.round((item.madeQty / Math.max(1,item.targetQty))*100));
-        const el = document.createElement('div');
-        el.className='card job';
-        el.innerHTML = `
-          <div class="job-hdr">
-            <b>${CT.escape(item.title)}</b>
-            <button class="icon-btn info" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
-          </div>
-          <div class="bar" style="position:relative">
-            <div style="width:${pct}%"></div>
-            <div style="position:absolute;inset:0;display:grid;place-items:center;font-weight:800;color:#20324d">${pct}%</div>
-          </div>
-          <div class="job-meta">${item.madeQty} / ${item.targetQty} • ${new Date(item.date).toLocaleDateString()}</div>
-        `;
-        el.querySelector('.icon-btn').onclick = () => editJob(item);
-        prodList.appendChild(el);
-      });
-    }
-    function editJob(item){
-      const html = `
-        <label class="fld">Titel<input id="j_t" value="${CT.escape(item.title)}"></label>
-        <label class="fld">Zielmenge<input id="j_q" type="number" inputmode="numeric" value="${item.targetQty}"></label>
-        <label class="fld">Bereits gefertigt<input id="j_m" type="number" inputmode="numeric" value="${item.madeQty}"></label>
-        <div class="row"><button class="btn warn" id="del">Löschen</button></div>`;
-      CT.openModal({title:'Auftrag', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
-        const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
-        const idx = data.produktion.findIndex(p=>p.id===item.id);
-        if(idx>-1){
-          data.produktion[idx].title = document.getElementById('j_t').value.trim()||'Ohne Titel';
-          data.produktion[idx].targetQty = parseInt(document.getElementById('j_q').value||0,10);
-          data.produktion[idx].madeQty = parseInt(document.getElementById('j_m').value||0,10);
-          CT.storage.write(CT_KEYS.DASH, data); CT.toast('Gespeichert','ok'); renderProd();
-        }
-      }});
-      document.getElementById('del').onclick = ()=>{
-        const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
-        data.produktion = data.produktion.filter(p=>p.id!==item.id);
-        CT.storage.write(CT_KEYS.DASH, data); CT.closeModal(); CT.toast('Gelöscht','ok'); renderProd();
-      };
-    }
-    document.getElementById('addJob').onclick=()=>{
-      const html = `
-        <label class="fld">Titel<input id="n_t" placeholder="Auftrag"></label>
-        <label class="fld">Zielmenge<input id="n_q" type="number" inputmode="numeric" placeholder="100"></label>`;
-      CT.openModal({title:'Neuer Auftrag', html, okText:'Anlegen', onOk:()=>{
-        const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
-        data.produktion.push({id:CT.uid(), title:document.getElementById('n_t').value||'Auftrag',
-          targetQty:parseInt(document.getElementById('n_q').value||0,10), madeQty:0, date:Date.now()});
-        CT.storage.write(CT_KEYS.DASH, data); CT.toast('Angelegt','ok'); renderProd();
-      }});
-    };
-    renderProd();
-
-    // ===== Checkliste =====
-    const list = document.getElementById('checklist');
-    function renderChecklist(){
-      const data = CT.storage.read(CT_KEYS.DASH, { produktion:[], checklist:[] });
-      list.innerHTML = '';
-      if(!data.checklist.length){ list.innerHTML = '<li class="muted">Keine Punkte</li>'; return; }
-      data.checklist.forEach(it=>{
-        const li = document.createElement('li'); li.draggable=true; li.dataset.id=it.id;
-        li.innerHTML = `<span class="drag">≡</span>
-          <label><input type="checkbox" ${it.done?'checked':''}/> ${CT.escape(it.title)}</label>
-          <button class="icon-btn sm" aria-label="Bearbeiten"><svg><use href="./ui/icons.svg#edit"/></svg></button>`;
-        li.querySelector('input').onchange = ()=>{
-          const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-          const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].done=!cur.checklist[idx].done; CT.storage.write(CT_KEYS.DASH,cur);}
-        };
-        li.querySelector('button').onclick = ()=>{
-          CT.openModal({title:'Punkt', html:`<input id="c_t" value="${CT.escape(it.title)}">`,
-            okText:'Speichern', cancelText:'Löschen', onOk:()=>{
-              const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-              const idx=cur.checklist.findIndex(x=>x.id===it.id); if(idx>-1){cur.checklist[idx].title=document.getElementById('c_t').value||'Punkt'; CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); CT.toast('Gespeichert','ok');}
-            }});
-          const foot=document.querySelector('.modal .footer .cancel');
-          foot.onclick=()=>{ const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-            cur.checklist = cur.checklist.filter(x=>x.id!==it.id); CT.storage.write(CT_KEYS.DASH,cur); CT.closeModal(); renderChecklist(); CT.toast('Gelöscht','ok'); };
-        };
-        // DnD
-        li.addEventListener('dragstart', e=>e.dataTransfer.setData('text', it.id));
-        li.addEventListener('dragover', e=>e.preventDefault());
-        li.addEventListener('drop', e=>{
-          e.preventDefault();
-          const from = e.dataTransfer.getData('text'); const to = it.id;
-          const cur=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-          const a=cur.checklist.findIndex(x=>x.id===from), b=cur.checklist.findIndex(x=>x.id===to);
-          if(a>-1 && b>-1){ const [m]=cur.checklist.splice(a,1); cur.checklist.splice(b,0,m); CT.storage.write(CT_KEYS.DASH,cur); renderChecklist(); }
-        });
-        list.appendChild(li);
-      });
-    }
-    document.getElementById('addCheck').onclick=()=>{
-      CT.openModal({title:'Neuer Punkt', html:`<input id="p_t" placeholder="Text">`, okText:'Hinzufügen', onOk:()=>{
-        const data=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-        data.checklist.push({id:CT.uid(), title:document.getElementById('p_t').value||'Punkt', done:false});
-        CT.storage.write(CT_KEYS.DASH,data); CT.toast('Hinzugefügt','ok'); renderChecklist();
-      }});
-    };
-    document.getElementById('clearDone').onclick=()=>{
-      const data=CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-      data.checklist = data.checklist.filter(x=>!x.done); CT.storage.write(CT_KEYS.DASH,data); renderChecklist(); CT.toast('Aufgeräumt','ok');
-    };
-    renderChecklist();
-
-    // Поиск по карточкам разделов (демо)
-    CT.bindGlobalSearch((q)=>{
-      document.querySelectorAll('.section').forEach(sec=>{
-        if(!q){ sec.style.display=''; return; }
-        sec.style.display = sec.textContent.toLowerCase().includes(q) ? '' : 'none';
-      });
-    });
+    CT.exportJSON('citi_backup.json',dump);
+    CT.toast('Backup gespeichert','ok');
+  };
+  btnRestore.onclick=()=>CT.importJSON().then(d=>{
+    if(!d)return;
+    CT.storage.write(CT_KEYS.TOOLS,d.tools||[]);
+    CT.storage.write(CT_KEYS.SETUP,d.setup||{});
+    CT.storage.write(CT_KEYS.PROGS,d.progs||[]);
+    CT.storage.write(CT_KEYS.DASH,d.dash||{produktion:[],checklist:[]});
+    CT.toast('Wiederhergestellt','ok'); renderProd(); renderChecklist();
   });
+
+  // Produktion
+  const prodList=document.getElementById('prodList');
+  const dashData=()=>CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
+  const saveData=d=>CT.storage.write(CT_KEYS.DASH,d);
+
+  function renderProd(){
+    const data=dashData().produktion;
+    prodList.innerHTML='';
+    if(!data.length){prodList.innerHTML='<div class="muted">Keine Aufträge</div>';return;}
+    data.forEach(j=>{
+      const pct=Math.min(100,Math.round((j.madeQty/Math.max(1,j.targetQty))*100));
+      const el=document.createElement('div');
+      el.className='card job';
+      el.innerHTML=`
+        <div class="job-hdr">
+          <b>${CT.escape(j.title)}</b>
+          <button class="icon-btn info"><svg><use href="./ui/icons.svg#info"/></svg></button>
+        </div>
+        <div class="bar" style="position:relative"><div style="width:${pct}%"></div>
+          <div style="position:absolute;inset:0;display:grid;place-items:center;font-weight:700">${pct}%</div>
+        </div>
+        <div class="job-meta">${j.madeQty} / ${j.targetQty} • ${new Date(j.date).toLocaleDateString()}</div>`;
+      prodList.appendChild(el);
+    });
+  }
+  addJob.onclick=()=>{
+    CT.openModal({title:'Neuer Auftrag',
+      html:`<input id="t" placeholder="Titel"><input id="q" type="number" placeholder="Zielmenge">`,
+      okText:'Anlegen',onOk:()=>{
+        const d=dashData();
+        d.produktion.push({id:CT.uid(),title:t.value||'Auftrag',targetQty:+q.value||0,madeQty:0,date:Date.now()});
+        saveData(d); renderProd();
+      }});
+  };
+  renderProd();
+
+  // Checkliste
+  const list=document.getElementById('checklist');
+  function renderChecklist(){
+    const d=dashData().checklist;
+    list.innerHTML='';
+    if(!d.length){list.innerHTML='<li class="muted">Keine Punkte</li>';return;}
+    d.forEach(it=>{
+      const li=document.createElement('li');
+      li.innerHTML=`<input type="checkbox" ${it.done?'checked':''}> ${CT.escape(it.title)}`;
+      li.querySelector('input').onchange=e=>{
+        const all=dashData();const i=all.checklist.findIndex(x=>x.id===it.id);
+        if(i>-1){all.checklist[i].done=e.target.checked;saveData(all);}
+      };
+      list.appendChild(li);
+    });
+  }
+  addCheck.onclick=()=>{
+    CT.openModal({title:'Neuer Punkt',html:`<input id="p" placeholder="Text">`,
+      okText:'Hinzufügen',onOk:()=>{
+        const d=dashData();d.checklist.push({id:CT.uid(),title:p.value||'Punkt',done:false});
+        saveData(d);renderChecklist();
+      }});
+  };
+  clearDone.onclick=()=>{
+    const d=dashData();d.checklist=d.checklist.filter(x=>!x.done);
+    saveData(d);renderChecklist();
+  };
+  renderChecklist();
+});
 </script>
 </body>
 </html>
