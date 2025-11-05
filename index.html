@@ -17,13 +17,13 @@
         <div class="subtitle">Dashboard</div>
       </div>
     </a>
-    <div class="row">
+    <div class="actions">
       <button class="btn brand" id="ctaSetup">Neues Setup</button>
-      <form class="search-inline" onsubmit="return false;">
-        <input id="globalSearch" type="search" placeholder="Suchen…"/>
-        <button class="icon" type="button" aria-label="Suche"><svg><use href="./ui/icons.svg#search"/></svg></button>
-      </form>
+      <button class="icon-btn" id="btnSearch" title="Suche"><svg><use href="./ui/icons.svg#search"/></svg></button>
     </div>
+  </div>
+  <div class="searchbar collapsed" id="searchbar">
+    <input type="search" id="globalSearch" placeholder="Suchen...">
   </div>
 </header>
 
@@ -75,93 +75,9 @@
 <script src="./ui/dock.js"></script>
 <script>
 CT.ready(()=>{
-  CT.splash({logo:':ct',ms:400});
-  CT.ensureSeeds();
-
-  // Backup / Restore
-  btnBackup.onclick=()=>{
-    const dump={
-      tools:CT.storage.read(CT_KEYS.TOOLS,[]),
-      setup:CT.storage.read(CT_KEYS.SETUP,{}),
-      progs:CT.storage.read(CT_KEYS.PROGS,[]),
-      dash:CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]})
-    };
-    CT.exportJSON('citi_backup.json',dump);
-    CT.toast('Backup gespeichert','ok');
-  };
-  btnRestore.onclick=()=>CT.importJSON().then(d=>{
-    if(!d)return;
-    CT.storage.write(CT_KEYS.TOOLS,d.tools||[]);
-    CT.storage.write(CT_KEYS.SETUP,d.setup||{});
-    CT.storage.write(CT_KEYS.PROGS,d.progs||[]);
-    CT.storage.write(CT_KEYS.DASH,d.dash||{produktion:[],checklist:[]});
-    CT.toast('Wiederhergestellt','ok'); renderProd(); renderChecklist();
-  });
-
-  // Produktion
-  const prodList=document.getElementById('prodList');
-  const dashData=()=>CT.storage.read(CT_KEYS.DASH,{produktion:[],checklist:[]});
-  const saveData=d=>CT.storage.write(CT_KEYS.DASH,d);
-
-  function renderProd(){
-    const data=dashData().produktion;
-    prodList.innerHTML='';
-    if(!data.length){prodList.innerHTML='<div class="muted">Keine Aufträge</div>';return;}
-    data.forEach(j=>{
-      const pct=Math.min(100,Math.round((j.madeQty/Math.max(1,j.targetQty))*100));
-      const el=document.createElement('div');
-      el.className='card job';
-      el.innerHTML=`
-        <div class="job-hdr">
-          <b>${CT.escape(j.title)}</b>
-          <button class="icon-btn info"><svg><use href="./ui/icons.svg#info"/></svg></button>
-        </div>
-        <div class="bar" style="position:relative"><div style="width:${pct}%"></div>
-          <div style="position:absolute;inset:0;display:grid;place-items:center;font-weight:700">${pct}%</div>
-        </div>
-        <div class="job-meta">${j.madeQty} / ${j.targetQty} • ${new Date(j.date).toLocaleDateString()}</div>`;
-      prodList.appendChild(el);
-    });
-  }
-  addJob.onclick=()=>{
-    CT.openModal({title:'Neuer Auftrag',
-      html:`<input id="t" placeholder="Titel"><input id="q" type="number" placeholder="Zielmenge">`,
-      okText:'Anlegen',onOk:()=>{
-        const d=dashData();
-        d.produktion.push({id:CT.uid(),title:t.value||'Auftrag',targetQty:+q.value||0,madeQty:0,date:Date.now()});
-        saveData(d); renderProd();
-      }});
-  };
-  renderProd();
-
-  // Checkliste
-  const list=document.getElementById('checklist');
-  function renderChecklist(){
-    const d=dashData().checklist;
-    list.innerHTML='';
-    if(!d.length){list.innerHTML='<li class="muted">Keine Punkte</li>';return;}
-    d.forEach(it=>{
-      const li=document.createElement('li');
-      li.innerHTML=`<input type="checkbox" ${it.done?'checked':''}> ${CT.escape(it.title)}`;
-      li.querySelector('input').onchange=e=>{
-        const all=dashData();const i=all.checklist.findIndex(x=>x.id===it.id);
-        if(i>-1){all.checklist[i].done=e.target.checked;saveData(all);}
-      };
-      list.appendChild(li);
-    });
-  }
-  addCheck.onclick=()=>{
-    CT.openModal({title:'Neuer Punkt',html:`<input id="p" placeholder="Text">`,
-      okText:'Hinzufügen',onOk:()=>{
-        const d=dashData();d.checklist.push({id:CT.uid(),title:p.value||'Punkt',done:false});
-        saveData(d);renderChecklist();
-      }});
-  };
-  clearDone.onclick=()=>{
-    const d=dashData();d.checklist=d.checklist.filter(x=>!x.done);
-    saveData(d);renderChecklist();
-  };
-  renderChecklist();
+  // Поиск плавный
+  const sb=document.getElementById('searchbar');
+  btnSearch.onclick=()=>sb.classList.toggle('collapsed');
 });
 </script>
 </body>
