@@ -1,0 +1,289 @@
+<!-- ===== FILE: index-neo.html (CitiTool • Neo/Behance-style) ===== -->
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>CitiTool • Neo</title>
+<style>
+:root{
+  --bg:#f6f8fb;
+  --ink:#0d1b2a;
+  --muted:#6b7a90;
+  --brand:#2d6cdf;
+  --accent:#ff4b4b;
+  --glass:#ffffffcc;
+  --hair:#e9eef6;
+  --r1:18px; --r2:22px;
+  --shadow:0 10px 30px rgba(13,27,42,.08);
+}
+
+/* ---------- Reset / base ---------- */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
+
+/* ---------- Decorative blueprint background (subtle) ---------- */
+.hero-bg{
+  position:fixed; inset:-20% -10% auto -10%; height:640px; z-index:-1;
+  background:
+    radial-gradient(1200px 400px at 60% -10%, rgba(45,108,223,.12), transparent 70%),
+    radial-gradient(900px 400px at 10% 30%, rgba(255,75,75,.06), transparent 70%),
+    linear-gradient(180deg,#fff 0%, #f3f6fb 60%, #eef2f9 100%);
+  mask-image: linear-gradient(#000 75%, transparent);
+}
+.hero-grid{
+  position:absolute; inset:0;
+  background:
+    repeating-linear-gradient(0deg, rgba(13,27,42,.06) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(90deg, rgba(13,27,42,.05) 0 1px, transparent 1px 40px);
+  filter: blur(.2px) saturate(.9);
+  opacity:.55;
+}
+
+/* ---------- AppBar / Hero ---------- */
+.appbar{
+  position:sticky; top:0; z-index:30;
+  backdrop-filter: saturate(1.1) blur(8px);
+  background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.70));
+  border-bottom:1px solid var(--hair);
+}
+.appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;
+  display:flex;align-items:center;gap:12px;justify-content:space-between}
+
+.logo-line{display:flex;align-items:center;gap:10px}
+.ct-badge{
+  width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff, #2d6cdf, #7bb0ff);
+  color:#fff;font-weight:900;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff;
+}
+.ct-word{font:900 22px/1 "Inter",system-ui;letter-spacing:-.4px}
+.ct-word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+.actions{display:flex;align-items:center;gap:8px}
+
+/* search expanding */
+.search{
+  position:relative; display:flex; align-items:center; overflow:hidden;
+  width:44px; height:40px; border-radius:12px; transition:width .35s ease, background .2s;
+  background:#fff; border:1px solid var(--hair); box-shadow:inset 0 1px 2px rgba(0,0,0,.04);
+}
+.search.active{width:min(56vw, 260px)}
+.search svg{position:absolute; left:12px; width:18px; height:18px; fill:#8aa0c4}
+.search input{
+  border:0; outline:0; width:100%; height:100%; padding:0 12px 0 38px; background:transparent;
+  font:600 14px/1.2 Inter,system-ui; color:var(--ink);
+}
+.btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:700}
+.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff; box-shadow:0 8px 20px rgba(45,108,223,.25)}
+.btn:active{transform:translateY(1px)}
+
+/* ---------- Hero header content ---------- */
+.hero{
+  max-width:1040px;margin:0 auto;padding:26px 16px 8px;
+}
+.hero-card{
+  background:var(--glass); border:1px solid var(--hair); border-radius:24px; box-shadow:var(--shadow);
+  padding:22px; backdrop-filter: blur(8px);
+}
+.hero-title{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
+.hero-title h1{margin:0;font:900 34px/1.05 "Inter Tight",Inter,system-ui; letter-spacing:-.6px}
+.hero-sub{margin:10px 0 0; color:var(--muted); max-width:640px}
+
+/* ---------- Sections / cards ---------- */
+.main{max-width:1040px;margin:0 auto;padding:12px 16px 96px;display:grid;gap:14px}
+.section{background:#fff;border:1px solid var(--hair);border-radius:var(--r2);box-shadow:var(--shadow);padding:14px}
+.section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter,system-ui}
+.list{display:grid; gap:10px}
+.row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:14px;border:1px solid #edf1f7;border-radius:16px}
+.row .title{font-weight:700}
+.row .meta{color:var(--muted)}
+
+/* ---------- Module grid (как в референсе) ---------- */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mod{background:#fff;border-radius:18px;overflow:hidden;border:1px solid var(--hair);box-shadow:var(--shadow);transition:transform .25s}
+.mod:hover{transform:translateY(-2px)}
+.mod .thumb{height:140px;background:linear-gradient(180deg,#eaf2ff,#fff);display:grid;place-items:center}
+.mod .thumb svg{width:58px;height:58px;opacity:.25}
+.mod .meta{padding:12px}
+.mod .name{font-weight:800}
+.mod .sub{color:var(--muted);font-size:13px}
+
+/* ---------- Glass Dock ---------- */
+.dock{
+  position:fixed; left:0; right:0; bottom:0; z-index:40;
+  padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  backdrop-filter: blur(12px) saturate(1.2);
+  background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));
+  border-top:1px solid var(--hair);
+}
+.dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+.dock a{display:grid;justify-items:center;gap:4px;padding:10px;border-radius:14px;text-decoration:none;color:inherit}
+.dock a small{font-weight:600;font-size:12px;color:#344966}
+.dock a.active{background:#eef3ff; box-shadow:inset 0 0 0 1px #d6e5ff}
+.icon{width:22px;height:22px; fill:#2e3e55}
+
+/* ---------- Tiny helpers ---------- */
+.muted{color:var(--muted)}
+.badge{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:800;padding:0 10px}
+
+/* Responsive */
+@media (max-width:560px){
+  .grid{grid-template-columns:1fr}
+  .hero-title h1{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<!-- fixed blueprint bg -->
+<div class="hero-bg"><div class="hero-grid"></div></div>
+
+<!-- AppBar -->
+<header class="appbar">
+  <div class="wrap">
+    <div class="logo-line">
+      <div class="ct-badge">CT</div>
+      <div class="ct-word"><b>CITI‧TOOL</b></div>
+    </div>
+    <div class="actions">
+      <button class="btn brand" id="newProg">Neues Programm</button>
+      <div class="search" id="searchBox">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+        <input type="search" placeholder="Suchen…" id="q">
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Hero: title + quick description -->
+<div class="hero">
+  <div class="hero-card">
+    <div class="hero-title">
+      <h1>Setup • Tools • Docs</h1>
+      <button class="btn brand" id="newProgTop">Neues Programm</button>
+    </div>
+    <p class="hero-sub">Светлый минимализм в стиле Behance: крупный логотип, анимированный поиск, стеклянные карточки, мягкая динамика.</p>
+  </div>
+</div>
+
+<!-- Content -->
+<main class="main">
+
+  <!-- Модули (референс-плитки) -->
+  <section class="section">
+    <h2>Module</h2>
+    <div class="grid">
+      <article class="mod">
+        <div class="thumb">
+          <svg viewBox="0 0 24 24"><path d="M3 4h18v2H3zM3 8h12v2H3zM3 12h18v2H3zM3 16h12v2H3z"/></svg>
+        </div>
+        <div class="meta">
+          <div class="name">Programme</div>
+          <div class="sub">Live-Setup, Slots, Zeichnung</div>
+        </div>
+      </article>
+      <article class="mod">
+        <div class="thumb">
+          <svg viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg>
+        </div>
+        <div class="meta">
+          <div class="name">Tools</div>
+          <div class="sub">Schrank, Kategorien, Fotos</div>
+        </div>
+      </article>
+      <article class="mod">
+        <div class="thumb">
+          <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/></svg>
+        </div>
+        <div class="meta">
+          <div class="name">Docs</div>
+          <div class="sub">PDF/DOC/PPT + поиск</div>
+        </div>
+      </article>
+      <article class="mod">
+        <div class="thumb">
+          <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg>
+        </div>
+        <div class="meta">
+          <div class="name">Dashboard</div>
+          <div class="sub">Schnellaktionen, Produktion</div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Schnellaktionen -->
+  <section class="section">
+    <h2>Schnellaktionen</h2>
+    <div class="list">
+      <div class="row">
+        <div>
+          <div class="title">Neues Setup</div>
+          <div class="meta">Live-Setup anlegen</div>
+        </div>
+        <button class="btn">Öffnen</button>
+      </div>
+      <div class="row">
+        <div>
+          <div class="title">Neues Werkzeug</div>
+          <div class="meta">In den Schrank hinzufügen</div>
+        </div>
+        <button class="btn">Öffnen</button>
+      </div>
+      <div class="row">
+        <div>
+          <div class="title">Material-Assist</div>
+          <div class="meta">Schnittdaten schnell berechnen</div>
+        </div>
+        <button class="btn">Öffnen</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Produktion (демо) -->
+  <section class="section">
+    <h2>Produktion (Demo)</h2>
+    <div class="list">
+      <div class="row"><div class="title">Los 123 • 20 / 100 • Heute</div><span class="badge">20%</span></div>
+      <div class="row"><div class="title">Los 124 • 58 / 200 • Woche</div><span class="badge">29%</span></div>
+      <div class="row"><div class="title">Los 125 • 0 / 150 • Morgen</div><span class="badge">0%</span></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Dock -->
+<nav class="dock">
+  <div class="wrap">
+    <a href="#" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
+    <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
+    <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
+    <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
+    <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+  </div>
+</nav>
+
+<script>
+/* Expand search on tap */
+const box = document.getElementById('searchBox');
+const q = document.getElementById('q');
+box.addEventListener('click', ()=>{ box.classList.add('active'); q.focus(); });
+q.addEventListener('blur', ()=>{ if(!q.value) box.classList.remove('active'); });
+
+/* Mirror action button top/bottom */
+document.getElementById('newProg').onclick =
+document.getElementById('newProgTop').onclick = () => alert('Neues Programm… (hook your handler)');
+
+/* Small shrink of hero on scroll (visual) */
+let last = 0;
+addEventListener('scroll', ()=>{
+  const y = scrollY;
+  if(Math.abs(y-last)<6) return;
+  document.documentElement.style.setProperty('--hero-opa', Math.max(0, 1 - y/220));
+  last = y;
+});
+</script>
+</body>
+</html>
