@@ -156,3 +156,16 @@ window.CT = (function(){
   };
 })();
 window.CT_KEYS = window.CT?.CT_KEYS || { TOOLS:'ct_tools_v2', CATS:'ct_cats_v1', SETUP:'ct_setup_live', PROGS:'ct_programs_v1', DASH:'ct_dash_v1', DOCS:'ct_docs_v3' };
+
+/* === Neo-init: единый стиль и скрываемый поиск === */
+CT.ready(()=>{
+  // включаем пресет на всех страницах
+  document.body.classList.add('neo');
+
+  // скрытый поиск: <form class="search-inline"><input id="globalSearch"> <button class="icon">…</button></form>
+  const si = document.querySelector('.search-inline');
+  if(si){
+    const btn = si.querySelector('button.icon');
+    btn?.addEventListener('click', (e)=>{ e.preventDefault(); si.classList.toggle('open'); if(si.classList.contains('open')) si.querySelector('input')?.focus(); });
+  }
+});
