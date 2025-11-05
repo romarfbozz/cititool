@@ -1,303 +1,56 @@
-/* CitiTool • Neo Pro (Light / Glass) */
 :root{
-  --bg:#f6f8fb; --fg:#0e1320; --muted:#7b8aa0;
-  --brand:#2d6cdf; --brand-2:#79a8ff; --accent:#94c2ff;
-  --hair:#e7edf6;
-  --glass:#ffffffcc; --glass-2:#ffffffa6; --glass-3:#ffffff80;
-  --ok:#15a05c; --warn:#e7aa1a; --err:#e14a4a;
-  --r:18px; --tap:translateY(1px);
-  --shadow-lg:0 22px 70px rgba(26,40,74,.18);
-  --shadow-md:0 12px 36px rgba(26,40,74,.12);
+  --bg:#f7f8fc; --fg:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf;
+  --card:#fff; --br:18px; --btnr:14px; --shadow:0 6px 24px rgba(13,27,42,.08);
+  --hair:#e8ecf4; --tap:translateY(1px);
 }
-
-/* Фон: мягкие световые пятна + деликатная сетка (без «клетки») */
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0; color:var(--fg);
-  font:16px ui-sans-serif,-apple-system,Segoe UI,Inter,Roboto,system-ui,sans-serif;
-  background:
-    radial-gradient(900px 500px at 85% -10%, #d9e8ff80, transparent 60%),
-    radial-gradient(700px 400px at -15% 10%, #eaf2ff, transparent 55%),
-    linear-gradient(180deg,#fdfefe 0%,#f4f8fe 40%,#eef3fb 100%);
-}
-body::after{
-  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.18;
-  background:
-    linear-gradient(transparent 31px,#eaf1fb 32px) 0 0/32px 32px,
-    linear-gradient(90deg, transparent 31px,#eaf1fb 32px) 0 0/32px 32px;
-  mask-image:linear-gradient(#000, #0000 60%);
-}
-
-img{max-width:100%; display:block}
-a{color:inherit; text-decoration:none}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--fg);font:16px -apple-system,Segoe UI,Inter,Roboto,sans-serif}
+img{max-width:100%}
 .muted{color:var(--muted)}
-.mt{margin-top:.75rem}
 
-/* ========================= AppBar + ЛОГО (сливается с шапкой) ========================= */
-.appbar{
-  position:sticky; top:0; z-index:40; border-bottom:1px solid var(--hair);
-  background:
-    linear-gradient(180deg,#ffffffde,#ffffffc5 60%, #ffffffb8);
-  backdrop-filter:saturate(1.3) blur(10px);
-}
-.appbar .wrap{
-  display:flex; align-items:center; justify-content:space-between; gap:.8rem;
-  padding:12px max(env(safe-area-inset-left),16px) 12px max(env(safe-area-inset-right),16px);
-}
+.appbar{position:sticky;top:0;z-index:20;backdrop-filter:blur(16px);background:linear-gradient(180deg,#fefeff 20%,#f8faff 100%);border-bottom:1px solid #e6ecf9;}
+.appbar .wrap{display:flex;align-items:center;justify-content:space-between;padding:12px}
 
-/* Логотип-капсула с бликами — визуально влит в шапку */
-.ct-logo{display:flex; align-items:center; gap:.8rem}
-.ct-logo .mark{
-  --w:44px;
-  width:var(--w); height:var(--w); border-radius:14px; position:relative;
-  display:grid; place-items:center; font-weight:900; letter-spacing:.3px;
-  color:#1e3e7a;
-  background:
-    radial-gradient(120% 120% at 20% 15%, #fff 0 32%, #f2f7ff 45%, #e3eeff 62%, #d6e6ff 80%, #cfe0ff 100%),
-    linear-gradient(145deg,#f0f6ff 0%,#dfeaff 55%,#cfe0ff 100%);
-  box-shadow:
-    inset 0 1px 0 #fff,
-    0 8px 24px rgba(43,94,185,.20),
-    0 2px 0 rgba(255,255,255,.8);
-}
-.ct-logo .mark::before{
-  /* верхний «блик» */
-  content:""; position:absolute; inset:0; border-radius:inherit;
-  background:linear-gradient(180deg, #ffffffb8, #ffffff00 50%);
-  mix-blend-mode:screen; pointer-events:none;
-}
-.ct-logo .mark::after{
-  /* низовый «glow» */
-  content:""; position:absolute; inset:-2px; border-radius:inherit;
-  box-shadow:0 18px 40px #2d6cdf2a; pointer-events:none;
-}
-.ct-logo .tit{line-height:1}
-.ct-logo .tit b{font-weight:900; letter-spacing:.2px}
-.ct-logo .tit small{display:block; color:var(--muted); margin-top:2px}
+.ct-logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;color:inherit}
+.ct-logo .mark{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;
+background:linear-gradient(180deg,#eef3ff,#d9e6ff);box-shadow:inset 0 0 0 1px #d1e0ff,0 6px 18px rgba(40,90,200,.20);
+color:#223347;font-weight:900;font-size:18px}
+.tit .title{font-weight:700}
+.tit .subtitle{font-size:13px;color:var(--muted)}
 
-.icon-btn{display:inline-grid; place-items:center; width:44px; height:44px; border:0; background:transparent; border-radius:14px}
-.icon-btn:active{transform:var(--tap)}
-.icon-btn svg{width:22px; height:22px; fill:currentColor}
+.btn{height:44px;border-radius:var(--btnr);border:1px solid #dbe5ff;background:#fff;padding:0 14px;font-weight:600}
+.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.sm{height:36px;padding:0 10px}
+.btn.ghost{background:rgba(255,255,255,.5);backdrop-filter:blur(6px)}
+.btn.warn{background:#e5a100;border-color:#e5a100;color:#fff}
 
-/* ========================= Кнопки (премиум-градиент/стекло) ========================= */
-.btn{
-  height:44px; border-radius:14px; border:1px solid #dce6fb;
-  background:linear-gradient(#fff,#f7faff);
-  padding:0 14px; font-weight:800; color:#1a2b4d; box-shadow:var(--shadow-md);
-}
-.btn.brand{
-  color:#fff; border-color:transparent;
-  background:linear-gradient(180deg, #2d6cdf, #1e56c2);
-  box-shadow:0 10px 30px #2d6cdf40, inset 0 1px 0 #7fb0ff80;
-}
-.btn.ghost{background:var(--glass-3); border-color:#e6eeff}
-.btn.sm{height:36px; padding:0 12px; font-weight:800}
-.btn.warn{background:#fff5e8; border-color:#f8e0b4; color:#8f5e05}
+.container{padding:16px;display:grid;gap:16px}
 
-/* ========================= Скрываемый поиск ========================= */
-.searchbar{
-  position:sticky; top:56px; z-index:39; padding:8px 16px; border-bottom:1px solid var(--hair);
-  background:linear-gradient(180deg,#ffffffde,#ffffffbf); backdrop-filter:blur(8px)
+.section,.panel-xl{
+  background:linear-gradient(180deg,#ffffffea,#f8faff);
+  box-shadow:0 10px 40px rgba(17,34,68,.08);
+  border-radius:18px;border:1px solid #e9eef8;padding:16px;
 }
-.searchbar.collapsed{display:none}
-.searchbar .field{
-  width:100%; height:44px; border-radius:12px; border:1px solid #dce6fb; padding:0 12px; background:#fff
-}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem}
 
-/* ========================= Контент (стеклянные секции) ========================= */
-.container{padding:16px 16px calc(86px + env(safe-area-inset-bottom)); display:grid; gap:16px}
-.section{
-  background:var(--glass-2); border:1px solid #e9f0fb; border-radius:22px; box-shadow:var(--shadow-lg); padding:16px;
-  backdrop-filter:blur(6px) saturate(1.05);
-}
-.section h2{margin:0 4px 12px; font-size:22px}
+.card{background:#fff;border:1px solid #e5ebf7;border-radius:14px;padding:12px}
+.job-hdr{display:flex;justify-content:space-between;align-items:center}
+.bar{height:8px;background:#eef3ff;border-radius:6px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;background:var(--brand)}
 
-/* ========================= Карточки и списки ========================= */
-.row{display:flex; gap:.6rem; flex-wrap:wrap; align-items:center}
-.row.between{justify-content:space-between}
-.stack{display:grid; gap:.6rem}
-.card{
-  background:#fff; border:1px solid #e8eef8; border-radius:16px; padding:12px; box-shadow:var(--shadow-md);
-}
-.badge{
-  display:inline-grid; place-items:center; min-width:42px; height:28px; border-radius:10px;
-  background:linear-gradient(180deg,#eef4ff,#e3ecff); color:var(--brand); font-weight:900; padding:0 10px
-}
-.badge.err{background:#ffe8e8; color:#c21e1e}
+.checklist{list-style:none;padding:0;display:grid;gap:.5rem}
+.checklist li{display:flex;align-items:center;gap:.5rem;border:1px dashed #dfe6f7;border-radius:12px;padding:8px}
+.checklist input[type=checkbox]{width:20px;height:20px}
 
-/* Прогресс-бар с центральным лейблом */
-.bar{position:relative; height:10px; background:#eef3ff; border-radius:999px; overflow:hidden}
-.bar>div{height:100%; background:linear-gradient(90deg,#2d6cdf,#79a8ff)}
-.bar .label{position:absolute; inset:0; display:grid; place-items:center; font-size:12px; font-weight:900; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:space-around;align-items:center;
+background:rgba(255,255,255,.82);backdrop-filter:blur(12px);border-top:1px solid #e5eaf9;padding:4px 0}
+.dock a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;text-decoration:none;color:inherit;font-size:12px}
+.dock a.active{background:linear-gradient(180deg,#2d6cdf,#1f57c6);color:#fff;border-radius:12px;box-shadow:0 6px 18px rgba(45,108,223,.25)}
+.dock svg{width:22px;height:22px}
 
-/* ========================= Кнопка «i» (вместо синей/серой точки) ========================= */
-.icon-btn.info{
-  width:36px; height:36px; border-radius:12px; color:#294a86;
-  background:linear-gradient(145deg,#f7fbff,#eef5ff);
-  box-shadow:inset 0 1px 0 #ffffff, 0 4px 16px rgba(40,80,150,.15);
-  border:1px solid #dde9ff;
-}
-.icon-btn.info:hover{ background:linear-gradient(145deg,#f4f9ff,#e9f2ff) }
-.icon-btn.info svg{ width:18px; height:18px }
+/* общие плавности */
+.section,.card,.panel-xl{animation:fadeUp .35s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
-/* ========================= Tools / миниатюры ========================= */
-.list-tools{list-style:none; margin:0; padding:0; display:grid; gap:.6rem}
-.list-tools li{
-  display:grid; grid-template-columns:56px 1fr auto; align-items:center; gap:.6rem;
-  border:1px solid #e5ebf7; border-radius:14px; padding:8px; background:#fff
-}
-.list-tools .thumb{width:56px; height:56px; object-fit:cover; border-radius:12px; background:#f0f4fa}
-.list-tools .noimg{width:56px; height:56px; border-radius:12px; display:grid; place-items:center; background:#f6f9ff; border:1px dashed #dbe7ff; color:#6c88b5; font-weight:900}
-.list-tools .name{font-weight:900}
-
-/* ========================= Setup / слоты ========================= */
-.tabs{display:flex; gap:.5rem; margin:.5rem 0}
-.tab{border:1px solid #dbe5ff; background:#fff; border-radius:12px; padding:8px 12px}
-.tab.active{background:#eef4ff; color:var(--brand); border-color:#cfe0ff}
-.slots{display:grid; gap:.6rem}
-.slot{border:1px solid #e5ebf7; border-radius:14px; padding:10px; background:#fff}
-.slot-full{display:grid; grid-template-columns:72px 56px 1fr auto; gap:.6rem; align-items:center}
-.slot .tnum{min-width:64px}
-.slot-empty{display:flex; justify-content:space-between; align-items:center}
-
-/* ========================= Modal / Drawer / Toast / Splash ========================= */
-.modal,.drawer,.toast{position:fixed; inset:0; z-index:100; display:none}
-.modal.show,.drawer.show,.toast.show{display:block}
-.modal .overlay,.drawer .overlay{position:absolute; inset:0; background:rgba(4,18,40,.28); backdrop-filter:blur(6px)}
-.modal .card{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(92vw,680px); max-height:86vh; overflow:auto; background:#fff; border-radius:22px;
-  box-shadow:var(--shadow-lg); padding:14px; border:1px solid #e7eef9
-}
-.modal .card .footer{display:flex; justify-content:flex-end; gap:.5rem; margin-top:10px}
-.drawer .panel{
-  position:absolute; right:0; top:0; bottom:0; width:min(92vw,560px);
-  background:#fff; border-left:1px solid #e7eef9; box-shadow:var(--shadow-lg); padding:12px; overflow:auto;
-  border-top-left-radius:22px; border-bottom-left-radius:22px
-}
-.drawer .hdr{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px}
-.drawer .list{list-style:none; margin:0; padding:0; display:grid; gap:.5rem}
-.drawer .list li{display:flex; justify-content:space-between; gap:.5rem; border:1px solid #e5ebf7; border-radius:12px; padding:8px}
-
-/* Toast */
-.toast .inner{
-  position:absolute; left:50%; bottom:86px; transform:translateX(-50%);
-  background:#0b1222; color:#fff; padding:10px 14px; border-radius:12px; box-shadow:0 6px 24px rgba(0,0,0,.25)
-}
-
-/* Splash (кодовый логотип) */
-.splash .card{text-align:center; padding:24px}
-.ct-badge{width:72px; height:72px; border-radius:18px; display:grid; place-items:center; font-weight:900; font-size:24px; color:#1e3e7a;
-  background:linear-gradient(145deg,#eef4ff,#dbe7ff 55%, #cfe0ff);
-  box-shadow:inset 0 1px 0 #fff, 0 8px 22px rgba(55,95,170,.18)}
-
-/* Формы */
-.fld{display:grid; gap:.45rem; margin:.45rem 0}
-.fld input,.fld select,.fld textarea{width:100%; height:44px; border-radius:12px; border:1px solid #dce6fb; padding:0 12px; background:#fff}
-.fld textarea{height:auto; min-height:96px; padding:10px}
-.imgwrap{display:grid; place-items:center; margin:.5rem 0}
-.imgwrap img{max-height:56vh; border-radius:14px; box-shadow:var(--shadow-md)}
-
-/* Dock (стекло + подсветка активного) */
-.dock{
-  position:fixed; left:0; right:0; bottom:0; z-index:50;
-  padding:6px max(env(safe-area-inset-left),10px) calc(6px + env(safe-area-inset-bottom)) max(env(safe-area-inset-right),10px);
-  border-top:1px solid #eaf1ff;
-  background:linear-gradient(180deg,#ffffffc6,#ffffffde);
-  backdrop-filter:saturate(1.2) blur(14px);
-}
-.dock .wrap{display:grid; grid-template-columns:repeat(5,1fr); gap:6px}
-.dock a{display:flex; flex-direction:column; align-items:center; gap:2px; padding:10px 8px; color:#2b3b56; border-radius:14px}
-.dock a.active{background:#eef4ff; color:var(--brand); box-shadow:inset 0 0 0 1px #d4e3ff}
-.dock svg{width:22px; height:22px}
-/* ===== Premium Neo-Kit (единый вид «как на Setup») ===== */
-:root{
-  --glass-2: linear-gradient(180deg,#ffffffee,#ffffffd8);
-  --shadow-lg: 0 14px 40px rgba(17, 34, 68, .12);
-}
-
-/* панель/карточка */
-body.neo .hero,
-body.neo .section,
-body.neo .card,
-body.neo .doc-card,
-body.neo .slot,
-body.neo .list-tools li{
-  border-radius:22px;
-  background:var(--glass-2);
-  border:1px solid #e8eef8;
-  box-shadow:var(--shadow-lg);
-}
-
-/* верхняя большая «шапочная» панель страницы */
-body.neo .panel-xl{
-  padding:18px;
-  border-radius:24px;
-  background:var(--glass-2);
-  border:1px solid #e7eef9;
-  box-shadow:var(--shadow-lg);
-}
-body.neo .panel-xl .h-title{ font-size:22px; font-weight:900; margin:0 0 8px; }
-body.neo .panel-xl .h-sub{ color:var(--muted); }
-
-/* превью Zeichnung / «kein Foto» */
-body.neo .photo{
-  width: 260px; max-width:100%; height: 180px;
-  border-radius:18px; border:1px dashed #dbe7ff;
-  display:grid; place-items:center; color:#6c88b5;
-  background:#f6f9ff; margin:8px 0;
-}
-body.neo .photo img{ width:100%; height:100%; object-fit:cover; border-radius:inherit; }
-
-/* Chips-действия (RO/RU/Apply) */
-body.neo .chips{ display:flex; gap:.6rem; flex-wrap:wrap; }
-body.neo .chip{ height:44px; display:inline-grid; place-items:center; padding:0 14px;
-  border-radius:14px; border:1px solid #dce6fb; background:#fff; font-weight:800;
-}
-body.neo .chip.primary{
-  color:#fff; background:linear-gradient(180deg,#2d6cdf,#1f56c3);
-  border-color:transparent; box-shadow:0 10px 30px #2d6cdf40;
-}
-
-/* компактные вторичные */
-body.neo .btn.ghost{ background:#f4f8ff; border-color:#e5edfb; }
-
-/* список слотов / tools */
-body.neo .slots{ display:grid; gap:.8rem; }
-body.neo .slot{ padding:14px; }
-body.neo .slot .slot-full{ grid-template-columns:72px 100px 1fr auto; }
-body.neo .list-tools li{ padding:10px; }
-body.neo .list-tools .thumb,
-body.neo .list-tools .noimg{ width:56px; height:56px; border-radius:12px; }
-
-/* appbar-кнопка */
-body.neo .appbar .btn.brand{ height:44px; border-radius:14px; padding:0 16px; font-weight:900; }
-
-/* LOGO, чтобы «сливался» с шапкой */
-.ct-logo{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:inherit}
-.ct-logo .mark{
-  width:34px;height:34px;border-radius:12px;
-  display:grid;place-items:center;font-weight:900;letter-spacing:.2px;
-  color:#234; background:linear-gradient(180deg,#e9f0ff,#d8e6ff);
-  box-shadow:inset 0 0 0 1px #d6e3ff, 0 8px 24px rgba(45,108,223,.15);
-}
-
-/* Скрываемый поиск в AppBar */
-body.neo .search-inline{ position:relative; width:44px; transition:width .22s ease; overflow:hidden; margin-left:.5rem; }
-body.neo .search-inline.open{ width:min(72vw,520px); }
-body.neo .search-inline input{
-  width:100%; height:44px; border-radius:14px; border:1px solid #dce6fb;
-  padding:0 44px 0 14px; background:#fff;
-}
-body.neo .search-inline .icon{
-  position:absolute; right:8px; top:50%; transform:translateY(-50%);
-  width:28px;height:28px;border:0;background:transparent;
-}
-
-/* унифицированная иконка-info вместо «точек» */
-.icon-btn.info{
-  width:36px;height:36px;border-radius:12px;border:1px solid #e6edfb;
-  display:grid;place-items:center;background:#fff;color:#6b7a90;
-}
-.icon-btn.info svg{width:18px;height:18px;fill:currentColor}
+/* фоновый градиент всей страницы */
+body.has-bg{background:linear-gradient(180deg,#f8fbff 0%,#eaf1ff 100%);background-attachment:fixed}
