@@ -1,36 +1,45 @@
-/* CitiTool Core — hero + раскрывающийся поиск + параллакс */
-window.CT = (()=>{
+/* минимальный «ядро» + хиро-логика */
+(function(){
+  const CT = window.CT = window.CT || {};
 
-  const qs = sel => document.querySelector(sel);
+  // simple storage helpers
+  CT.storage = {
+    get:(k,def)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}},
+    set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
+  };
 
+  // раскрывающийся поиск + мягкий параллакс
   function heroInit(){
-    // свернуть поиск при скролле
-    const sb = qs('#searchbar'); const btn = qs('#btnSearch'); const input = qs('#globalSearch');
-    if(!sb||!btn) return;
-    btn.addEventListener('click',()=>{
-      sb.classList.toggle('collapsed');
-      if(!sb.classList.contains('collapsed')) setTimeout(()=>input && input.focus(),10);
-    });
-    document.addEventListener('click',(e)=>{
-      if(!sb.classList.contains('collapsed')){
-        const ok = sb.contains(e.target) || btn.contains(e.target);
-        if(!ok) sb.classList.add('collapsed');
-      }
-    });
-    window.addEventListener('scroll',()=>{ if(!sb.classList.contains('collapsed')) sb.classList.add('collapsed'); });
+    const sb   = document.querySelector('#searchbar');
+    const btn  = document.querySelector('#btnSearch');
+    const input= document.querySelector('#globalSearch');
 
-    // лёгкий параллакс: тянем геро-карту чуть медленнее
-    const heroCard = qs('.hero-card');
+    if(btn && sb){
+      btn.addEventListener('click', ()=>{
+        sb.classList.toggle('collapsed');
+        if(!sb.classList.contains('collapsed')) setTimeout(()=>input?.focus(), 30);
+      });
+      const collapse = ()=> sb.classList.add('collapsed');
+      document.addEventListener('click', e=>{
+        if(!sb.classList.contains('collapsed')){
+          const inside = sb.contains(e.target) || btn.contains(e.target);
+          if(!inside) collapse();
+        }
+      }, {passive:true});
+      window.addEventListener('scroll', collapse, {passive:true});
+    }
+
+    const heroCard = document.querySelector('.hero-card');
     if(heroCard){
       const onScroll = ()=>{
-        const y = window.scrollY;
-        heroCard.style.transform = `translateY(${Math.min(0, -y*0.08)}px)`;
+        const y = Math.min(window.scrollY, 220);
+        heroCard.style.transform = `translateY(${(-y*0.06).toFixed(1)}px)`;
       };
-      onScroll(); window.addEventListener('scroll', onScroll, {passive:true});
+      onScroll();
+      window.addEventListener('scroll', onScroll, {passive:true});
     }
   }
 
-  return { heroInit };
+  document.addEventListener('DOMContentLoaded', heroInit);
+  CT.heroInit = heroInit;
 })();
-
-document.addEventListener('DOMContentLoaded', CT.heroInit);
