@@ -1,106 +1,183 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>CitiTool • Dashboard</title>
-  <link rel="stylesheet" href="./ui/core.css">
-  <style>
-    /* локальные акценты страницы (минимум) */
-    .panel-xl{background:var(--card);border-radius:24px;box-shadow:var(--shadow);padding:16px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CitiTool • Dashboard</title>
+
+<!-- Основной CSS (если есть). ?v=7 ломает кэш -->
+<link rel="stylesheet" href="./ui/core.css?v=7">
+
+<style>
+/* === КРИТИЧЕСКИЙ CSS (fallback, чтобы не было «голых» элементов) === */
+:root{
+  --bg:#f7f8fc; --fg:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf;
+  --hair:#e8ecf4; --card:#fff; --shadow:0 8px 34px rgba(13,27,42,.08);
+  --btnr:14px; --br:22px; --appbar-h:64px; --dock-h:68px;
+}
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
+h1,h2{margin:.2rem 0 1rem}
+h1{font-size:32px} h2{font-size:22px}
+.muted{color:var(--muted)} .mt{margin-top:.75rem}
+
+.appbar{position:sticky;top:0;z-index:20;height:var(--appbar-h);
+  background:linear-gradient(180deg,#fff,rgba(255,255,255,.9));
+  border-bottom:1px solid var(--hair);backdrop-filter:saturate(1.1) blur(8px)}
+.appbar .wrap{height:var(--appbar-h);display:flex;align-items:center;
+  justify-content:space-between;gap:.5rem;padding:0 12px}
+.ct-logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;color:inherit}
+.ct-logo .mark{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;
+  font-weight:800;color:#1a2b4a;background:linear-gradient(180deg,#eef3ff,#dfe9ff);
+  box-shadow:inset 0 0 0 1px #d2dcff, 0 8px 24px rgba(13,27,42,.06)}
+.ct-logo .tit .subtitle{font-size:12px;color:var(--muted)}
+.actions{display:flex;align-items:center;gap:.4rem}
+
+.btn{height:44px;padding:0 16px;border-radius:var(--btnr);
+  border:1px solid #dbe5ff;background:#fff;font-weight:700}
+.btn:active{transform:translateY(1px)}
+.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.sm{height:36px;padding:0 12px}
+.icon-btn{width:40px;height:40px;border:0;background:transparent;border-radius:10px;display:grid;place-items:center}
+.icon-btn svg{width:22px;height:22px;fill:currentColor;color:#2b446b}
+
+.searchbar{position:absolute;left:0;right:0;top:var(--appbar-h);
+  background:rgba(255,255,255,.95);border-bottom:1px solid #e5eaf9;
+  padding:10px 12px;display:grid;place-items:center;transition:.25s;backdrop-filter:blur(10px)}
+.searchbar.collapsed{opacity:0;max-height:0;padding:0;border-bottom:0;overflow:hidden}
+.searchbar input{width:min(92vw,520px);height:40px;font-size:16px;border:1px solid #dbe5ff;
+  border-radius:12px;padding:0 12px;background:#fff}
+
+.container{padding:12px 12px calc(var(--dock-h) + env(safe-area-inset-bottom) + 16px)}
+.section,.panel{background:var(--card);border-radius:var(--br);box-shadow:var(--shadow);padding:16px}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.stack{display:grid;gap:.5rem}
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:.5rem}
+.checklist li{display:flex;gap:.5rem;align-items:center;border:1px dashed #dfe6f7;border-radius:12px;padding:8px}
+
+.cardline{border:1px solid #e8eefb;border-radius:16px;padding:12px}
+
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:30;
+  height:calc(var(--dock-h) + env(safe-area-inset-bottom));
+  padding:4px 6px calc(4px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.86);backdrop-filter:blur(10px) saturate(1.1);
+  border-top:1px solid var(--hair);display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.dock a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:12px;color:inherit;text-decoration:none}
+.dock a.active{background:#eef3ff;color:var(--brand)}
+.dock svg{width:22px;height:22px}
+
+/* простые svg-иконки вшитые шрифтом (fallback) */
+svg{display:block}
+</style>
 </head>
-<body data-active="dash" class="has-bg">
+<body>
 
-  <!-- APPBAR -->
-  <header class="appbar is-solid" id="appbar">
-    <div class="wrap">
-      <a class="ct-logo" href="./index.html" aria-label="CitiTool">
-        <span class="mark">CT</span>
-        <div class="tit">
-          <div class="title"><b>CitiTool</b></div>
-          <div class="subtitle">Dashboard</div>
-        </div>
-      </a>
-      <div class="actions">
-        <button class="btn brand" id="ctaSetup">Neues Setup</button>
-        <button class="icon-btn" id="btnSearch" title="Suchen"><svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 6.01 12.02l3.74 3.74-1.42 1.42-3.74-3.74A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg></button>
+<header class="appbar" id="appbar">
+  <div class="wrap">
+    <a class="ct-logo" href="./index.html">
+      <span class="mark">CT</span>
+      <div class="tit">
+        <div class="title"><b>CitiTool</b></div>
+        <div class="subtitle">Dashboard</div>
       </div>
+    </a>
+    <div class="actions">
+      <button class="btn brand" id="ctaSetup">Neues Setup</button>
+      <button class="icon-btn" id="btnSearch" title="Suchen" aria-label="Suchen">
+        <svg viewBox="0 0 24 24"><path d="M10.5 3a7.5 7.5 0 0 1 6.01 12.02l3.74 3.74-1.42 1.42-3.74-3.74A7.5 7.5 0 1 1 10.5 3Zm0 2a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11Z"/></svg>
+      </button>
     </div>
-    <div class="searchbar collapsed" id="searchbar">
-      <form onsubmit="return false" class="searchform">
-        <input type="search" id="globalSearch" placeholder="Suchen…">
-      </form>
+  </div>
+  <div class="searchbar collapsed" id="searchbar">
+    <form onsubmit="return false" class="searchform">
+      <input type="search" id="globalSearch" placeholder="Suchen…">
+    </form>
+  </div>
+</header>
+
+<main class="container">
+  <section class="panel">
+    <h1>Willkommen</h1>
+    <p class="muted">Schnellaktionen, Produktion & Checkliste – alles hier.</p>
+    <div class="row mt">
+      <button class="btn ghost sm" id="btnBackup">Backup</button>
+      <button class="btn sm" id="btnRestore">Restore</button>
     </div>
-  </header>
+  </section>
 
-  <!-- CONTENT -->
-  <main class="container">
-    <section class="panel-xl">
-      <h1>Willkommen</h1>
-      <p class="muted">Schnellaktionen, Produktion & Checkliste – alles hier.</p>
-      <div class="row mt">
-        <button class="btn ghost sm" id="btnBackup">Backup</button>
-        <button class="btn sm" id="btnRestore">Restore</button>
-      </div>
-    </section>
+  <section class="section">
+    <h2>Schnellaktionen</h2>
+    <div class="stack">
+      <button class="cardline" onclick="location.href='./setup.html'">Neues Setup</button>
+      <button class="cardline" onclick="location.href='./tools.html'">Neues Werkzeug</button>
+      <button class="cardline" onclick="location.href='./assist.html'">Material-Assist</button>
+      <button class="cardline" onclick="location.href='./docs.html'">Dokumente</button>
+    </div>
+  </section>
 
-    <section class="section">
-      <h2>Schnellaktionen</h2>
-      <div class="stack">
-        <button class="btn brand" onclick="location.href='./setup.html'">Neues Setup</button>
-        <button class="btn" onclick="location.href='./tools.html'">Neues Werkzeug</button>
-        <button class="btn" onclick="location.href='./assist.html'">Material-Assist</button>
-        <button class="btn" onclick="location.href='./docs.html'">Dokumente</button>
-      </div>
-    </section>
+  <section class="section">
+    <h2>Produktion</h2>
+    <div id="prodList" class="stack"></div>
+    <button class="btn brand mt" id="addJob">Neuer Auftrag</button>
+  </section>
 
-    <section class="section">
-      <h2>Produktion</h2>
-      <div id="prodList" class="stack"></div>
-      <button class="btn brand mt" id="addJob">Neuer Auftrag</button>
-    </section>
+  <section class="section">
+    <h2>Setup-Checkliste</h2>
+    <ul id="checklist" class="checklist"></ul>
+    <div class="row mt">
+      <button class="btn" id="addCheck">Neuer Punkt</button>
+      <button class="btn warn" id="clearDone">Abgehakte löschen</button>
+    </div>
+  </section>
+</main>
 
-    <section class="section">
-      <h2>Setup-Checkliste</h2>
-      <ul id="checklist" class="checklist"></ul>
-      <div class="row mt">
-        <button class="btn" id="addCheck">Neuer Punkt</button>
-        <button class="btn warn" id="clearDone">Abgehakte löschen</button>
-      </div>
-    </section>
-  </main>
+<nav class="dock">
+  <a href="./index.html" class="active" aria-label="Dash">
+    <svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4z"/></svg><span>Dash</span>
+  </a>
+  <a href="./setup.html"><svg viewBox="0 0 24 24"><path d="M12 2 7 7h10l-5-5Zm7 9H5v11h14V11Z"/></svg><span>Setup</span></a>
+  <a href="./tools.html"><svg viewBox="0 0 24 24"><path d="M7 2h3v8H7V2Zm7 0h3v8h-3V2ZM4 14h16v8H4v-8Z"/></svg><span>Tools</span></a>
+  <a href="./programmes.html"><svg viewBox="0 0 24 24"><path d="M4 6h16v2H4V6Zm0 5h16v2H4v-2Zm0 5h16v2H4v-2Z"/></svg><span>Programme</span></a>
+  <a href="./docs.html"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6V2Zm9 1.5V8h4.5"/></svg><span>Docs</span></a>
+</nav>
 
-  <!-- DOCK -->
-  <nav class="dock">
-    <a href="./index.html" class="active"><svg><use href="./ui/icons.svg#home"/></svg><span>Dash</span></a>
-    <a href="./setup.html"><svg><use href="./ui/icons.svg#setup"/></svg><span>Setup</span></a>
-    <a href="./tools.html"><svg><use href="./ui/icons.svg#tools"/></svg><span>Tools</span></a>
-    <a href="./programmes.html"><svg><use href="./ui/icons.svg#list"/></svg><span>Programme</span></a>
-    <a href="./docs.html"><svg><use href="./ui/icons.svg#doc"/></svg><span>Docs</span></a>
-  </nav>
+<script>
+/* раскрывающийся поиск + анти-zoom iOS */
+const sb=document.getElementById('searchbar');
+const btn=document.getElementById('btnSearch');
+const inp=document.getElementById('globalSearch');
+btn.addEventListener('click',()=>{ sb.classList.toggle('collapsed'); if(!sb.classList.contains('collapsed')) setTimeout(()=>inp.focus(),10); });
+document.addEventListener('click',e=>{ if(!sb.classList.contains('collapsed')){ const ok=sb.contains(e.target)||btn.contains(e.target); if(!ok) sb.classList.add('collapsed'); }});
+window.addEventListener('scroll',()=>{ if(!sb.classList.contains('collapsed')) sb.classList.add('collapsed'); });
 
-  <script src="./ui/core.js"></script>
-  <script>
-    // ===== UX: раскрывающийся поиск, без iOS-зума, автозакрытие =====
-    const sb = document.getElementById('searchbar');
-    const btn = document.getElementById('btnSearch');
-    const inp = document.getElementById('globalSearch');
-    btn.addEventListener('click', ()=>{
-      sb.classList.toggle('collapsed');
-      if(!sb.classList.contains('collapsed')) setTimeout(()=>inp.focus(),10);
-    });
-    // закрытие по клику вне
-    document.addEventListener('click', (e)=>{
-      if(!sb.classList.contains('collapsed')){
-        const inside = sb.contains(e.target) || btn.contains(e.target);
-        if(!inside) sb.classList.add('collapsed');
-      }
-    });
-    // закрытие при скролле
-    window.addEventListener('scroll', ()=>{
-      if(!sb.classList.contains('collapsed')) sb.classList.add('collapsed');
-    });
-  </script>
+/* демо-контент: производство + чеклист */
+const prod=document.getElementById('prodList');
+function addJob(title,done,total,when){
+  const p=document.createElement('div'); p.className='cardline';
+  const pct=Math.round((done/total)*100);
+  p.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:.6rem">
+    <div><b>${title}</b><div class="muted">${done} / ${total} • ${when}</div></div>
+    <div style="min-width:72px;text-align:right"><b>${pct}%</b></div>
+  </div>
+  <div style="height:8px;background:#eef3ff;border-radius:8px;margin-top:8px;overflow:hidden">
+    <div style="height:100%;width:${pct}%;background:var(--brand)"></div>
+  </div>`;
+  prod.appendChild(p);
+}
+addJob('Los 123',20,100,'Heute');
+addJob('Los 124',58,200,'Woche');
+addJob('Los 125',0,150,'Morgen');
+
+const cl=document.getElementById('checklist');
+['Aufspann-Check','Nullpunkt','Werkzeugliste'].forEach(txt=>{
+  const li=document.createElement('li');
+  li.innerHTML=`<input type="checkbox"> ${txt}`;
+  cl.appendChild(li);
+});
+document.getElementById('addJob').onclick=()=>addJob('Los '+Math.floor(100+Math.random()*899),0,100,'Diese Woche');
+document.getElementById('addCheck').onclick=()=>{const li=document.createElement('li');li.innerHTML=`<input type="checkbox"> Neuer Punkt`;cl.appendChild(li);}
+document.getElementById('clearDone').onclick=()=>{[...cl.querySelectorAll('li')].forEach(li=>{if(li.querySelector('input').checked) li.remove();});};
+</script>
 </body>
 </html>
