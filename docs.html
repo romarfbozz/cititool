@@ -1,170 +1,53 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>CitiTool • Dokumentation</title>
-  <link rel="stylesheet" href="./ui/core.css">
-  <style>
-    /* Минимум специфики только для списка документов */
-    .cards{display:grid;gap:10px}
-    .card-doc{display:grid;grid-template-columns:64px 1fr auto;gap:10px;align-items:center;
-      background:#fff;border:1px solid var(--hair);border-radius:16px;box-shadow:var(--shadow);padding:10px}
-    .doc-thumb{width:64px;height:64px;border-radius:12px;object-fit:cover;background:#eef3ff}
-    .doc-thumb.nofoto{display:grid;place-items:center;color:#7a8baa;font-weight:800}
-    .doc-title{font-weight:800}
-    .doc-meta{color:var(--muted);font-size:13px}
-    .doc-body{color:#2b3450;font-size:14px;line-height:1.35;
-      display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-    .doc-actions{display:flex;gap:6px}
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CitiTool • Dokumente</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="./ui/core.css">
 </head>
-<body data-module="docs">
+<body>
 
-<!-- Фон -->
-<div class="hero-bg"><div class="hero-grid"></div></div>
-
-<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
-    <div class="logo-line">
-      <div class="ct-badge">CT</div>
-      <div class="ct-word"><b>CITI‧TOOL</b></div>
-    </div>
+    <a class="logo" href="./index.html">
+      <div class="ct">CT</div><div class="title">CITI·TOOL</div>
+    </a>
     <div class="actions">
-      <button class="btn brand" id="actionMain">Neues Dokument</button>
+      <button class="btn brand" id="btnNewDoc">Neues Dokument</button>
       <div class="search" id="searchBox">
         <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
-        <input type="search" placeholder="Suchen…" id="q">
+        <input type="search" placeholder="Suchen…">
       </div>
     </div>
   </div>
 </header>
 
-<!-- Hero -->
-<div class="hero" style="opacity:var(--hero-opa,1)">
-  <div class="hero-card">
-    <div class="hero-title">
-      <h1>Dokumentation</h1>
-      <button class="btn brand" id="actionHero">Neues Dokument</button>
-    </div>
-    <p class="hero-sub">PDF/DOC/PPT и собственные заметки. Единый вид карточек, миниатюры и быстрый поиск.</p>
-  </div>
-</div>
-
-<!-- Контент -->
-<main class="main">
+<main class="container">
   <section class="section">
-    <h2>Notizen</h2>
-    <div id="docList" class="cards"></div>
+    <h2>Dokumentation</h2>
+    <div class="muted" style="margin:6px 4px 12px">
+      PDF/DOC/PPT и собственные заметки. Поиск, категории, теги и автономный предпросмотр изображений.
+    </div>
+    <div id="docsFilters" class="row" style="flex-wrap:wrap"></div>
+    <ul class="doclist" id="docsWrap"></ul>
   </section>
 </main>
 
-<!-- Dock -->
 <nav class="dock">
   <div class="wrap">
-    <a href="./index.html"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
-    <a href="./setup.html"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
-    <a href="./tools.html"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
-    <a href="./setup.html#progs"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3zM3 8h12v2H3zM3 12h18v2H3zM3 16h12v2H3z"/></svg><small>Programme</small></a>
-    <a href="./docs.html" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+    <a href="./index.html"><svg class="svg" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
+    <a href="./setup.html"><svg class="svg" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
+    <a href="./tools.html"><svg class="svg" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
+    <a href="./programme.html"><svg class="svg" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
+    <a class="active" href="./docs.html"><svg class="svg" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
   </div>
 </nav>
 
 <script src="./ui/core.js"></script>
 <script>
-/* ===== Минимальная логика модуля Docs (всё остальное — из /ui) ===== */
-const KEY = 'CT_DOCS_V1';
-
-// начальные демо-заметки если пусто
-function seedDocs(){
-  const cur = JSON.parse(localStorage.getItem(KEY)||'[]');
-  if (cur.length) return;
-  const demo = [
-    {id: crypto.randomUUID(), title:'Aufspann-Check', category:'Setup', body:'Schrauben, Anschläge, Reitstock…', img:'', ts:Date.now()},
-    {id: crypto.randomUUID(), title:'Werkstoff Notiz', category:'Stahl', body:'Hinweise zur Kühlung…', img:'', ts:Date.now()}
-  ];
-  localStorage.setItem(KEY, JSON.stringify(demo));
-}
-
-function readDocs(){
-  try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch(e){ return []; }
-}
-function writeDocs(arr){
-  localStorage.setItem(KEY, JSON.stringify(arr));
-}
-
-function renderDocs(){
-  const q = (document.getElementById('q')?.value || '').toLowerCase();
-  const wrap = document.getElementById('docList');
-  const data = readDocs().filter(d =>
-    !q || (d.title+d.category+d.body).toLowerCase().includes(q)
-  );
-  if (!data.length){
-    wrap.innerHTML = '<div class="muted">Keine Notizen</div>';
-    return;
-  }
-  wrap.innerHTML = '';
-  data.forEach(d=>{
-    const card = document.createElement('div');
-    card.className = 'card-doc';
-    const hasImg = !!d.img;
-    card.innerHTML = `
-      ${hasImg
-        ? `<img class="doc-thumb" src="${d.img}" alt="">`
-        : `<div class="doc-thumb nofoto">No</div>`}
-      <div>
-        <div class="doc-title">${escapeHTML(d.title)}</div>
-        <div class="doc-meta">${escapeHTML(d.category||'')}</div>
-        <div class="doc-body">${escapeHTML(d.body||'')}</div>
-      </div>
-      <div class="doc-actions">
-        <button class="btn" data-act="edit">Bearbeiten</button>
-        <button class="btn" data-act="del">Löschen</button>
-      </div>
-    `;
-    card.querySelector('[data-act="edit"]').onclick = ()=> editDoc(d.id);
-    card.querySelector('[data-act="del"]').onclick  = ()=> delDoc(d.id);
-    wrap.appendChild(card);
-  });
-}
-
-// очень лёгкий «редактор»: prompt + выбор картинки (по желанию)
-function newDoc(){
-  const title = prompt('Titel:','Neue Notiz');
-  if (!title) return;
-  const category = prompt('Kategorie:','');
-  const body = prompt('Text:','');
-
-  const rec = { id: crypto.randomUUID(), title, category, body, img:'', ts: Date.now() };
-  const all = readDocs(); all.unshift(rec); writeDocs(all); renderDocs();
-}
-function editDoc(id){
-  const all = readDocs();
-  const i = all.findIndex(x=>x.id===id);
-  if (i<0) return;
-  const cur = all[i];
-  const title = prompt('Titel:', cur.title) ?? cur.title;
-  const category = prompt('Kategorie:', cur.category||'') ?? cur.category;
-  const body = prompt('Text:', cur.body||'') ?? cur.body;
-  all[i] = { ...cur, title, category, body };
-  writeDocs(all); renderDocs();
-}
-function delDoc(id){
-  if (!confirm('Löschen?')) return;
-  writeDocs(readDocs().filter(x=>x.id!==id)); renderDocs();
-}
-
-// util
-function escapeHTML(s){return (s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));}
-
-// инициализация
-seedDocs();
-renderDocs();
-document.getElementById('q')?.addEventListener('input', renderDocs);
-
-// кнопка AppBar/hero из /ui/core.js: ловим событие
-window.addEventListener('ui:new-doc', newDoc);
+  CT.initDocsModule();
 </script>
 </body>
 </html>
