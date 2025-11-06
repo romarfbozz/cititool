@@ -1,159 +1,443 @@
-
 <!doctype html>
-<html lang="de">
+<html lang="ru">
 <head>
-  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>CitiTool • Werkzeugs­chrank</title>
-  <link rel="stylesheet" href="./ui/core.css">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Nakamura WT250-2 • Setup Helper</title>
+<style>
+:root{
+  --bg:#0f1115; --panel:#151922; --muted:#9aa4b2; --text:#e6e8ec; --acc:#6ae3ff;
+  --ok:#28c281; --warn:#ffcf5c; --bad:#ff6b6b; --line:#212734;
+  --chip:#1d2430; --chipText:#c9d2e3;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:linear-gradient(180deg,#0d1015,#0c0f14);
+  color:var(--text);font:14px/1.45 system-ui,Segoe UI,Roboto,Arial,sans-serif;
+}
+.app{max-width:1200px;margin:auto;padding:16px 16px 80px}
+h1{font-size:20px;margin:0 0 12px;display:flex;gap:10px;align-items:center}
+h1 .tag{font-size:12px;background:var(--chip);color:var(--chipText);padding:2px 8px;border-radius:999px}
+.grid{display:grid;gap:12px}
+.grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{
+  background:linear-gradient(180deg,var(--panel),#121620);
+  border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.25)
+}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.input{display:flex;flex-direction:column;gap:6px;min-width:120px;flex:1}
+.input label{color:var(--muted);font-size:12px}
+.input input,.input select,.input textarea{
+  width:100%;border:1px solid var(--line);background:#0c0f16;color:var(--text);
+  padding:10px;border-radius:10px;outline:none
+}
+.input textarea{min-height:100px;resize:vertical}
+.kbd{background:#0a0d13;border:1px solid var(--line);padding:2px 6px;border-radius:6px;font-size:12px}
+.btn{background:#0a0f18;border:1px solid var(--line);color:var(--text);padding:10px 12px;border-radius:10px;cursor:pointer}
+.btn:hover{border-color:#2a3344}
+.btn.primary{background:linear-gradient(180deg,#0f2230,#0c1b27);border-color:#183142;box-shadow:inset 0 0 0 1px #183142}
+.btn.success{background:#0f1f19;border-color:#1f3b2f}
+.badge{padding:2px 8px;border-radius:999px;font-size:12px}
+.badge.ok{background:rgba(40,194,129,.12);color:#66e0ad}
+.badge.warn{background:rgba(255,207,92,.12);color:#ffd483}
+.badge.bad{background:rgba(255,107,107,.12);color:#ff8f8f}
+.sectionTitle{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;color:#c9d2e3}
+.toolgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.tool{background:#0a0e16;border:1px solid var(--line);border-radius:10px;padding:8px}
+.tool .pos{font-weight:600;color:#8bd5ff}
+.tool input{width:100%;margin-top:6px}
+.tabs{display:flex;gap:8px;margin:8px 0}
+.tab{padding:8px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:#0b0f15}
+.tab.active{outline:1px solid #2b3547;background:#0f1420}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{border-bottom:1px solid #1b2230;padding:8px;text-align:left}
+.code{font:12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;background:#0b0f15;border:1px solid #1a2230;border-radius:10px;padding:8px;white-space:pre;overflow:auto;max-height:300px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:#0c111a;border:1px solid #1b2330;border-radius:999px;padding:6px 10px;font-size:12px;color:#b8c5d6}
+footer{position:fixed;left:0;right:0;bottom:0;background:rgba(10,12,16,.9);backdrop-filter:blur(8px);
+  border-top:1px solid #1a2230;padding:8px 12px}
+footer .row{align-items:center;justify-content:space-between}
+small{color:#9aa4b2}
+.code .hl{color:#6ae3ff}
+.code .mk{background:#24324b}
+</style>
 </head>
-<body data-active="tools">
-<header class="appbar">
-  <div class="wrap">
-    <a class="logo" href="./index.html">
-      <img src="./ui/brand.png" alt="CT" class="badge">
-      <div class="tit"><div class="title">CitiTool</div><div class="subtitle">Werkzeugs­chrank</div></div>
-    </a>
-    <div class="actions">
-      <button class="btn ghost sm" id="btnCats">Kategorien</button>
-      <button class="btn brand sm" id="btnNew">Neu</button>
-      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen"><svg><use href="./ui/icons.svg#search"/></svg></button>
-    </div>
-  </div>
-</header>
-<div class="searchbar collapsed"><input class="field" type="search" placeholder="Werkzeuge suchen…" id="toolSearch"></div>
+<body>
+<div class="app">
+  <h1>WT250-2 Setup Helper <span class="tag">двойной револьвер</span></h1>
 
-<main class="container">
-  <section class="section">
-    <h2>Liste</h2>
-    <ul id="toolList" class="list-tools"></ul>
-  </section>
-</main>
-<nav class="dock" id="dock"></nav>
-
-<script src="./ui/core.js"></script>
-<script src="./ui/dock.js"></script>
-<script>
-CT.ready(()=>{
-  CT.ensureSeeds();
-  let tools = CT.storage.read(CT_KEYS.TOOLS, []);
-  let cats  = CT.storage.read(CT_KEYS.CATS, []);
-  let activeCat = 'ALL';
-
-  function catTitle(id){ return id==='ALL' ? 'Alle' : (cats.find(c=>c.id===id)?.title || '—'); }
-
-  function render(){
-    tools = CT.storage.read(CT_KEYS.TOOLS, []);
-    cats  = CT.storage.read(CT_KEYS.CATS, []);
-    const ul = document.getElementById('toolList'); ul.innerHTML='';
-    const q = (document.getElementById('toolSearch').value||'').trim().toLowerCase();
-    const data = tools.filter(t => (activeCat==='ALL'||t.catId===activeCat) &&
-      (t.name.toLowerCase().includes(q)||t.code.toLowerCase().includes(q)||(t.iso||'').toLowerCase().includes(q)));
-    if(!data.length){ ul.innerHTML = '<li class="muted">Keine Werkzeuge</li>'; return; }
-    data.forEach(t=>{
-      const li = document.createElement('li');
-      li.innerHTML = `
-        <img class="thumb" src="${t.imgData||''}" alt="" onerror="this.style.display='none'">
-        <div class="meta">
-          <div class="name">${CT.escape(t.name)}</div>
-          <div class="sub">${CT.escape(t.code)} • ${catTitle(t.catId)}</div>
-        </div>
-        <div class="tail">
-          <span class="badge">${Math.max(0, t.lifePct|0)}%</span>
-          <button class="icon-btn" aria-label="Info"><svg><use href="./ui/icons.svg#info"/></svg></button>
-        </div>`;
-      li.querySelector('button').onclick=()=>showInfo(t);
-      ul.appendChild(li);
-    });
-  }
-
-  function showInfo(t){
-    const cat = catTitle(t.catId);
-    const html = `
-      ${t.imgData?`<div class="imgwrap"><img src="${t.imgData}" alt=""></div>`:''}
-      <div class="i-head"><b>${CT.escape(t.name)}</b></div>
-      <div class="i-row">${CT.escape(t.code)} • ${CT.escape(cat)} • ${CT.escape(t.maker||'')}</div>
-      <div class="i-grid">
-        <div><label>ISO</label><div>${CT.escape(t.iso||'—')}</div></div>
-        <div><label>Ressource</label><div>${Math.max(0,t.lifePct|0)}%</div></div>
-        <div class="full"><label>Notiz</label><div>${CT.escape(t.note||'')}</div></div>
+  <!-- Top summary -->
+  <div class="grid cols-3">
+    <div class="card">
+      <div class="sectionTitle"><strong>Партия / Материал</strong></div>
+      <div class="row">
+        <div class="input"><label>Номер заказа</label><input id="job" placeholder="PK231999"/></div>
+        <div class="input"><label>Материал</label><input id="mat" placeholder="Seagen / 42CrMo4 / Alu…"/></div>
+        <div class="input"><label>Ø заготовки, мм</label><input id="bar" type="number" step="0.01" placeholder="45.0"/></div>
+        <div class="input"><label>Вылет, мм</label><input id="stick" type="number" step="0.1" placeholder="104"/></div>
       </div>
       <div class="row">
-        <button class="btn" id="toSetup">+ Zu Setup</button>
-        <button class="btn brand" id="edit">Bearbeiten</button>
-      </div>`;
-    CT.openModal({title:'Werkzeug', html, cancelText:'Schließen'});
-    document.getElementById('edit').onclick=()=>editTool(t);
-    document.getElementById('toSetup').onclick=()=>assignToSetup(t);
-  }
+        <div class="input"><label>Обороты (цель, об/мин)</label><input id="rpm" type="number" placeholder="1800"/></div>
+        <div class="input"><label>Подача (мм/об)</label><input id="fpr" type="number" step="0.01" placeholder="0.15"/></div>
+        <div class="input"><label>Охлаждение</label>
+          <select id="cool">
+            <option>М8 включено</option><option>М9 выкл</option><option>Высокое давление</option>
+          </select>
+        </div>
+      </div>
+      <div class="chips" id="quickState"></div>
+    </div>
 
-  function editTool(t){
-    const isNew = !t;
-    const cur = t || {id:CT.uid(), name:'', code:'', catId:cats[0]?.id, iso:'', maker:'', note:'', imgData:'', lifePct:100};
-    const catOptions = cats.map(c=>`<option value="${c.id}" ${c.id===cur.catId?'selected':''}>${CT.escape(c.title)}</option>`).join('');
-    const html = `
-      <label class="fld">Name<input id="f_name" value="${CT.escape(cur.name)}" placeholder="Bezeichnung"></label>
-      <label class="fld">Code<input id="f_code" value="${CT.escape(cur.code)}" placeholder="Artikel/Code"></label>
-      <label class="fld">Kategorie<select id="f_cat">${catOptions}</select></label>
-      <label class="fld">ISO<input id="f_iso" value="${CT.escape(cur.iso)}" placeholder="z.B. CNMG120408-PM"></label>
-      <label class="fld">Hersteller<input id="f_maker" value="${CT.escape(cur.maker)}"></label>
-      <label class="fld">Ressource (%)<input id="f_life" type="number" inputmode="numeric" value="${cur.lifePct}"></label>
-      <label class="fld">Notiz<textarea id="f_note" rows="3">${CT.escape(cur.note||'')}</textarea></label>
-      <label class="fld file">Foto<input id="f_img" type="file" accept="image/*"></label>
-      ${!isNew?'<div class="row"><button class="btn warn" id="del">Löschen</button></div>':''}
+    <div class="card">
+      <div class="sectionTitle"><strong>Карта револьверов</strong><small>Tap для правки</small></div>
+      <div class="tabs">
+        <div class="tab active" data-pane="turret1">Верхний REV (RO)</div>
+        <div class="tab" data-pane="turret2">Нижний REV (RU)</div>
+      </div>
+      <div id="turret1" class="pane">
+        <div class="toolgrid" id="toolsTop"></div>
+      </div>
+      <div id="turret2" class="pane" style="display:none">
+        <div class="toolgrid" id="toolsBot"></div>
+      </div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="exportTools">Экспорт карты</button></div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle"><strong>Смещения / G54…G59</strong></div>
+      <table class="table" id="wcsTbl">
+        <thead><tr><th>WCS</th><th>Z0</th><th>X0</th><th>Примечание</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row" style="margin-top:8px"><button class="btn" id="addWcs">+ WCS</button></div>
+    </div>
+  </div>
+
+  <!-- Calculators -->
+  <div class="grid cols-3" style="margin-top:12px">
+    <div class="card">
+      <div class="sectionTitle"><strong>Калькуляторы</strong></div>
+      <div class="row">
+        <div class="input"><label>SFM (м/мин)</label><input id="sfm" type="number" step="0.1" placeholder="180"/></div>
+        <div class="input"><label>Ø, мм</label><input id="diam" type="number" step="0.01" placeholder="45"/></div>
+        <div class="input"><label>RPM</label><input id="rpmOut" type="number" step="1" placeholder="—"/></div>
+      </div>
+      <div class="row">
+        <button class="btn primary" id="sfm2rpm">SFM → RPM</button>
+        <button class="btn" id="rpm2sfm">RPM → SFM</button>
+      </div>
+      <hr style="border-color:#1a2230;margin:10px 0">
+      <div class="row">
+        <div class="input"><label>Подача, мм/об</label><input id="fprIn" type="number" step="0.001" placeholder="0.15"/></div>
+        <div class="input"><label>RPM</label><input id="rpmIn" type="number" step="1" placeholder="1200"/></div>
+        <div class="input"><label>Подача, мм/мин</label><input id="fpmOut" type="number" step="1" placeholder="—"/></div>
+      </div>
+      <div class="row"><button class="btn primary" id="fpr2fpm">мм/об → мм/мин</button></div>
+      <hr style="border-color:#1a2230;margin:10px 0">
+      <div class="row">
+        <div class="input"><label>Резьба G76 (P Q R / шаг)</label><input id="g76" placeholder="P021060 Q075 R0.05 / F1.5"/></div>
+      </div>
+      <small>Подсказка: P = finish passes / angle / chamfer; Q = depth min; R = finish stock; F = шаг.</small>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle"><strong>Чек-лист запуска</strong></div>
+      <div class="row">
+        <label><input type="checkbox" class="cl"> Барфидер: вылет и упор (M120/M61)</label>
+        <label><input type="checkbox" class="cl"> Зажим/разжим патрона (M10/M11/M50/M51)</label>
+        <label><input type="checkbox" class="cl"> Ориентировка C/синхронизация</label>
+        <label><input type="checkbox" class="cl"> Охлаждение + промывка кулачков</label>
+        <label><input type="checkbox" class="cl"> Остановы G28, безопасные плоскости</label>
+        <label><input type="checkbox" class="cl"> Отрезной: позиция, ширина пластины</label>
+        <label><input type="checkbox" class="cl"> Передача детали / перехват</label>
+      </div>
+      <div class="chips" id="clState"></div>
+    </div>
+
+    <div class="card">
+      <div class="sectionTitle"><strong>M/G-коды в программе</strong><small>(из примеров)</small></div>
+      <div class="chips" id="mgChips"></div>
+    </div>
+  </div>
+
+  <!-- G-code viewer -->
+  <div class="grid cols-2" style="margin-top:12px">
+    <div class="card">
+      <div class="sectionTitle"><strong>G-код — Левая шпиндель (RO)</strong><small>перетащи .txt/.nc сюда</small></div>
+      <div class="row">
+        <textarea id="codeRO" class="code"></textarea>
+      </div>
+      <div class="row">
+        <input type="text" id="findRO" placeholder="поиск (например, G76 / T0101)">
+        <button class="btn" data-find="RO">Найти</button>
+      </div>
+      <pre id="outRO" class="code"></pre>
+    </div>
+    <div class="card">
+      <div class="sectionTitle"><strong>G-код — Правая шпиндель (RU)</strong><small>перетащи .txt/.nc сюда</small></div>
+      <div class="row">
+        <textarea id="codeRU" class="code"></textarea>
+      </div>
+      <div class="row">
+        <input type="text" id="findRU" placeholder="поиск (например, M180)">
+        <button class="btn" data-find="RU">Найти</button>
+      </div>
+      <pre id="outRU" class="code"></pre>
+    </div>
+  </div>
+
+  <!-- Diff -->
+  <div class="card" style="margin-top:12px">
+    <div class="sectionTitle"><strong>Сверка RO↔RU (diff)</strong><small>по строкам</small></div>
+    <pre id="diff" class="code"></pre>
+    <div class="row"><button id="mkDiff" class="btn">Построить diff</button></div>
+  </div>
+
+  <footer>
+    <div class="row">
+      <div><small>Файл сохраняется в LocalStorage (браузер). Работает офлайн.</small></div>
+      <div class="row">
+        <button class="btn" id="save">Сохранить сессию</button>
+        <button class="btn" id="load">Загрузить</button>
+        <button class="btn" id="reset">Сброс</button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+// --------- sample programs from your files (for instant testing)
+const sampleRO = `% O1507(PK231999RO)
+G28U0
+G28W0
+M471(Y-ACHSE ENTRIEGELN)
+G28V0
+M470(Y-ACHSE VERRIEGELN)
+G333(ABWAHL MODALER G-FUNKTIONEN)
+G99M41
+G50S3000
+M100
+G65P9000A134B140.15C0
+...
+(GEWINDESTAHL SANDVIK D25 M52X1.5 G54)
+G76P021060Q75R.05
+G76X52.Z-15.5P920Q77F1.5
+...
+M181
+M199
+M30
+%`;
+
+const sampleRU = `% O1507(PK231999RU)
+(MATERIAL SEAGEN 1040MM)
+G28U0
+G28B0M97
+G28W0
+G333(ABWAHL MODALER G-FUNKTIONEN)
+G99M441
+G50S3000
+M100
+...
+N10(ABSTECHEN) G54M428
+T1010
+M8
+(ABSTECHSTAHL 3MM ...)
+G97S1000M3
+...
+M181
+M199
+M30
+%`;
+
+// --------- UI helpers
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+function setTabs(){
+  $$('.tab').forEach(t=>{
+    t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      $$('.pane').forEach(p=>p.style.display='none');
+      $('#'+t.dataset.pane).style.display='block';
+    }
+  });
+}
+setTabs();
+
+function buildTools(containerId){
+  const cont = $('#'+containerId);
+  cont.innerHTML='';
+  for(let i=1;i<=12;i++){
+    const el = document.createElement('div');
+    el.className='tool';
+    el.innerHTML = `
+      <div class="row" style="justify-content:space-between;align-items:center">
+        <div class="pos">T${String(i).padStart(2,'0')}</div>
+        <span class="badge ok">готов</span>
+      </div>
+      <input placeholder="Инструмент/державка (DNMG, отрезной…)" />
+      <input placeholder="R коррекция / носик (мм)" type="number" step="0.01"/>
+      <input placeholder="Корректор геом. (G41/G42 D…)" />
     `;
-    CT.openModal({title:isNew?'Neues Werkzeug':'Werkzeug bearbeiten', html, okText:'Speichern', cancelText:'Schließen', onOk:()=>{
-      const up = {...cur};
-      up.name=document.getElementById('f_name').value||'Werkzeug';
-      up.code=document.getElementById('f_code').value||'—';
-      up.catId=document.getElementById('f_cat').value;
-      up.iso=document.getElementById('f_iso').value;
-      up.maker=document.getElementById('f_maker').value;
-      up.lifePct=parseInt(document.getElementById('f_life').value||0,10);
-      up.note=document.getElementById('f_note').value;
-      const file=document.getElementById('f_img').files?.[0];
-      const commit=()=>{ const arr=CT.storage.read(CT_KEYS.TOOLS,[]); const idx=arr.findIndex(x=>x.id===up.id);
-        if(idx>-1) arr[idx]=up; else arr.push(up); CT.storage.write(CT_KEYS.TOOLS,arr); CT.toast('Gespeichert','ok'); render(); };
-      if(file){ CT.readFileAsDataURL(file).then(data=>{up.imgData=data; commit();}); } else commit();
-    }});
-    const delBtn=document.getElementById('del'); if(delBtn) delBtn.onclick=()=>{ const arr=CT.storage.read(CT_KEYS.TOOLS,[]).filter(x=>x.id!==cur.id); CT.storage.write(CT_KEYS.TOOLS,arr); CT.closeModal(); render(); CT.toast('Gelöscht','ok'); };
+    cont.appendChild(el);
   }
+}
+buildTools('toolsTop'); buildTools('toolsBot');
 
-  function assignToSetup(tool){
-    const live = CT.storage.read(CT_KEYS.SETUP, { ro:Array(12).fill(null), ru:Array(12).fill(null) });
-    const options = ['ro','ru'].map(side=>{
-      const label = side==='ro'?'RO (G54)':'RU (G55)';
-      const slots = Array.from({length:12},(_,i)=> {
-        const busy = !!live[side][i];
-        return `<button class="btn ${busy?'ghost':''}" data-side="${side}" data-slot="${i}" ${busy?'disabled':''}>${i+1}</button>`;
-      }).join('');
-      return `<div class="drawer-block"><div class="hdr">${label}</div><div class="row">${slots}</div></div>`;
-    }).join('');
-    CT.openDrawer({title:'Zu Setup zuweisen', html:options});
-    document.querySelectorAll('.drawer .btn').forEach(b=>{
-      b.onclick=()=>{
-        const side=b.dataset.side, slot=+b.dataset.slot;
-        const data=CT.storage.read(CT_KEYS.SETUP,{ro:Array(12).fill(null), ru:Array(12).fill(null)});
-        data[side][slot]={toolId:tool.id, note:''}; CT.storage.write(CT_KEYS.SETUP,data);
-        CT.closeDrawer(); CT.toast(`Zugewiesen: ${side.toUpperCase()} #${slot+1}`,'ok');
-      };
-    });
-  }
+function addWcsRow(wcs='G54', z='', x='', note=''){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td>${wcs}</td>
+    <td contenteditable>${z}</td>
+    <td contenteditable>${x}</td>
+    <td contenteditable>${note}</td>`;
+  $('#wcsTbl tbody').appendChild(tr);
+}
+['G54','G55','G56'].forEach(w=>addWcsRow(w));
 
-  // Kategorien
-  document.getElementById('btnCats').onclick=()=>{
-    const counts = (id)=>CT.storage.read(CT_KEYS.TOOLS,[]).filter(t=>t.catId===id).length;
-    const items=[{id:'ALL', title:`Alle (${CT.storage.read(CT_KEYS.TOOLS,[]).length})`}].concat(
-      cats.map(c=>({id:c.id, title:`${c.title} (${counts(c.id)})`}))
-    );
-    CT.openDrawer({title:'Kategorien', items, onSelect:(id)=>{activeCat=id; render();}});
+// --------- Calculators
+$('#sfm2rpm').onclick=()=>{
+  const v = parseFloat($('#sfm').value||0); // m/min
+  const d = parseFloat($('#diam').value||0); // mm
+  const rpm = d>0 ? Math.round((1000*v)/(Math.PI*d)) : 0;
+  $('#rpmOut').value = rpm;
+};
+$('#rpm2sfm').onclick=()=>{
+  const n = parseFloat($('#rpmOut').value||0);
+  const d = parseFloat($('#diam').value||0);
+  const sfm = d>0 ? ((Math.PI*d*n)/1000).toFixed(1) : 0;
+  $('#sfm').value = sfm;
+};
+$('#fpr2fpm').onclick=()=>{
+  const fpr = parseFloat($('#fprIn').value||0);
+  const rpm = parseFloat($('#rpmIn').value||0);
+  $('#fpmOut').value = Math.round(fpr*rpm);
+};
+
+// --------- Checklist / quick state
+function renderChecklist(){
+  const total = $$('.cl').length;
+  const done = $$('.cl:checked').length;
+  $('#clState').innerHTML = `<span class="badge ${done===total?'ok':(done? 'warn':'bad')}">
+    ${done}/${total} готово</span>`;
+}
+$$('.cl').forEach(c=>c.onchange=renderChecklist); renderChecklist();
+
+function renderQuick(){
+  const arr = [
+    ['Материал',$('#mat').value||'—'],
+    ['Ø',$('#bar').value||'—'],
+    ['Вылет',$('#stick').value||'—'],
+    ['RPM',$('#rpm').value||'—'],
+    ['f/об',$('#fpr').value||'—'],
+    ['Охлаждение',$('#cool').value||'—'],
+  ];
+  $('#quickState').innerHTML = arr.map(([k,v])=>`<span class="chip">${k}: <strong>${v}</strong></span>`).join('');
+}
+$$('#job,#mat,#bar,#stick,#rpm,#fpr,#cool').forEach(i=>i.oninput=renderQuick); renderQuick();
+
+// --------- G-code viewer + parser
+function highlight(code){
+  return code
+    .replace(/(G\d+|M\d+|T\d{2}\d{2}|S\d+|F\d+|N\d+)/g,'<span class="hl">$1</span>')
+    .replace(/\((.*?)\)/g,'<span class="mk">($1)</span>');
+}
+function parseMG(code){
+  const mg = new Set();
+  (code.match(/([GM]\d+)(?:\(|\s|$)/g)||[]).forEach(x=>mg.add(x.trim()));
+  return [...mg].sort();
+}
+function renderMG(){
+  const list = new Set([...parseMG($('#codeRO').value),...parseMG($('#codeRU').value)]);
+  const mapHints = {
+    'M8':'coolant on','M9':'coolant off','M50':'chuck open','M51':'chuck close',
+    'M70':'sync on','M71':'sync off','M180':'parts catcher','M181':'parts catcher off',
+    'M199':'end block','M41':'low gear','M54':'spindle CW','M3':'spindle CW',
+    'M490':'C-axis off','M491':'C-axis on','M471':'Y unlock','M470':'Y lock',
+    'M120':'wait bar stop','M61':'bar pusher','M10':'chuck clamp','M11':'chuck unclamp'
   };
-  document.getElementById('btnNew').onclick=()=>editTool(null);
+  $('#mgChips').innerHTML = [...list].map(x=>{
+    const h = mapHints[x] ? ` — ${mapHints[x]}` : '';
+    return `<span class="chip">${x}${h}</span>`;
+  }).join('');
+}
+function showFind(which){
+  const src = which==='RO'? $('#codeRO').value : $('#codeRU').value;
+  const q = (which==='RO'? $('#findRO'):$('#findRU')).value.trim();
+  const reg = q? new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'):null;
+  const marked = reg? src.replace(reg,m=>`<span class="mk">${m}</span>`):src;
+  (which==='RO'? $('#outRO'):$('#outRU')).innerHTML = highlight(marked);
+}
+$$('button[data-find="RO"],button[data-find="RU"]').forEach(b=>b.onclick=()=>showFind(b.dataset.find));
 
-  document.getElementById('toolSearch').addEventListener('input', render);
-  CT.bindGlobalSearch(()=>render());
-  render();
+// drag&drop
+['codeRO','codeRU'].forEach(id=>{
+  const ta = $('#'+id);
+  ta.addEventListener('dragover',e=>{e.preventDefault(); ta.style.outline='2px dashed #2e3a50';});
+  ta.addEventListener('dragleave',()=>ta.style.outline='none');
+  ta.addEventListener('drop',e=>{
+    e.preventDefault(); ta.style.outline='none';
+    const f = e.dataTransfer.files[0]; if(!f) return;
+    const reader = new FileReader();
+    reader.onload=ev=>{ ta.value=ev.target.result; showFind(id==='codeRO'?'RO':'RU'); renderMG(); };
+    reader.readAsText(f);
+  });
 });
+
+// preload samples
+$('#codeRO').value = sampleRO;
+$('#codeRU').value = sampleRU;
+showFind('RO'); showFind('RU'); renderMG();
+
+// diff
+function makeDiff(){
+  const a = $('#codeRO').value.split(/\r?\n/);
+  const b = $('#codeRU').value.split(/\r?\n/);
+  const max = Math.max(a.length,b.length);
+  let out = '';
+  for(let i=0;i<max;i++){
+    const L = a[i]??''; const R = b[i]??'';
+    if(L===R){ out += ` ${String(i+1).padStart(4,' ')}  ${L}\n`; }
+    else{
+      out += `<span class="mk">-${String(i+1).padStart(4,' ')}  ${L}</span>\n`;
+      out += `<span class="mk">+${String(i+1).padStart(4,' ')}  ${R}</span>\n`;
+    }
+  }
+  $('#diff').innerHTML = out;
+}
+$('#mkDiff').onclick = makeDiff;
+
+// export tools
+$('#exportTools').onclick=()=>{
+  const grab=(gridId)=>[...$('#'+gridId).querySelectorAll('.tool')].map((t,i)=>{
+    const [name,r,geo] = [...t.querySelectorAll('input')].map(x=>x.value);
+    return {pos:i+1,name,r,geo};
+  });
+  const data = {
+    top: grab('toolsTop'),
+    bot: grab('toolsBot'),
+    wcs: [...$('#wcsTbl tbody').querySelectorAll('tr')].map(tr=>{
+      const tds = tr.querySelectorAll('td'); return {wcs:tds[0].innerText,z:tds[1].innerText,x:tds[2].innerText,note:tds[3].innerText};
+    }),
+    job: $('#job').value, mat: $('#mat').value, bar: $('#bar').value, stick: $('#stick').value,
+    rpm: $('#rpm').value, fpr: $('#fpr').value, cool: $('#cool').value
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=`WT250_setup_${Date.now()}.json`; a.click();
+};
+
+// save/load
+const KEY='wt250_setup_v1';
+$('#save').onclick=()=>{ localStorage.setItem(KEY, JSON.stringify({
+  codeRO:$('#codeRO').value, codeRU:$('#codeRU').value
+})); alert('Сохранено в браузер.'); };
+$('#load').onclick=()=>{ const d=localStorage.getItem(KEY); if(d){ const o=JSON.parse(d);
+  $('#codeRO').value=o.codeRO||''; $('#codeRU').value=o.codeRU||''; showFind('RO'); showFind('RU'); renderMG();
+}};
+$('#reset').onclick=()=>{ if(confirm('Сбросить форму?')) location.reload(); };
+
 </script>
 </body>
 </html>
-
