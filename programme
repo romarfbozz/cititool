@@ -1,0 +1,101 @@
+<!doctype html><html lang="de"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Programme • CitiTool</title>
+<link rel="stylesheet" href="ui/core.css">
+</head><body>
+<div id="appbar"></div>
+<main class="container">
+  <section class="section">
+    <h2>Programme</h2>
+    <div id="list" class="list"></div>
+  </section>
+</main>
+<div id="dock"></div>
+<script src="ui/core.js"></script>
+<script>
+CT.ui.mountAppBar('#appbar',{
+  title:'CITI·TOOL', subtitle:'Programme',
+  actions:[{label:'Neues Programm',type:'brand',onClick:()=>newProg()}],
+  onSearch:(q)=>render(q)
+});
+CT.ui.mountDock('#dock',{active:'progs'});
+
+function newProg(){
+  const p = CT.prog.create({title:'Neues Programm', number: String(Date.now()).slice(-4)});
+  render(); CT.toast('Programm angelegt');
+}
+
+function card(p){
+  const slots = CT.slot.listByProg(p.id);
+  return `<div class="row">
+    <div>
+      <div class="title">${p.title} — ${p.number||'#'}</div>
+      <div class="meta">Seite ${p.side||'RO'} • Slots: ${slots.length}</div>
+    </div>
+    <div>
+      <button class="ct-btn" data-open="${p.id}">Öffnen</button>
+      <button class="ct-btn warn" data-del="${p.id}">Löschen</button>
+    </div>
+  </div>`;
+}
+function render(q=''){
+  const list=document.getElementById('list');
+  let arr=CT.prog.list();
+  if(q){const qq=q.toLowerCase(); arr=arr.filter(p=>(p.title+p.number+p.side).toLowerCase().includes(qq));}
+  list.innerHTML= arr.map(card).join('') || '<div class="muted">Keine Programme…</div>';
+  list.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{CT.prog.remove(b.dataset.del)});
+  list.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProg(b.dataset.open));
+}
+function openProg(id){
+  const p = CT.prog.get(id);
+  const m = CT.ui.modal({title:`${p.title} — ${p.number}`});
+  const body = html(`<div>
+    <div class="fld"><label>Titel — Nummer</label><input id="t" value="${p.title} — ${p.number}"></div>
+    <div class="fld"><label>Seite</label>
+      <select id="side"><option ${p.side==='RO'?'selected':''}>RO</option><option ${p.side==='RU'?'selected':''}>RU</option></select>
+    </div>
+    <div class="fld"><label>Slots</label>
+      <div id="slots"></div>
+    </div>
+  </div>`);
+  m.root.querySelector('.body').append(body);
+  function drawSlots(){
+    const arr=CT.slot.listByProg(id);
+    const wrap=body.querySelector('#slots');
+    wrap.innerHTML = Array.from({length:12}).map((_,i)=>{
+      const s=arr.find(x=>x.pos===i+1);
+      const tool=s?CT.tool.get(s.toolId):null;
+      return `<div class="row">
+        <div class="title">#${i+1} • ${tool?tool.name:'Frei'}</div>
+        <div>
+          <button class="ct-btn" data-swap="${i+1}">Wechseln</button>
+          ${s?`<button class="ct-btn warn" data-rm="${s.id}">Entfernen</button>`:''}
+        </div>
+      </div>`;
+    }).join('');
+    wrap.querySelectorAll('[data-swap]').forEach(b=>b.onclick=()=>pickTool(+b.dataset.swap));
+    wrap.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{CT.slot.remove(b.dataset.rm); drawSlots();});
+  }
+  function pickTool(pos){
+    // быстрый пикер: список инструментов
+    const mm=CT.ui.modal({title:`Slot #${pos}: Werkzeug wählen`});
+    const list=html(`<div class="list">${CT.tool.list().map(t=>`
+      <div class="row"><div><div class="title">${t.name}</div><div class="meta">${t.iso||''}</div></div>
+      <button class="ct-btn" data-pick="${t.id}">OK</button></div>`).join('')}</div>`);
+    mm.root.querySelector('.body').append(list);
+    list.querySelectorAll('[data-pick]').forEach(b=>b.onclick=()=>{CT.slot.assign({progId:id,pos,toolId:b.dataset.pick});mm.close();drawSlots();});
+  }
+  const foot = html(`<div class="foot">
+    <button class="ct-btn brand" id="ok">Speichern</button>
+  </div>`); m.root.append(foot);
+  foot.querySelector('#ok').onclick=()=>{
+    const vv = val('#t'); const mm = vv.split('—'); 
+    CT.prog.update(id,{ title:(mm[0]||'').trim(), number:(mm[1]||'').trim(), side: val('#side') });
+    m.close(); CT.toast('Programm gespeichert');
+  };
+  drawSlots();
+}
+render();
+CT.bus.on('prog:changed',render);
+</script>
+</body></html>
