@@ -1,70 +1,78 @@
-/* ===== Base safe-area & text size (фикс iOS zoom на инпутах) ===== */
-html{ -webkit-text-size-adjust:100%; }
 :root{
-  --appbar-h:64px;
-  --dock-h:68px;
+  /* Тема hero */
+  --bg:#eef3f8; --fg:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf;
+  --card:#ffffffcc; --glass:#ffffffb8; --hair:#e8ecf4;
+  --br:22px; --btnr:14px; --appbar:72px; --dock:72px;
+  --shadow:0 12px 36px rgba(13,27,42,.10);
+  --hero-img:url("./hero/cnc-spark.webp"); /* можно заменить на свою */
 }
 
-/* Контент отступает от Dock */
-.container{
-  padding-bottom: calc(var(--dock-h) + env(safe-area-inset-bottom) + 16px);
+/* базис */
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);
+  font:16px -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
+
+/* HERO шапка (как в heropro) */
+.hero{position:relative;min-height:100svh;display:grid;align-items:end}
+.hero::before{
+  content:"";position:fixed;inset:-10vh 0 auto 0;height:120svh;z-index:-2;
+  background:var(--hero-img) center/cover no-repeat fixed;
+  filter:saturate(1.05) contrast(1.05) brightness(.98);
+}
+.hero::after{
+  content:"";position:fixed;inset:-10vh 0 auto 0;height:120svh;z-index:-1;
+  background:radial-gradient(1200px 600px at 50% 0,#ffffffdd,transparent 70%),
+             linear-gradient(180deg,#ffffffd9 0%,#ffffffb2 35%,#ffffff80 60%,#ffffff40 100%);
+  backdrop-filter:blur(8px);
 }
 
-/* ===== AppBar (ровный) ===== */
-.appbar{
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  height: var(--appbar-h);
-  background: linear-gradient(180deg,#fff,rgba(255,255,255,.88));
-  border-bottom: 1px solid var(--hair);
-  backdrop-filter: saturate(1.1) blur(8px);
-}
-.appbar .wrap{
-  height: var(--appbar-h);
-  display: flex; align-items: center; justify-content: space-between;
-  gap: .5rem; padding: 0 12px;
-}
-.ct-logo{display:flex;align-items:center;gap:.6rem;text-decoration:none;color:inherit}
-.ct-logo .mark{
-  width:34px;height:34px;border-radius:12px;display:grid;place-items:center;
-  font-weight:800;color:#1a2b4a;background:linear-gradient(180deg,#eef3ff,#dfe9ff);
-  box-shadow:inset 0 0 0 1px #d2dcff, 0 8px 24px rgba(13,27,42,.06);
-}
-.ct-logo .tit .title{line-height:1}
-.ct-logo .tit .subtitle{font-size:12px;color:var(--muted);line-height:1.2}
-.actions{display:flex;align-items:center;gap:.4rem}
+/* AppBar */
+.appbar{position:sticky;top:0;z-index:30;height:var(--appbar);
+  background:linear-gradient(180deg,#fff,rgba(255,255,255,.92));
+  border-bottom:1px solid var(--hair);backdrop-filter:saturate(1.1) blur(8px)}
+.appbar .wrap{height:var(--appbar);display:flex;align-items:center;justify-content:space-between;padding:0 14px;gap:.6rem}
 
-/* ===== Searchbar раскрывающийся ===== */
-.searchbar{
-  position: absolute; left: 0; right: 0; top: var(--appbar-h);
-  background: rgba(255,255,255,.92);
-  border-bottom:1px solid #e5eaf9;
-  padding: 10px 12px;
-  display: grid; place-items: center;
-  transition: opacity .25s ease, max-height .25s ease, padding .25s ease;
-  backdrop-filter: blur(10px);
-}
-.searchbar.collapsed{opacity:0;max-height:0;padding:0;border-bottom:none;overflow:hidden}
-.searchbar .searchform{width:100%;display:flex;justify-content:center}
-.searchbar input{
-  width:min(92vw,520px); height:40px;           /* ≥ 16px => нет iOS-зума */
-  font-size:16px; line-height:20px;
-  border:1px solid #dbe5ff; border-radius:12px;
-  padding:0 12px; background:#fff; outline:none;
-}
+/* Премиальный логотип (сливается с шапкой) */
+.ct-logo{display:flex;align-items:center;gap:.7rem;text-decoration:none;color:inherit}
+.ct-mark{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;
+  font-weight:800;letter-spacing:.2px;color:#1a2b4a;
+  background:linear-gradient(180deg,#f7fbff,#e8efff);
+  box-shadow:inset 0 0 0 1px #d2dcff, 0 10px 28px rgba(13,27,42,.08)}
+.ct-tit .subtitle{font-size:12px;color:var(--muted)}
 
-/* ===== Dock: фиксированная высота ===== */
-.dock{
-  position: fixed; left: 0; right: 0; bottom: 0;
-  height: calc(var(--dock-h) + env(safe-area-inset-bottom));
-  padding: 4px 6px calc(4px + env(safe-area-inset-bottom));
-  display:grid; grid-template-columns:repeat(5,1fr); gap:4px;
-  background: rgba(255,255,255,.85);
-  border-top:1px solid #e8ecf4;
-  backdrop-filter: blur(10px) saturate(1.1);
-  z-index: 30;
-}
-.dock a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px;border-radius:12px;color:inherit;text-decoration:none}
+/* Кнопки */
+.btn{height:44px;padding:0 16px;border-radius:var(--btnr);border:1px solid #dbe5ff;background:#fff;font-weight:700}
+.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.sm{height:36px;padding:0 12px}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:0;background:#fff;display:grid;place-items:center;box-shadow:0 6px 18px rgba(13,27,42,.08)}
+.icon-btn:active,.btn:active{transform:translateY(1px)} .icon-btn svg{width:22px;height:22px;fill:#2b446b}
+
+/* раскрывающийся поиск */
+.searchbar{position:absolute;left:0;right:0;top:var(--appbar);
+  background:#ffffffef;border-bottom:1px solid #e5eaf9;backdrop-filter:blur(10px);
+  padding:10px 12px;display:grid;place-items:center;transition:.25s}
+.searchbar.collapsed{opacity:0;max-height:0;padding:0;border:0;overflow:hidden}
+.searchbar input{width:min(92vw,560px);height:42px;border:1px solid #dbe5ff;border-radius:12px;padding:0 12px}
+
+/* Контент-карточки */
+.container{padding:18px 14px calc(var(--dock) + env(safe-area-inset-bottom) + 14px)}
+.hero-card{margin:-28svh 14px 16px;border-radius:28px;padding:18px;background:var(--glass);
+  box-shadow:var(--shadow);backdrop-filter:blur(12px)}
+.section{background:var(--glass);border-radius:var(--br);box-shadow:var(--shadow);padding:16px}
+
+/* Линии/ячейки */
+.cardline{border:1px solid #e8eefb;border-radius:16px;padding:12px;background:#fff}
+
+/* Dock */
+.dock{position:fixed;left:0;right:0;bottom:0;height:calc(var(--dock)+env(safe-area-inset-bottom));
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.86);backdrop-filter:blur(10px) saturate(1.1);
+  border-top:1px solid var(--hair);display:grid;grid-template-columns:repeat(5,1fr);gap:6px;z-index:40}
+.dock a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px;border-radius:14px;color:inherit;text-decoration:none}
 .dock a.active{background:#eef3ff;color:var(--brand)}
 .dock svg{width:22px;height:22px}
+
+/* Иконка i (вместо синей точки) */
+.info-ico{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(45,108,223,.08); color:#2d6cdf}
+.info-ico svg{width:18px;height:18px;fill:currentColor}
