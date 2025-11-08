@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>CitiTool • Docs</title>
+<link rel="stylesheet" href="./ui/neo.css">
+</head>
+<body>
+
+<!-- BG -->
+<div class="hero-bg"><div class="hero-grid"></div></div>
+
+<!-- AppBar (модульные действия: только «Neues Dokument») -->
+<header class="appbar">
+  <div class="wrap">
+    <div class="logo-line">
+      <div class="ct-badge">CT</div>
+      <div class="ct-word"><b>CITI‧TOOL</b></div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnNew">Neues Dokument</button>
+      <div class="search" id="searchBox">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+        <input type="search" placeholder="Suchen…" id="q" autocomplete="off">
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-card">
+    <div class="hero-title"><h1>Docs</h1></div>
+    <p class="hero-sub">Заметки, файлы, мини-превью. Поиск, категории, теги. Новое сверху.</p>
+  </div>
+</div>
+
+<main class="main">
+
+  <!-- Панель управления -->
+  <section class="section">
+    <h2>Aktionen</h2>
+    <div class="list">
+      <div class="row" id="controlsRow">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="catFilter"></select>
+          <button class="btn btn--outline is-sm" id="btnCats">Kategorien…</button>
+          <button class="btn btn--outline is-sm" id="btnImport">Import</button>
+          <button class="btn btn--outline is-sm" id="btnExport">Export</button>
+          <button class="btn btn--outline is-sm" id="btnClearFilters">Filter löschen</button>
+        </div>
+        <div class="muted" id="counter"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Список документов -->
+  <section class="section">
+    <h2>Dokumente</h2>
+    <div class="list" id="docList"></div>
+  </section>
+
+</main>
+
+<!-- Dock -->
+<nav class="dock">
+  <div class="wrap">
+    <a href="./index.html" data-id="dash"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
+    <a href="./setup.html" data-id="setup"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
+    <a href="./tools.html" data-id="tools"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
+    <a href="./setup.html" data-id="programs"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
+    <a href="./docs.html" data-id="docs" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+  </div>
+</nav>
+
+<script src="./ui/neo.js"></script>
+<script src="./ui/docs.js"></script>
+<script>
+CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
+CT.neo.shrinkOnScroll();
+CT.neo.setActiveDock('docs');
+
+Docs.ensureSeeds();
+
+/* ------------ State ------------ */
+const state = { q:'', cat:'', tag:'' };
+CT.on('search', q=>{ state.q=q||''; render(); });
+
+/* ------------ UI refs ------------ */
+const listEl = document.getElementById('docList');
+const catSel = document.getElementById('catFilter');
+const counter= document.getElementById('counter');
+
+/* ------------ Helpers ------------ */
+function fillCats(){
+  const cats = Docs.loadCats();
+  catSel.innerHTML = '';
+  const optAll = document.createElement('option'); optAll.value=''; optAll.textContent='Alle Kategorien';
+  catSel.append(optAll);
+  cats.forEach(c=>{
+    const o=document.createElement('option'); o.value=c; o.textContent=c;
+    if(state.cat===c) o.selected=true;
+    catSel.append(o);
+  });
+}
+function setBadgeCount(n){
+  counter.textContent = n===0 ? '0 Einträge' : `${n} Einträge`;
+}
+function render(){
+  fillCats();
+  const arr = Docs.list(state);
+  setBadgeCount(arr.length);
+  listEl.innerHTML = '';
+  arr.forEach(d=>{
+    const row = document.createElement('div'); row.className='row';
+
+    // левый блок: превью + текст
+    const left = document.createElement('div');
+    const title = document.createElement('div'); title.className='title'; title.textContent = d.title;
+    const meta = document.createElement('div'); meta.className='meta';
+    meta.textContent = `${d.category} • ${new Date(d.updatedAt).toLocaleString()}`;
+
+    const wrapText = document.createElement('div');
+    wrapText.append(title, meta);
+
+    if (d.text){
+      const meta2 = document.createElement('div'); meta2.className='meta';
+      meta2.textContent = Docs.truncate(d.text, 120);
+      wrapText.append(meta2);
+    }
+
+    // превью (если есть). Без собственных CSS, используем width/height атрибуты
+    if (d.imgData){
+      const img = document.createElement('img');
+      img.src = d.imgData; img.alt = 'thumb'; img.width = 56; img.height = 56;
+      // добавим небольшую отступную структуру
+      const imgWrap = document.createElement('div');
+      imgWrap.append(img);
+      left.append(imgWrap, wrapText);
+      left.style.display='grid'; left.style.gridTemplateColumns='56px auto'; left.style.gap='10px';
+    } else {
+      left.append(wrapText);
+    }
+
+    // правый блок: теги + кнопки
+    const right = document.createElement('div');
+    right.style.display='flex'; right.style.flexDirection='column'; right.style.alignItems='flex-end'; right.style.gap='6px';
+
+    const tagsWrap = document.createElement('div');
+    tagsWrap.style.display='flex'; tagsWrap.style.flexWrap='wrap'; tagsWrap.style.gap='6px';
+    (d.tags||[]).forEach(t=>{
+      const tag = document.createElement('span'); tag.className='tag'; tag.textContent = t;
+      tag.title='Nach Tag filtern';
+      tag.onclick=()=>{ state.tag = t; render(); };
+      tagsWrap.append(tag);
+    });
+
+    const btns = document.createElement('div');
+    btns.style.display='flex'; btns.style.gap='6px'; btns.style.alignItems='center';
+    const bOpen = document.createElement('button'); bOpen.className='btn btn--outline is-sm'; bOpen.textContent='Öffnen';
+    const bDel  = document.createElement('button'); bDel.className='btn btn--outline is-sm'; bDel.textContent='Löschen';
+    bOpen.onclick = ()=> openEditor(d);
+    bDel.onclick  = ()=> askDelete(d);
+    btns.append(bOpen,bDel);
+
+    right.append(tagsWrap, btns);
+
+    row.append(left, right);
+    listEl.append(row);
+  });
+}
+
+/* ------------ Editor ------------ */
+function openEditor(doc){
+  const cats = Docs.loadCats();
+  const form = CT.ui.form.create({
+    values: doc || { title:'', category: cats[0]||'Allgemein', tags:[], text:'', imgData:null, file:null },
+    fields: [
+      {type:'text',   key:'title',    label:'Titel', placeholder:'...'},
+      {type:'select', key:'category', label:'Kategorie', options: cats},
+      {type:'text',   key:'tags',     label:'Tags (comma)', placeholder:'drehen, stahl'},
+      {type:'textarea', key:'text',   label:'Text', rows:4},
+      {type:'file',   key:'file',     label:'Datei/Foto', accept:'.pdf,.doc,.docx,.ppt,.pptx,.png,.jpg,.jpeg'}
+    ]
+  });
+
+  // «+ Neue Kategorie» кнопка рядом с select — добавим через небольшой верхний блок
+  const tools = document.createElement('div');
+  tools.style.display='flex'; tools.style.justifyContent='space-between'; tools.style.marginBottom='8px';
+  const btnNewCat = document.createElement('button'); btnNewCat.className='btn btn--outline is-sm'; btnNewCat.textContent='+ Neue Kategorie';
+  btnNewCat.onclick = ()=>{
+    const catForm = CT.ui.form.create({
+      values:{name:''},
+      fields:[{type:'text', key:'name', label:'Name'}]
+    });
+    CT.ui.modal.open({
+      title:'Kategorie hinzufügen',
+      contentEl:catForm.el,
+      footer:[
+        {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
+        {label:'Hinzufügen', kind:'primary', onClick:()=>{
+          const v=catForm.getValues(); const name=(v.name||'').trim(); if(!name){catForm.setErrors({name:'Pflichtfeld'});return;}
+          Docs.cats.add(name); CT.ui.modal.close(); CT.ui.modal.close(); openEditor(doc); // переоткрыть с обновлённым списком
+        }}
+      ]
+    });
+  };
+  tools.append(document.createTextNode(''), btnNewCat);
+
+  const holder = document.createElement('div');
+  holder.append(tools, form.el);
+
+  CT.ui.modal.open({
+    title: doc? 'Dokument bearbeiten' : 'Neues Dokument',
+    contentEl: holder,
+    footer: [
+      {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
+      {label:'Speichern', kind:'primary', onClick: async ()=>{
+        const v = form.getValues();
+        if (!v.title || !v.title.trim()){ form.setErrors({title:'Pflichtfeld'}); return; }
+        // подготовка полей
+        const patch = {
+          title: v.title,
+          category: v.category || 'Allgemein',
+          tags: v.tags ? v.tags.split(',').map(s=>s.trim()).filter(Boolean) : [],
+          text: v.text||'',
+        };
+        // файл -> если картинка, делаем превью; всегда сохраняем метаданные file
+        const fileInput = form.el.querySelector('input[type=file]');
+        if (fileInput && fileInput.files && fileInput.files[0]){
+          const f = fileInput.files[0];
+          const isImg = /^image\//.test(f.type);
+          let imgData = null;
+          if (isImg) imgData = await Docs.resizeImageToDataURL(f, 512);
+          patch.file = { name:f.name, type:f.type };
+          patch.imgData = imgData;
+        }
+        if (doc){ Docs.update(doc.id, patch); }
+        else { Docs.create(patch); }
+        CT.ui.modal.close(); render();
+      }}
+    ]
+  });
+}
+
+/* ------------ Delete ------------ */
+function askDelete(doc){
+  CT.ui.confirm({title:'Löschen?', msg:`«${doc.title}» wirklich entfernen?`})
+    .then(ok=>{ if(ok){ Docs.remove(doc.id); render(); }});
+}
+
+/* ------------ Category manager ------------ */
+document.getElementById('btnCats').onclick = ()=>{
+  const cats = Docs.loadCats();
+  const box = document.createElement('div');
+  const list = document.createElement('div');
+
+  function refreshList(){
+    list.innerHTML='';
+    cats.splice(0, cats.length, ...Docs.loadCats()); // обновить из хранилища
+    cats.forEach(c=>{
+      const row=document.createElement('div'); row.className='row';
+      const left=document.createElement('div'); left.innerHTML=`<div class="title">${c}</div>`;
+      const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
+      const bRen=document.createElement('button'); bRen.className='btn btn--outline is-sm'; bRen.textContent='Umbenennen';
+      const bDel=document.createElement('button'); bDel.className='btn btn--outline is-sm'; bDel.textContent='Löschen';
+      bRen.onclick=()=>{
+        const f=CT.ui.form.create({values:{to:c},fields:[{type:'text',key:'to',label:'Neuer Name',placeholder:c}]});
+        CT.ui.modal.open({
+          title:`Kategorie «${c}» umbenennen`,
+          contentEl:f.el,
+          footer:[
+            {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
+            {label:'Speichern',kind:'primary',onClick:()=>{
+              const v=f.getValues(); const to=(v.to||'').trim(); if(!to){f.setErrors({to:'Pflichtfeld'});return;}
+              Docs.cats.rename(c,to); CT.ui.modal.close(); document.getElementById('btnCats').click(); // reopen
+            }}
+          ]
+        });
+      };
+      bDel.onclick=()=>{
+        const f=CT.ui.form.create({
+          values:{reassign:'Allgemein'},
+          fields:[{type:'select',key:'reassign',label:'Dokumente zu',options:Docs.loadCats()}]
+        });
+        CT.ui.modal.open({
+          title:`Kategorie «${c}» löschen`,
+          contentEl:f.el,
+          footer:[
+            {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
+            {label:'Löschen',kind:'danger',onClick:()=>{
+              const v=f.getValues(); Docs.cats.remove(c, v.reassign||'Allgemein'); CT.ui.modal.close(); document.getElementById('btnCats').click();
+            }}
+          ]
+        });
+      };
+      right.append(bRen,bDel); row.append(left,right); list.append(row);
+    });
+  }
+
+  const addBar=document.createElement('div'); addBar.className='row';
+  const addBtn=document.createElement('button'); addBtn.className='btn'; addBtn.textContent='+ Hinzufügen';
+  addBtn.onclick=()=>{
+    const f=CT.ui.form.create({values:{name:''},fields:[{type:'text',key:'name',label:'Name'}]});
+    CT.ui.modal.open({
+      title:'Neue Kategorie',
+      contentEl:f.el,
+      footer:[
+        {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
+        {label:'Hinzufügen',kind:'primary',onClick:()=>{
+          const v=f.getValues(); const name=(v.name||'').trim(); if(!name){f.setErrors({name:'Pflichtfeld'});return;}
+          Docs.cats.add(name); CT.ui.modal.close(); refreshList();
+        }}
+      ]
+    });
+  };
+  addBar.append(document.createElement('div'), addBtn);
+
+  box.append(addBar, list);
+  refreshList();
+
+  CT.ui.modal.open({
+    title:'Kategorien',
+    contentEl:box,
+    footer:[{label:'Schließen',onClick:()=>CT.ui.modal.close()}],
+    wide:true
+  });
+};
+
+/* ------------ Import/Export ------------ */
+document.getElementById('btnExport').onclick=()=>{
+  const data = Docs.export();
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'citi_docs_backup.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+
+document.getElementById('btnImport').onclick=()=>{
+  const form = CT.ui.form.create({
+    values:{mode:'merge'},
+    fields:[
+      {type:'select',key:'mode',label:'Modus',options:['merge','replace']},
+      {type:'file',key:'file',label:'JSON',accept:'.json'}
+    ]
+  });
+  CT.ui.modal.open({
+    title:'Import',
+    contentEl:form.el,
+    footer:[
+      {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
+      {label:'Importieren',kind:'primary',onClick:()=>{
+        const el = form.el.querySelector('input[type=file]');
+        if(!el || !el.files || !el.files[0]){ form.setErrors({file:'Datei wählen'}); return; }
+        const f = el.files[0];
+        const reader = new FileReader();
+        reader.onload = ()=>{
+          try{
+            const list = JSON.parse(reader.result);
+            const mode = form.getValues().mode || 'merge';
+            const res = Docs.import(list, mode);
+            CT.ui.modal.close();
+            alert(`Import: added ${res.added}, updated ${res.updated}`); // лаконично; можно заменить на toast
+            render();
+          }catch(e){
+            form.setErrors({file:'Ungültige JSON'});
+          }
+        };
+        reader.readAsText(f, 'utf-8');
+      }}
+    ]
+  });
+};
+
+/* ------------ Filters ------------ */
+catSel.onchange = ()=>{ state.cat = catSel.value || ''; render(); };
+document.getElementById('btnClearFilters').onclick=()=>{ state.q=''; state.cat=''; state.tag=''; document.getElementById('q').value=''; render(); };
+
+/* ------------ New doc ------------ */
+document.getElementById('btnNew').onclick = ()=> openEditor();
+
+/* ------------ Initial ------------ */
+render();
+</script>
+</body>
+</html>
