@@ -1,32 +1,66 @@
-// CitiTool • Docs module (логика без верстки-стилей). Использует CT.load/CT.save и CT.ui.*
+// CitiTool • Docs module (чистая логика + миграция). Работает через CT.load/CT.save и CT.ui.*
 ;(function(global){
   const K_DOCS = 'CT_DOCS_V1';
   const K_CATS = 'CT_DOC_CATS_V1';
 
-  const now = () => Date.now();
-  const uid = () => Math.random().toString(36).slice(2,10);
+  const now  = () => Date.now();
+  const uid  = () => Math.random().toString(36).slice(2,10);
   const trim = s => (s||'').toString().trim();
+  const toNum = v => {
+    if (typeof v === 'number') return v;
+    const t = Date.parse(v); return Number.isFinite(t) ? t : now();
+  };
   const uniq = arr => [...new Set(arr)];
 
   function normalizeDoc(d){
-    const tags = Array.isArray(d.tags) ? d.tags.map(trim).filter(Boolean) : (typeof d.tags==='string' ? trim(d.tags).split(',').map(trim).filter(Boolean) : []);
+    // tags может быть массивом или строкой
+    const tags = Array.isArray(d.tags)
+      ? d.tags.map(trim).filter(Boolean)
+      : (typeof d.tags === 'string'
+          ? trim(d.tags).split(',').map(trim).filter(Boolean)
+          : []);
+    // поддержка legacy: desc -> text
+    const text = d.text ?? d.desc ?? '';
     return {
       id: d.id || uid(),
       title: trim(d.title) || 'Untitled',
       category: trim(d.category) || 'Allgemein',
       tags,
-      text: d.text || '',
+      text,
       imgData: d.imgData || null,
       file: d.file || null,
       favorite: !!d.favorite,
-      createdAt: d.createdAt || now(),
-      updatedAt: d.updatedAt || now(),
+      createdAt: d.createdAt ? toNum(d.createdAt) : now(),
+      updatedAt: d.updatedAt ? toNum(d.updatedAt) : now(),
     };
   }
 
+  function migrateIfNeeded(){
+    const cur = CT.load(K_DOCS, null);
+    if (!cur) return false;
+    let changed = false;
+    const next = (cur||[]).map(d=>{
+      const n = normalizeDoc(d);
+      // если что-то изменилось — пометим
+      if (JSON.stringify(n) !== JSON.stringify(d)) changed = true;
+      return n;
+    });
+    if (changed) CT.save(K_DOCS, next);
+    // категории
+    let cats = CT.load(K_CATS, null);
+    if (!cats || !Array.isArray(cats) || cats.length===0){
+      cats = uniq(next.map(x=> x.category));
+      if (!cats.includes('Allgemein')) cats.unshift('Allgemein');
+      CT.save(K_CATS, cats);
+      changed = true;
+    }
+    return changed;
+  }
+
   const Docs = {
-    // ===== Storage =====
+    // ===== Storage / seeds / migration =====
     ensureSeeds(){
+      migrateIfNeeded();
       if (!CT.load(K_CATS, null)) CT.save(K_CATS, ['Allgemein','Setup','Material']);
       if (!CT.load(K_DOCS, null)) {
         const n = now();
@@ -58,9 +92,7 @@
         if (filter.cat && d.category !== filter.cat) return false;
         if (filter.tag && !(d.tags||[]).includes(filter.tag)) return false;
         if (!q) return true;
-        const hay = [
-          d.title||'', d.text||'', d.category||'', (d.tags||[]).join(',')
-        ].join(' ').toLowerCase();
+        const hay = [d.title||'', d.text||'', d.category||'', (d.tags||[]).join(',')].join(' ').toLowerCase();
         return hay.includes(q);
       }).sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
     },
@@ -72,7 +104,6 @@
       cur.updatedAt = now();
       const docs = this.load();
       this.save([cur, ...docs]); // новое сверху
-      // ensure category
       const cats = this.loadCats();
       if (!cats.includes(cur.category)) this.saveCats([...cats, cur.category]);
       return cur;
@@ -104,7 +135,6 @@
         this.saveCats(cats.length? cats : ['Allgemein']);
         return {added: normalized.length, updated: 0};
       }
-      // merge
       const cur = this.load();
       const map = new Map(cur.map(d=>[d.id,d]));
       let added=0, updated=0;
@@ -182,5 +212,5 @@
     }
   };
 
-  global.Docs = Docs;
+  global.Docs = Docs; // доступно как window.Docs
 })(window);
