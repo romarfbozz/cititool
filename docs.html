@@ -11,7 +11,7 @@
 <!-- BG -->
 <div class="hero-bg"><div class="hero-grid"></div></div>
 
-<!-- AppBar (модульные действия: только «Neues Dokument») -->
+<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
     <div class="logo-line">
@@ -44,7 +44,7 @@
     <div class="list">
       <div class="row" id="controlsRow">
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select id="catFilter"></select>
+          <select id="catFilter" style="min-width:160px"></select>
           <button class="btn btn--outline is-sm" id="btnCats">Kategorien…</button>
           <button class="btn btn--outline is-sm" id="btnImport">Import</button>
           <button class="btn btn--outline is-sm" id="btnExport">Export</button>
@@ -104,46 +104,47 @@ function fillCats(){
     catSel.append(o);
   });
 }
-function setBadgeCount(n){
-  counter.textContent = n===0 ? '0 Einträge' : `${n} Einträge`;
-}
+function setBadgeCount(n){ counter.textContent = `${n} Einträge`; }
+
 function render(){
   fillCats();
   const arr = Docs.list(state);
   setBadgeCount(arr.length);
   listEl.innerHTML = '';
+  if (arr.length===0){
+    const empty=document.createElement('div'); empty.className='row';
+    empty.innerHTML = `<div class="muted">Keine Dokumente</div>`;
+    listEl.append(empty);
+    return;
+  }
   arr.forEach(d=>{
     const row = document.createElement('div'); row.className='row';
 
-    // левый блок: превью + текст
+    // Левый блок
     const left = document.createElement('div');
+    const grid = document.createElement('div');
+    grid.style.display='grid'; grid.style.gridTemplateColumns='56px auto'; grid.style.gap='10px';
+
+    const thumb = document.createElement('div');
+    thumb.style.width='56px'; thumb.style.height='56px'; thumb.style.border='1px solid #edf1f7'; thumb.style.borderRadius='10px';
+    thumb.style.display='grid'; thumb.style.placeItems='center'; thumb.style.fontWeight='800'; thumb.style.color='#6b7a90';
+    if (d.imgData){ const img=document.createElement('img'); img.src=d.imgData; img.alt='thumb'; img.width=56; img.height=56; img.style.borderRadius='10px'; thumb.innerHTML=''; thumb.append(img); }
+    else { thumb.textContent='CT'; }
+
+    const textWrap = document.createElement('div');
     const title = document.createElement('div'); title.className='title'; title.textContent = d.title;
-    const meta = document.createElement('div'); meta.className='meta';
-    meta.textContent = `${d.category} • ${new Date(d.updatedAt).toLocaleString()}`;
-
-    const wrapText = document.createElement('div');
-    wrapText.append(title, meta);
-
+    const meta1 = document.createElement('div'); meta1.className='meta';
+    meta1.textContent = `${d.category} • ${new Date(Number(d.updatedAt||d.createdAt)).toLocaleString()}`;
+    textWrap.append(title, meta1);
     if (d.text){
       const meta2 = document.createElement('div'); meta2.className='meta';
       meta2.textContent = Docs.truncate(d.text, 120);
-      wrapText.append(meta2);
+      textWrap.append(meta2);
     }
+    grid.append(thumb, textWrap);
+    left.append(grid);
 
-    // превью (если есть). Без собственных CSS, используем width/height атрибуты
-    if (d.imgData){
-      const img = document.createElement('img');
-      img.src = d.imgData; img.alt = 'thumb'; img.width = 56; img.height = 56;
-      // добавим небольшую отступную структуру
-      const imgWrap = document.createElement('div');
-      imgWrap.append(img);
-      left.append(imgWrap, wrapText);
-      left.style.display='grid'; left.style.gridTemplateColumns='56px auto'; left.style.gap='10px';
-    } else {
-      left.append(wrapText);
-    }
-
-    // правый блок: теги + кнопки
+    // Правый блок
     const right = document.createElement('div');
     right.style.display='flex'; right.style.flexDirection='column'; right.style.alignItems='flex-end'; right.style.gap='6px';
 
@@ -165,7 +166,6 @@ function render(){
     btns.append(bOpen,bDel);
 
     right.append(tagsWrap, btns);
-
     row.append(left, right);
     listEl.append(row);
   });
@@ -185,15 +185,11 @@ function openEditor(doc){
     ]
   });
 
-  // «+ Neue Kategorie» кнопка рядом с select — добавим через небольшой верхний блок
   const tools = document.createElement('div');
   tools.style.display='flex'; tools.style.justifyContent='space-between'; tools.style.marginBottom='8px';
   const btnNewCat = document.createElement('button'); btnNewCat.className='btn btn--outline is-sm'; btnNewCat.textContent='+ Neue Kategorie';
   btnNewCat.onclick = ()=>{
-    const catForm = CT.ui.form.create({
-      values:{name:''},
-      fields:[{type:'text', key:'name', label:'Name'}]
-    });
+    const catForm = CT.ui.form.create({ values:{name:''}, fields:[{type:'text', key:'name', label:'Name'}] });
     CT.ui.modal.open({
       title:'Kategorie hinzufügen',
       contentEl:catForm.el,
@@ -201,7 +197,7 @@ function openEditor(doc){
         {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
         {label:'Hinzufügen', kind:'primary', onClick:()=>{
           const v=catForm.getValues(); const name=(v.name||'').trim(); if(!name){catForm.setErrors({name:'Pflichtfeld'});return;}
-          Docs.cats.add(name); CT.ui.modal.close(); CT.ui.modal.close(); openEditor(doc); // переоткрыть с обновлённым списком
+          Docs.cats.add(name); CT.ui.modal.close(); CT.ui.modal.close(); openEditor(doc);
         }}
       ]
     });
@@ -219,14 +215,12 @@ function openEditor(doc){
       {label:'Speichern', kind:'primary', onClick: async ()=>{
         const v = form.getValues();
         if (!v.title || !v.title.trim()){ form.setErrors({title:'Pflichtfeld'}); return; }
-        // подготовка полей
         const patch = {
           title: v.title,
           category: v.category || 'Allgemein',
           tags: v.tags ? v.tags.split(',').map(s=>s.trim()).filter(Boolean) : [],
           text: v.text||'',
         };
-        // файл -> если картинка, делаем превью; всегда сохраняем метаданные file
         const fileInput = form.el.querySelector('input[type=file]');
         if (fileInput && fileInput.files && fileInput.files[0]){
           const f = fileInput.files[0];
@@ -258,7 +252,7 @@ document.getElementById('btnCats').onclick = ()=>{
 
   function refreshList(){
     list.innerHTML='';
-    cats.splice(0, cats.length, ...Docs.loadCats()); // обновить из хранилища
+    cats.splice(0, cats.length, ...Docs.loadCats());
     cats.forEach(c=>{
       const row=document.createElement('div'); row.className='row';
       const left=document.createElement('div'); left.innerHTML=`<div class="title">${c}</div>`;
@@ -274,7 +268,7 @@ document.getElementById('btnCats').onclick = ()=>{
             {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
             {label:'Speichern',kind:'primary',onClick:()=>{
               const v=f.getValues(); const to=(v.to||'').trim(); if(!to){f.setErrors({to:'Pflichtfeld'});return;}
-              Docs.cats.rename(c,to); CT.ui.modal.close(); document.getElementById('btnCats').click(); // reopen
+              Docs.cats.rename(c,to); CT.ui.modal.close(); document.getElementById('btnCats').click();
             }}
           ]
         });
@@ -335,10 +329,8 @@ document.getElementById('btnExport').onclick=()=>{
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'citi_docs_backup.json';
-  a.click();
-  URL.revokeObjectURL(a.href);
+  a.click(); URL.revokeObjectURL(a.href);
 };
-
 document.getElementById('btnImport').onclick=()=>{
   const form = CT.ui.form.create({
     values:{mode:'merge'},
@@ -363,11 +355,9 @@ document.getElementById('btnImport').onclick=()=>{
             const mode = form.getValues().mode || 'merge';
             const res = Docs.import(list, mode);
             CT.ui.modal.close();
-            alert(`Import: added ${res.added}, updated ${res.updated}`); // лаконично; можно заменить на toast
+            alert(`Import: added ${res.added}, updated ${res.updated}`);
             render();
-          }catch(e){
-            form.setErrors({file:'Ungültige JSON'});
-          }
+          }catch(e){ form.setErrors({file:'Ungültige JSON'}); }
         };
         reader.readAsText(f, 'utf-8');
       }}
@@ -376,7 +366,7 @@ document.getElementById('btnImport').onclick=()=>{
 };
 
 /* ------------ Filters ------------ */
-catSel.onchange = ()=>{ state.cat = catSel.value || ''; render(); };
+catSel.onchange = ()=>{ state.cat = catSel.value || ''; state.tag=''; render(); };
 document.getElementById('btnClearFilters').onclick=()=>{ state.q=''; state.cat=''; state.tag=''; document.getElementById('q').value=''; render(); };
 
 /* ------------ New doc ------------ */
