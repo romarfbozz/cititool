@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>CITI·TOOL — Dokumente</title>
 <style>
-:root{--bg:#f6f8fb;--ink:#0d1b2a;--muted:#6b7a90;--brand:#2d6cdf;--hair:#e9eef6;--r:18px;--shadow:0 10px 30px rgba(13,27,42,.08)}
+:root{--bg:#f6f8fb;--ink:#0d1b2a;--muted:#6b7a90;--brand:#2d6cdf;--hair:#e9eef6;--shadow:0 10px 30px rgba(13,27,42,.08)}
 *{box-sizing:border-box} html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
-.mw{max-width:1040px;margin:0 auto} .muted{color:var(--muted)} .hidden{display:none!important}
+.mw{max-width:1040px;margin:0 auto}
 
 /* AppBar */
 .appbar{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.75));border-bottom:1px solid var(--hair);backdrop-filter:saturate(1.1) blur(8px)}
@@ -19,7 +19,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .actions{display:flex;align-items:center;gap:8px}
 .btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:700}
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
-.btn.ghost{background:#fff}
 .btn:active{transform:translateY(1px)}
 .search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04);transition:width .3s}
 .search.active{width:min(56vw,260px)}
@@ -33,11 +32,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .list{display:grid;gap:10px}
 .card{border:1px solid #edf1f7;border-radius:16px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff}
 .card .title{font-weight:800}
-.badge{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:800;padding:0 10px}
 .feature{background:#f7faff;border-color:#deeaFF}
 .thumb{width:72px;height:72px;border-radius:12px;background:#f0f3fa;display:grid;place-items:center;overflow:hidden}
 .thumb img{width:100%;height:100%;object-fit:cover;border-radius:12px}
-.noimg{width:40px;height:40px;border-radius:12px;background:#eef3ff;display:grid;place-items:center;color:#89a7e6;font-weight:800}
+.noimg{display:grid;place-items:center;gap:6px}
+.noimg-badge{width:40px;height:40px;border-radius:12px;background:#eef3ff;display:grid;place-items:center;color:#89a7e6;font-weight:800}
+.muted{color:var(--muted)}
+.badge{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:800;padding:0 10px}
 
 /* modal */
 .modal{position:fixed;inset:0;z-index:100;display:none}
@@ -45,19 +46,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .modal .overlay{position:absolute;inset:0;background:rgba(0,0,0,.25)}
 .modal .sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,760px);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:14px}
 .modal .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.modal .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.modal .grid .full{grid-column:1/-1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
 .fld{display:grid;gap:.35rem}
 .fld input,.fld select,.fld textarea{width:100%;height:42px;border-radius:12px;border:1px solid #dae2f3;padding:0 12px;background:#fff}
 .fld textarea{height:auto;min-height:120px;padding:10px}
 .footer{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-
-/* category chips bar */
-.catbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
-.catbar .chip{height:34px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;padding:0 10px;font-weight:700}
-.catbar .chip.active{background:#eef3ff;color:var(--brand);border-color:#cfe0ff}
-.catbar .add{border-style:dashed}
-
+@media (max-width:560px){.grid{grid-template-columns:1fr}}
 /* dock */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
 .dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
@@ -65,28 +60,24 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .dock a small{font-weight:600;font-size:12px;color:#344966}
 .dock a.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
 .dock svg{width:22px;height:22px;fill:#2e3e55}
-@media (max-width:560px){ .modal .grid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
 
-<header id="appbar" class="appbar"></header>
+<!-- AppBar -->
+<header class="appbar" id="appbar"></header>
 
 <main class="container mw">
   <section class="section">
     <h1>Dokumentation</h1>
-
-    <!-- Категории -->
-    <div id="catBar" class="catbar"></div>
-
-    <!-- Последнее добавленное -->
+    <!-- верхняя карточка – всегда последний добавленный -->
     <div id="latest" class="list"></div>
-
-    <!-- Остальные -->
+    <!-- остальные -->
     <div id="docsList" class="list"></div>
   </section>
 </main>
 
+<!-- Dock -->
 <nav class="dock">
   <div class="wrap">
     <a href="./index.html"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
@@ -98,154 +89,122 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 </nav>
 
 <script>
-/* ===== Mini-core ===== */
-const CT={}; CT._k='CT_V1';
+/* ========= Мини-ядро (автономно) ========= */
+const CT={_k:'CT_V1'};
 CT.store={
   get(k,fb){try{const all=JSON.parse(localStorage.getItem(CT._k)||'{}');return (k?all[k]:all)??fb}catch(e){return fb}},
   set(k,v){const all=CT.store.get();all[k]=v;localStorage.setItem(CT._k,JSON.stringify(all));return v}
 };
-CT._uuid=()=>('id-'+Math.random().toString(36).slice(2)+Date.now().toString(36));
-CT.collection=(name)=>{const key='coll_'+name;const all=()=>CT.store.get(key,[]);const save=a=>CT.store.set(key,a);
-  return{
-    all, find:id=>all().find(x=>x.id===id),
-    upsert:o=>{let a=all(); if(!o.id)o.id=CT._uuid(); const i=a.findIndex(x=>x.id===o.id);
-      if(!o.timestamp)o.timestamp=Date.now();
-      if(i>=0) a[i]=o; else a.push(o);
-      save(a); return o;
-    },
-    search:(q,idx=(x)=>[x.title,x.text,x.tags?.join(' '),x.category].join(' '))=>{
-      q=(q||'').trim().toLowerCase(); if(!q) return all(); return all().filter(x=>idx(x).toLowerCase().includes(q));
-    }
-  }
+CT.uuid=()=>('id-'+Math.random().toString(36).slice(2)+Date.now().toString(36));
+CT.docs={
+  all(){return CT.store.get('coll_docs',[])},
+  save(list){return CT.store.set('coll_docs',list)},
+  upsert(doc){const a=this.all(); if(!doc.id) doc.id=CT.uuid(); if(!doc.timestamp) doc.timestamp=Date.now();
+    const i=a.findIndex(x=>x.id===doc.id); if(i>=0) a[i]=doc; else a.push(doc); this.save(a); return doc;}
 };
-CT.docs=CT.collection('docs');
-CT.cats={
-  get(scope){const map=CT.store.get('cats',{docs:[],tools:[],progs:[]});return map[scope]||[]},
-  add(scope,name){const map=CT.store.get('cats',{docs:[],tools:[],progs:[]}); if(!map[scope].includes(name)) map[scope].push(name); CT.store.set('cats',map)}
-};
-CT.el=(h)=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstElementChild};
 
-/* ===== UI helpers ===== */
-function appBar({subtitle,onNew,onSearch}) {
-  const wrap=document.getElementById('appbar');
-  wrap.innerHTML=`<div class="row mw">
+/* ========= AppBar + поиск ========= */
+function mountAppBar(){
+  const el=document.getElementById('appbar');
+  el.innerHTML=`<div class="row mw">
     <div class="brandline"><div class="ct-badge">CT</div>
-      <div><div class="ct-word">CITI·TOOL</div><div class="muted" style="font-size:12px">${subtitle||''}</div></div>
+      <div><div class="ct-word">CITI·TOOL</div><div class="muted" style="font-size:12px">Dokumente</div></div>
     </div>
     <div class="actions">
       <button class="btn brand" id="btnNew">Neues Dokument</button>
-      <div class="search" id="search"><svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg><input id="q" placeholder="Suchen…"></div>
+      <div class="search" id="searchBox">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+        <input id="q" placeholder="Suchen…">
+      </div>
     </div></div>`;
-  document.getElementById('btnNew').onclick=onNew;
-  const s=document.getElementById('search'); const input=document.getElementById('q');
-  s.addEventListener('click',()=>{s.classList.add('active');input.focus()});
-  input.addEventListener('blur',()=>{if(!input.value)s.classList.remove('active')});
-  input.addEventListener('input',e=>onSearch&&onSearch(e.target.value));
+  const box=document.getElementById('searchBox'), q=document.getElementById('q');
+  box.addEventListener('click',()=>{box.classList.add('active');q.focus()});
+  q.addEventListener('blur',()=>{if(!q.value)box.classList.remove('active')});
+  q.addEventListener('input',()=>render(q.value.trim().toLowerCase()));
+  document.getElementById('btnNew').onclick=()=>openEditor();
 }
-function modal({title,body,footer}) {
-  let m=document.querySelector('.modal'); if(m) m.remove();
-  m=CT.el(`<div class="modal show"><div class="overlay"></div>
-    <div class="sheet"><div class="hdr"><strong>${title||''}</strong><button class="btn" id="mClose">Schließen</button></div>
+
+/* ========= Modal helpers ========= */
+function h(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild}
+function showModal(title,body,footer){
+  const m=h(`<div class="modal show"><div class="overlay"></div>
+    <div class="sheet"><div class="hdr"><strong>${title}</strong><button class="btn" id="mClose">Schließen</button></div>
     <div class="body"></div><div class="footer"></div></div></div>`);
   m.querySelector('.body').append(body);
-  footer&&m.querySelector('.footer').append(footer);
+  footer && m.querySelector('.footer').append(footer);
   document.body.appendChild(m);
   m.querySelector('#mClose').onclick=()=>m.remove();
   m.querySelector('.overlay').onclick=()=>m.remove();
   return m;
 }
-function editor({schema,value={},onSubmit,title}) {
-  const form=CT.el(`<form class="grid"></form>`); const fields={};
-  const catsDoc=CT.cats.get('docs');
-  schema.forEach(f=>{
-    const wrap=CT.el(`<div class="fld ${f.full?'full':''}"><label>${f.label||f.key}</label></div>`);
-    let input;
-    if(f.type==='textarea'){input=CT.el(`<textarea rows="${f.rows||8}"></textarea>`);}
-    else if(f.type==='select'){input=CT.el(`<select><option value="">(keine)</option>${catsDoc.map(c=>`<option>${c}</option>`).join('')}</select>`);}
-    else if(f.type==='chips'){input=CT.el(`<input placeholder="tag1, tag2">`);}
-    else if(f.type==='file'){input=CT.el(`<input type="file" accept="image/*">`);}
-    else{input=CT.el(`<input>`);}
-    if(value[f.key]!=null && f.type!=='file'){input.value=(f.type==='chips')?(value[f.key]||[]).join(', '):value[f.key];}
-    wrap.appendChild(input); fields[f.key]={def:f,input}; form.appendChild(wrap);
-  });
-  const footer=CT.el(`<div class="footer"><button type="button" class="btn" id="cancel">Abbrechen</button><button class="btn brand">Speichern</button></div>`);
-  const m=modal({title,body:form,footer});
-  footer.querySelector('#cancel').onclick=()=>m.remove();
-  form.addEventListener('submit',async e=>{
-    e.preventDefault(); const out={...value};
-    for(const k in fields){
-      const {def,input}=fields[k];
-      if(def.type==='chips') out[k]=input.value.split(',').map(s=>s.trim()).filter(Boolean);
-      else if(def.type==='file'){ if(input.files&&input.files[0]) out[k]=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(input.files[0]);}); }
-      else out[k]=input.value;
-    }
+
+/* ========= Editor ========= */
+function openEditor(doc){
+  const v=doc||{title:'',category:'',tags:[],type:'Notiz',text:'',fileThumb:''};
+  const form=h(`<form class="grid">
+    <div class="fld full"><label>Titel</label><input id="f_title" required value="${v.title||''}"></div>
+    <div class="fld"><label>Kategorie</label><input id="f_cat" value="${v.category||''}" placeholder="Allgemein"></div>
+    <div class="fld"><label>Tags (kommagetrennt)</label><input id="f_tags" value="${(v.tags||[]).join(', ')}"></div>
+    <div class="fld"><label>Typ</label><input id="f_type" value="${v.type||''}"></div>
+    <div class="fld full"><label>Inhalt</label><textarea id="f_text" rows="8">${v.text||''}</textarea></div>
+    <div class="fld full"><label>Bild/Thumb</label><input id="f_file" type="file" accept="image/*"></div>
+  </form>`);
+  const bar=h(`<div class="footer">
+    <button class="btn" id="cancel">Abbrechen</button>
+    <button class="btn brand" id="save">Speichern</button></div>`);
+  const m=showModal(doc?'Dokument bearbeiten':'Neues Dokument',form,bar);
+  bar.querySelector('#cancel').onclick=()=>m.remove();
+  bar.querySelector('#save').onclick=async ()=>{
+    const out={...v};
+    out.title=form.querySelector('#f_title').value.trim();
+    if(!out.title){alert('Titel ist erforderlich');return;}
+    out.category=form.querySelector('#f_cat').value.trim();
+    out.tags=form.querySelector('#f_tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+    out.type=form.querySelector('#f_type').value.trim();
+    out.text=form.querySelector('#f_text').value;
+    const file=form.querySelector('#f_file').files[0];
+    if(file){out.fileThumb=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});}
     out.timestamp=Date.now();
-    onSubmit&&onSubmit(out,m);
-  });
-  return m;
-}
-
-/* ===== AppBar ===== */
-appBar({
-  subtitle:'Dokumente',
-  onNew:()=>openEditor(),
-  onSearch:(q)=>{STATE.q=q; render();}
-});
-
-/* ===== Seed ===== */
-if(CT.cats.get('docs').length===0){['Allgemein','Check','NC','ISO-P'].forEach(c=>CT.cats.add('docs',c));}
-if(CT.docs.all().length===0){
-  CT.docs.upsert({title:'Aufspann-Check',category:'Allgemein',tags:['check','setup'],type:'Notiz',text:'Schrauben, Anschläge, Reitstock…'});
-}
-
-/* ===== Category bar (with +) ===== */
-const catBar=document.getElementById('catBar');
-function drawCatBar(){
-  catBar.innerHTML='';
-  const addChip=CT.el(`<button class="chip add">+ Kategorie</button>`);
-  addChip.onclick=()=>{
-    const name=prompt('Neue Kategorie:'); 
-    if(name && name.trim()){ CT.cats.add('docs',name.trim()); drawCatBar(); }
+    if(doc&&doc.id) out.id=doc.id;
+    CT.docs.upsert(out);
+    m.remove();
+    render();
   };
-  const allBtn=CT.el(`<button class="chip ${!STATE.cat?'active':''}">Alle</button>`);
-  allBtn.onclick=()=>{STATE.cat=null;drawCatBar();render();}
-  catBar.append(allBtn);
-  CT.cats.get('docs').forEach(c=>{
-    const b=CT.el(`<button class="chip ${STATE.cat===c?'active':''}">${c}</button>`);
-    b.onclick=()=>{STATE.cat=c;drawCatBar();render();}
-    catBar.append(b);
-  });
-  catBar.append(addChip);
 }
-drawCatBar();
 
-/* ===== State & Render ===== */
-let STATE={q:null,cat:null};
-function render(){
-  const all = STATE.q ? CT.docs.search(STATE.q) : CT.docs.all();
-  let items = all.sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
-  if(STATE.cat) items = items.filter(x=>x.category===STATE.cat);
+/* ========= Viewer ========= */
+function thumb(doc){
+  if(doc.fileThumb) return h(`<div class="thumb"><img src="${doc.fileThumb}" alt=""></div>`);
+  return h(`<div class="thumb noimg">
+    <div class="noimg-badge">CT</div><div class="muted" style="font-size:12px">kein Foto</div></div>`);
+}
+function openViewer(doc){
+  const box=h(`<div></div>`);
+  box.append(thumb(doc));
+  box.append(h(`<div class="muted" style="margin:8px 0">Kategorie: <b>${doc.category||'—'}</b> ${doc.tags?.length?'• '+doc.tags.join(', '):''}</div>`));
+  if(doc.text) box.append(h(`<div style="white-space:pre-wrap;border:1px dashed #e5eaf4;border-radius:12px;padding:10px">${doc.text}</div>`));
+  showModal(doc.title,box);
+}
 
-  // latest
-  const latest=document.getElementById('latest');
-  latest.innerHTML='';
-  if(items.length){
-    latest.append(renderDoc(items[0],true));
-    items = items.slice(1);
+/* ========= Render ========= */
+function render(q){
+  // сидаем демо один раз
+  if(CT.docs.all().length===0){
+    CT.docs.upsert({title:'Aufspann-Check',category:'Allgemein',tags:['check','setup'],type:'Notiz',text:'Schrauben, Anschläge, Reitstock…',timestamp:Date.now()});
   }
-
-  const list=document.getElementById('docsList');
-  list.innerHTML='';
-  items.forEach(d=>list.append(renderDoc(d,false)));
+  let items=CT.docs.all().slice().sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+  if(q) items=items.filter(d=>(`${d.title} ${d.text} ${(d.tags||[]).join(' ')} ${d.category||''}`.toLowerCase().includes(q)));
+  const latest=document.getElementById('latest'), list=document.getElementById('docsList');
+  latest.innerHTML=''; list.innerHTML='';
+  if(items.length){
+    latest.append(renderCard(items[0],true));
+    items.slice(1).forEach(d=>list.append(renderCard(d,false)));
+  }
 }
-function thumbEl(doc){
-  if(doc.fileThumb) return CT.el(`<div class="thumb"><img src="${doc.fileThumb}"></div>`);
-  return CT.el(`<div class="thumb"><div class="noimg">CT</div><div class="muted" style="font-size:12px;margin-top:4px">kein Foto</div></div>`);
-}
-function renderDoc(doc,featured){
-  const el=CT.el(`<div class="card ${featured?'feature':''}">
+function renderCard(doc,featured){
+  const el=h(`<div class="card ${featured?'feature':''}">
     <div style="display:flex;gap:12px;align-items:center;min-width:0">
-      ${thumbEl(doc).outerHTML}
+      ${thumb(doc).outerHTML}
       <div style="min-width:0">
         <div class="title">${featured?'Neu • ':''}${doc.title||'—'}</div>
         <div class="muted" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
@@ -263,36 +222,8 @@ function renderDoc(doc,featured){
   return el;
 }
 
-/* ===== Editor & Viewer ===== */
-const DOC_SCHEMA=[
-  {key:'title',label:'Titel',type:'text',required:true,full:true},
-  {key:'category',label:'Kategorie',type:'select'},
-  {key:'tags',label:'Tags',type:'chips'},
-  {key:'type',label:'Typ',type:'text'},
-  {key:'text',label:'Inhalt',type:'textarea',rows:8,full:true},
-  {key:'fileThumb',label:'Bild/Thumb',type:'file'}
-];
-function openEditor(doc){
-  editor({title:doc?'Dokument bearbeiten':'Neues Dokument',schema:DOC_SCHEMA,value:doc||{},
-    onSubmit:(val,m)=>{ if(!val.title?.trim()){alert('Titel ist erforderlich');return;}
-      if(doc) val.id=doc.id;
-      val.timestamp=Date.now();
-      CT.docs.upsert(val);
-      m.remove();
-      render();
-    }
-  });
-}
-function openViewer(doc){
-  const box=CT.el(`<div></div>`);
-  const head=CT.el(`<div class="muted">Kategorie: <b>${doc.category||'—'}</b> ${doc.tags?.length?'• '+doc.tags.join(', '):''}</div>`);
-  box.append(head);
-  box.append(thumbEl(doc));
-  if(doc.text) box.append(CT.el(`<div class="section" style="border:1px dashed #e5eaf4">${(doc.text||'').replace(/\n/g,'<br>')}</div>`));
-  modal({title:doc.title,body:box});
-}
-
-/* boot */
+/* ========= Boot ========= */
+mountAppBar();
 render();
 </script>
 </body>
