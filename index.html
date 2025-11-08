@@ -1,141 +1,31 @@
-<!doctype html>
-<html lang="de">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>CitiTool • Dashboard</title>
-  <link rel="stylesheet" href="./ui/core.css">
-</head>
-<body>
+<!doctype html><html lang="ru"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>CitiTool — Dashboard</title>
+<link rel="stylesheet" href="./ui/core.css"/>
+<script src="./ui/core.js" defer></script>
+<script src="./ui/widgets.js" defer></script>
+</head><body>
+<script>
+document.addEventListener('DOMContentLoaded', ()=>{
+  const page = CT.initPage({
+    title:'Dashboard', subtitle:'Сегодня',
+    active:'dash',
+    search:{ onQuery:q=> console.log('search dash', q) },
+    actions:[ {label:'Backup', onClick:()=>CT.backup()} ]
+  });
 
-<!-- fixed blueprint bg -->
-<div class="hero-bg"><div class="hero-grid"></div></div>
+  // Schnellaktionen
+  const quick = CT.el(`<div class="grid cols-3">
+    <div class="card"><div style="font-weight:700">Setup-Checkliste</div><div class="hint">Быстрый доступ</div><a class="btn" href="./setup.html" style="margin-top:8px">Открыть</a></div>
+    <div class="card"><div style="font-weight:700">Шкаф инструментов</div><div class="hint">Просмотр/CRUD</div><a class="btn" href="./tools.html" style="margin-top:8px">Открыть</a></div>
+    <div class="card"><div style="font-weight:700">Документы</div><div class="hint">Новые сверху</div><a class="btn" href="./docs.html" style="margin-top:8px">Открыть</a></div>
+  </div>`);
+  page.append(quick);
 
-<!-- AppBar -->
-<header class="appbar">
-  <div class="wrap">
-    <div class="logo-line">
-      <div class="ct-badge">CT</div>
-      <div class="ct-word"><b>CITI‧TOOL</b></div>
-    </div>
-    <div class="actions">
-      <button class="btn brand" id="newProg">Neues Programm</button>
-      <div class="search" id="searchBox">
-        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
-        <input type="search" placeholder="Suchen…" id="q">
-      </div>
-    </div>
-  </div>
-</header>
-
-<!-- Hero -->
-<div class="hero" style="opacity:var(--hero-opa,1)">
-  <div class="hero-card">
-    <div class="hero-title">
-      <h1>Setup • Tools • Docs</h1>
-      <button class="btn brand" id="newProgTop">Neues Programm</button>
-    </div>
-    <p class="hero-sub">Светлый минимализм в стиле Behance: крупный логотип, анимированный поиск, стеклянные карточки, мягкая динамика.</p>
-  </div>
-</div>
-
-<!-- Content -->
-<main class="main">
-
-  <!-- Модули -->
-  <section class="section">
-    <h2>Module</h2>
-    <div class="grid">
-      <article class="mod">
-        <div class="thumb">
-          <svg viewBox="0 0 24 24"><path d="M3 4h18v2H3zM3 8h12v2H3zM3 12h18v2H3zM3 16h12v2H3z"/></svg>
-        </div>
-        <div class="meta">
-          <div class="name">Programme</div>
-          <div class="sub">Live-Setup, Slots, Zeichnung</div>
-        </div>
-      </article>
-      <article class="mod">
-        <div class="thumb">
-          <svg viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg>
-        </div>
-        <div class="meta">
-          <div class="name">Tools</div>
-          <div class="sub">Schrank, Kategorien, Fotos</div>
-        </div>
-      </article>
-      <article class="mod">
-        <div class="thumb">
-          <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/></svg>
-        </div>
-        <div class="meta">
-          <div class="name">Docs</div>
-          <div class="sub">PDF/DOC/PPT + поиск</div>
-        </div>
-      </article>
-      <article class="mod">
-        <div class="thumb">
-          <svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg>
-        </div>
-        <div class="meta">
-          <div class="name">Dashboard</div>
-          <div class="sub">Schnellaktionen, Produktion</div>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <!-- Schnellaktionen -->
-  <section class="section">
-    <h2>Schnellaktionen</h2>
-    <div class="list">
-      <div class="row">
-        <div>
-          <div class="title">Neues Setup</div>
-          <div class="meta">Live-Setup anlegen</div>
-        </div>
-        <button class="btn">Öffnen</button>
-      </div>
-      <div class="row">
-        <div>
-          <div class="title">Neues Werkzeug</div>
-          <div class="meta">In den Schrank hinzufügen</div>
-        </div>
-        <button class="btn">Öffnen</button>
-      </div>
-      <div class="row">
-        <div>
-          <div class="title">Material-Assist</div>
-          <div class="meta">Schnittdaten schnell berechnen</div>
-        </div>
-        <button class="btn">Öffnen</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- Produktion (демо) -->
-  <section class="section">
-    <h2>Produktion (Demo)</h2>
-    <div class="list">
-      <div class="row"><div class="title">Los 123 • 20 / 100 • Heute</div><span class="badge">20%</span></div>
-      <div class="row"><div class="title">Los 124 • 58 / 200 • Woche</div><span class="badge">29%</span></div>
-      <div class="row"><div class="title">Los 125 • 0 / 150 • Morgen</div><span class="badge">0%</span></div>
-    </div>
-  </section>
-
-</main>
-
-<!-- Dock -->
-<nav class="dock">
-  <div class="wrap">
-    <a href="#" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
-    <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
-    <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
-    <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
-    <a href="#"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
-  </div>
-</nav>
-
-<script src="./ui/core.js"></script>
-</body>
-</html>
+  // Produktion (заглушка с прогрессом)
+  page.append(CT.el(`<div style="height:10px"></div>`));
+  page.append(CT.el(`<div class="card"><div style="font-weight:700;margin-bottom:8px">Produktion</div></div>`))
+    .append(CT.progress({value:32, max:100}));
+});
+</script>
+</body></html>
