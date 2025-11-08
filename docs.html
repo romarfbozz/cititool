@@ -5,225 +5,353 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>CITI·TOOL — Dokumente</title>
 <style>
-:root{--bg:#f6f8fb;--ink:#0d1b2a;--muted:#6b7a90;--brand:#2d6cdf;--hair:#e9eef6;--shadow:0 10px 30px rgba(13,27,42,.08)}
+:root{
+  --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf;
+  --hair:#e9eef6; --glass:#ffffffcc; --shadow:0 10px 30px rgba(13,27,42,.08);
+  --r:18px; --btnr:14px;
+}
 *{box-sizing:border-box} html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
-.mw{max-width:1040px;margin:0 auto}
+body{margin:0;background:var(--bg);color:var(--ink);
+     font:16px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
 
 /* AppBar */
-.appbar{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,.75));border-bottom:1px solid var(--hair);backdrop-filter:saturate(1.1) blur(8px)}
-.appbar .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px}
-.brandline{display:flex;align-items:center;gap:10px}
-.ct-badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:900;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff;background:conic-gradient(from 230deg at 30% 30%, #7bb0ff, #2d6cdf, #7bb0ff)}
-.ct-word{font:900 22px/1 Inter,system-ui;letter-spacing:-.3px}
-.actions{display:flex;align-items:center;gap:8px}
-.btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:700}
-.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
-.btn:active{transform:translateY(1px)}
-.search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04);transition:width .3s}
+.appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.70));
+  border-bottom:1px solid var(--hair)}
+.appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:10px}
+.badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff, #2d6cdf, #7bb0ff);
+  color:#fff;font-weight:900;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
+.brand{height:40px;padding:0 14px;border-radius:var(--btnr);border:1px solid #dbe5ff;background:#fff;font-weight:700}
+.brand.primary{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
+.brand:active{transform:translateY(1px)}
+.search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;transition:width .35s ease, background .2s;background:#fff;border:1px solid var(--hair)}
 .search.active{width:min(56vw,260px)}
 .search svg{position:absolute;left:12px;width:18px;height:18px;fill:#8aa0c4}
 .search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter,system-ui;color:var(--ink)}
+.actions{display:flex;align-items:center;gap:8px}
 
-/* content */
-.container{padding:14px 16px 96px}
-.section{background:#fff;border:1px solid #edf1f7;border-radius:22px;box-shadow:var(--shadow);padding:16px;margin:8px 0}
-.section h1{margin:2px 4px 12px;font:800 28px/1.2 Inter,system-ui}
-.list{display:grid;gap:10px}
-.card{border:1px solid #edf1f7;border-radius:16px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff}
-.card .title{font-weight:800}
-.feature{background:#f7faff;border-color:#deeaFF}
-.thumb{width:72px;height:72px;border-radius:12px;background:#f0f3fa;display:grid;place-items:center;overflow:hidden}
-.thumb img{width:100%;height:100%;object-fit:cover;border-radius:12px}
-.noimg{display:grid;place-items:center;gap:6px}
-.noimg-badge{width:40px;height:40px;border-radius:12px;background:#eef3ff;display:grid;place-items:center;color:#89a7e6;font-weight:800}
-.muted{color:var(--muted)}
-.badge{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:800;padding:0 10px}
+/* Layout */
+.container{max-width:1040px;margin:0 auto;padding:14px 16px 96px;display:grid;gap:14px}
+.section{background:#fff;border:1px solid var(--hair);border-radius:22px;box-shadow:var(--shadow);padding:14px}
+.section h1{margin:4px 8px 10px;font:900 28px/1.15 Inter,system-ui}
 
-/* modal */
+/* Карточки документов */
+.list{display:grid;gap:12px}
+.card{
+  border:1px solid #edf1f7;border-radius:16px;padding:14px;
+  display:flex;gap:12px;align-items:center;background:#fff;
+}
+.thumb{width:64px;height:64px;border-radius:14px;background:#f0f3fa;border:1px solid #e5ebf7;display:grid;place-items:center;flex-shrink:0;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .nofoto{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:linear-gradient(180deg,#eaf2ff,#fff);color:#8aa0c4;font-weight:800;border:1px solid #dbe5ff}
+.info{display:flex;gap:12px;align-items:center;min-width:0;flex:1}
+.title{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.meta{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.actions{display:flex;gap:6px;flex-shrink:0}
+.btn{height:36px;padding:0 12px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:700;white-space:nowrap}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.warn{background:#ffe9bf;border-color:#ffd87a}
+.btn.red{background:#ffe8e8;border-color:#ffc9c9}
+
+@media (max-width:480px){
+  .card{flex-wrap:wrap}
+  .actions{width:100%;justify-content:flex-end}
+}
+
+/* Модалки */
 .modal{position:fixed;inset:0;z-index:100;display:none}
 .modal.show{display:block}
-.modal .overlay{position:absolute;inset:0;background:rgba(0,0,0,.25)}
-.modal .sheet{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,760px);max-height:86vh;overflow:auto;background:#fff;border-radius:16px;box-shadow:var(--shadow);padding:14px}
-.modal .hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.full{grid-column:1/-1}
-.fld{display:grid;gap:.35rem}
-.fld input,.fld select,.fld textarea{width:100%;height:42px;border-radius:12px;border:1px solid #dae2f3;padding:0 12px;background:#fff}
-.fld textarea{height:auto;min-height:120px;padding:10px}
-.footer{display:flex;justify-content:flex-end;gap:8px;margin-top:10px}
-@media (max-width:560px){.grid{grid-template-columns:1fr}}
-/* dock */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
-.dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
-.dock a{display:grid;justify-items:center;gap:4px;padding:10px;border-radius:14px;text-decoration:none;color:inherit}
-.dock a small{font-weight:600;font-size:12px;color:#344966}
-.dock a.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
-.dock svg{width:22px;height:22px;fill:#2e3e55}
+.modal .ov{position:absolute;inset:0;background:rgba(0,0,0,.25)}
+.modal .panel{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(92vw,720px);max-height:86vh;overflow:auto;background:#fff;border-radius:18px;
+  box-shadow:var(--shadow);padding:12px;border:1px solid var(--hair)}
+.modal .row{display:grid;gap:.4rem;margin:.6rem 0}
+.modal label{font-weight:700}
+.input,.select,.textarea{width:100%;height:42px;border-radius:12px;border:1px solid #dae2f3;padding:0 12px;background:#fff}
+.textarea{height:auto;min-height:120px;padding:10px}
+.footer{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+
+/* Категории */
+.catbar{display:flex;gap:6px;flex-wrap:wrap;margin:6px 8px 2px}
+.chip{border:1px solid #dbe5ff;background:#fff;border-radius:999px;padding:6px 10px;font-weight:700}
+.chip.active{background:#eef3ff;color:#255acb;border-color:#cfe0ff}
 </style>
 </head>
 <body>
 
-<!-- AppBar -->
-<header class="appbar" id="appbar"></header>
+<header class="appbar">
+  <div class="wrap">
+    <div class="logo">
+      <div class="badge">CT</div>
+      <div style="font:900 22px/1 Inter,system-ui;letter-spacing:-.3px">CITI·TOOL</div>
+      <div class="muted" style="margin-left:6px">Dokumente</div>
+    </div>
+    <div class="actions">
+      <button class="brand primary" id="btnNewDoc">Neues Dokument</button>
+      <div class="search" id="search">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+        <input id="q" type="search" placeholder="Suchen…">
+      </div>
+    </div>
+  </div>
+</header>
 
-<main class="container mw">
+<main class="container">
   <section class="section">
     <h1>Dokumentation</h1>
-    <!-- верхняя карточка – всегда последний добавленный -->
-    <div id="latest" class="list"></div>
-    <!-- остальные -->
-    <div id="docsList" class="list"></div>
+    <div class="catbar" id="catbar"></div>
+    <div class="list" id="list"></div>
   </section>
 </main>
 
-<!-- Dock -->
-<nav class="dock">
-  <div class="wrap">
-    <a href="./index.html"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
-    <a href="./setup.html"><svg viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
-    <a href="./tools.html"><svg viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
-    <a href="./programme.html"><svg viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
-    <a class="active" href="./docs.html"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+<!-- Modal: Editor -->
+<div class="modal" id="editor">
+  <div class="ov" data-close></div>
+  <div class="panel">
+    <h2 id="edTitle" style="margin:6px 6px 0">Dokument bearbeiten</h2>
+    <div class="row">
+      <label>Titel</label>
+      <input id="f_title" class="input" placeholder="z.B. Aufspann-Check">
+    </div>
+    <div class="row">
+      <label>Beschreibung</label>
+      <textarea id="f_desc" class="textarea" placeholder="Kurzbeschreibung…"></textarea>
+    </div>
+    <div class="row">
+      <label>Kategorie</label>
+      <div style="display:flex;gap:6px">
+        <select id="f_cat" class="select" style="flex:1"></select>
+        <button class="btn" id="btnCats">Kategorien…</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>Tags (kommagetrennt)</label>
+      <input id="f_tags" class="input" placeholder="setup, check, iso-p …">
+    </div>
+    <div class="row">
+      <label>Vorschaubild</label>
+      <input id="f_img" class="input" placeholder="Bild-URL (optional)">
+    </div>
+    <div class="footer">
+      <button class="btn red" id="btnDel">Löschen</button>
+      <button class="btn" data-close>Abbrechen</button>
+      <button class="btn primary" id="btnSave">Speichern</button>
+    </div>
   </div>
-</nav>
+</div>
+
+<!-- Modal: Kategorien -->
+<div class="modal" id="cats">
+  <div class="ov" data-close></div>
+  <div class="panel">
+    <h2 style="margin:6px 6px 0">Kategorien</h2>
+    <div id="catsList" class="list" style="margin-top:8px"></div>
+    <div class="row">
+      <label>Neue Kategorie</label>
+      <div style="display:flex;gap:6px">
+        <input id="newCatName" class="input" placeholder="Name">
+        <button class="btn primary" id="addCat">Hinzufügen</button>
+      </div>
+    </div>
+    <div class="footer">
+      <button class="btn" data-close>Schließen</button>
+    </div>
+  </div>
+</div>
 
 <script>
-/* ========= Мини-ядро (автономно) ========= */
-const CT={_k:'CT_V1'};
-CT.store={
-  get(k,fb){try{const all=JSON.parse(localStorage.getItem(CT._k)||'{}');return (k?all[k]:all)??fb}catch(e){return fb}},
-  set(k,v){const all=CT.store.get();all[k]=v;localStorage.setItem(CT._k,JSON.stringify(all));return v}
-};
-CT.uuid=()=>('id-'+Math.random().toString(36).slice(2)+Date.now().toString(36));
-CT.docs={
-  all(){return CT.store.get('coll_docs',[])},
-  save(list){return CT.store.set('coll_docs',list)},
-  upsert(doc){const a=this.all(); if(!doc.id) doc.id=CT.uuid(); if(!doc.timestamp) doc.timestamp=Date.now();
-    const i=a.findIndex(x=>x.id===doc.id); if(i>=0) a[i]=doc; else a.push(doc); this.save(a); return doc;}
-};
+/* ====== storage keys ====== */
+const K_DOCS = 'CT_DOCS_V1';
+const K_CATS = 'CT_DOC_CATS_V1';
 
-/* ========= AppBar + поиск ========= */
-function mountAppBar(){
-  const el=document.getElementById('appbar');
-  el.innerHTML=`<div class="row mw">
-    <div class="brandline"><div class="ct-badge">CT</div>
-      <div><div class="ct-word">CITI·TOOL</div><div class="muted" style="font-size:12px">Dokumente</div></div>
-    </div>
-    <div class="actions">
-      <button class="btn brand" id="btnNew">Neues Dokument</button>
-      <div class="search" id="searchBox">
-        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
-        <input id="q" placeholder="Suchen…">
-      </div>
-    </div></div>`;
-  const box=document.getElementById('searchBox'), q=document.getElementById('q');
-  box.addEventListener('click',()=>{box.classList.add('active');q.focus()});
-  q.addEventListener('blur',()=>{if(!q.value)box.classList.remove('active')});
-  q.addEventListener('input',()=>render(q.value.trim().toLowerCase()));
-  document.getElementById('btnNew').onclick=()=>openEditor();
+/* ====== state ====== */
+let DOCS = load(K_DOCS, []);
+let CATS = load(K_CATS, ['Allgemein']);
+let FILTER = { q:'', cat:'__ALL__' };
+let editingId = null;
+
+/* ====== helpers ====== */
+function load(k,def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def }catch{ return def } }
+function save(k,v){ localStorage.setItem(k, JSON.stringify(v)) }
+function $(q,root=document){ return root.querySelector(q) }
+function h(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstChild }
+
+function fmtTags(a){ return (a||[]).join(', ') }
+
+/* ====== search box ====== */
+const sb = $('#search'), qi = $('#q');
+sb.addEventListener('click',()=>{ sb.classList.add('active'); qi.focus() })
+qi.addEventListener('blur',()=>{ if(!qi.value) sb.classList.remove('active') })
+qi.addEventListener('input',()=>{ FILTER.q = qi.value.trim().toLowerCase(); render() })
+
+/* ====== categories bar ====== */
+function renderCatbar(){
+  const bar = $('#catbar'); bar.innerHTML='';
+  const all = h(`<button class="chip ${FILTER.cat==='__ALL__'?'active':''}">Alle</button>`);
+  all.onclick=()=>{ FILTER.cat='__ALL__'; render() };
+  bar.append(all);
+  CATS.forEach(c=>{
+    const b = h(`<button class="chip ${FILTER.cat===c?'active':''}">${c}</button>`);
+    b.onclick=()=>{ FILTER.cat=c; render() };
+    bar.append(b);
+  });
+  // менеджер
+  const mgr = h(`<button class="chip">Kategorien verwalten</button>`);
+  mgr.onclick=openCats;
+  bar.append(mgr);
 }
 
-/* ========= Modal helpers ========= */
-function h(html){const t=document.createElement('template');t.innerHTML=html.trim();return t.content.firstElementChild}
-function showModal(title,body,footer){
-  const m=h(`<div class="modal show"><div class="overlay"></div>
-    <div class="sheet"><div class="hdr"><strong>${title}</strong><button class="btn" id="mClose">Schließen</button></div>
-    <div class="body"></div><div class="footer"></div></div></div>`);
-  m.querySelector('.body').append(body);
-  footer && m.querySelector('.footer').append(footer);
-  document.body.appendChild(m);
-  m.querySelector('#mClose').onclick=()=>m.remove();
-  m.querySelector('.overlay').onclick=()=>m.remove();
-  return m;
-}
-
-/* ========= Editor ========= */
-function openEditor(doc){
-  const v=doc||{title:'',category:'',tags:[],type:'Notiz',text:'',fileThumb:''};
-  const form=h(`<form class="grid">
-    <div class="fld full"><label>Titel</label><input id="f_title" required value="${v.title||''}"></div>
-    <div class="fld"><label>Kategorie</label><input id="f_cat" value="${v.category||''}" placeholder="Allgemein"></div>
-    <div class="fld"><label>Tags (kommagetrennt)</label><input id="f_tags" value="${(v.tags||[]).join(', ')}"></div>
-    <div class="fld"><label>Typ</label><input id="f_type" value="${v.type||''}"></div>
-    <div class="fld full"><label>Inhalt</label><textarea id="f_text" rows="8">${v.text||''}</textarea></div>
-    <div class="fld full"><label>Bild/Thumb</label><input id="f_file" type="file" accept="image/*"></div>
-  </form>`);
-  const bar=h(`<div class="footer">
-    <button class="btn" id="cancel">Abbrechen</button>
-    <button class="btn brand" id="save">Speichern</button></div>`);
-  const m=showModal(doc?'Dokument bearbeiten':'Neues Dokument',form,bar);
-  bar.querySelector('#cancel').onclick=()=>m.remove();
-  bar.querySelector('#save').onclick=async ()=>{
-    const out={...v};
-    out.title=form.querySelector('#f_title').value.trim();
-    if(!out.title){alert('Titel ist erforderlich');return;}
-    out.category=form.querySelector('#f_cat').value.trim();
-    out.tags=form.querySelector('#f_tags').value.split(',').map(s=>s.trim()).filter(Boolean);
-    out.type=form.querySelector('#f_type').value.trim();
-    out.text=form.querySelector('#f_text').value;
-    const file=form.querySelector('#f_file').files[0];
-    if(file){out.fileThumb=await new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});}
-    out.timestamp=Date.now();
-    if(doc&&doc.id) out.id=doc.id;
-    CT.docs.upsert(out);
-    m.remove();
-    render();
-  };
-}
-
-/* ========= Viewer ========= */
+/* ====== list ====== */
 function thumb(doc){
-  if(doc.fileThumb) return h(`<div class="thumb"><img src="${doc.fileThumb}" alt=""></div>`);
-  return h(`<div class="thumb noimg">
-    <div class="noimg-badge">CT</div><div class="muted" style="font-size:12px">kein Foto</div></div>`);
-}
-function openViewer(doc){
-  const box=h(`<div></div>`);
-  box.append(thumb(doc));
-  box.append(h(`<div class="muted" style="margin:8px 0">Kategorie: <b>${doc.category||'—'}</b> ${doc.tags?.length?'• '+doc.tags.join(', '):''}</div>`));
-  if(doc.text) box.append(h(`<div style="white-space:pre-wrap;border:1px dashed #e5eaf4;border-radius:12px;padding:10px">${doc.text}</div>`));
-  showModal(doc.title,box);
+  const t = h(`<div class="thumb"></div>`);
+  if(doc.img){
+    const img=document.createElement('img'); img.src=doc.img; img.alt=''; t.append(img);
+  }else{
+    t.append(h(`<div class="nofoto">CT</div>`));
+  }
+  return t;
 }
 
-/* ========= Render ========= */
-function render(q){
-  // сидаем демо один раз
-  if(CT.docs.all().length===0){
-    CT.docs.upsert({title:'Aufspann-Check',category:'Allgemein',tags:['check','setup'],type:'Notiz',text:'Schrauben, Anschläge, Reitstock…',timestamp:Date.now()});
-  }
-  let items=CT.docs.all().slice().sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
-  if(q) items=items.filter(d=>(`${d.title} ${d.text} ${(d.tags||[]).join(' ')} ${d.category||''}`.toLowerCase().includes(q)));
-  const latest=document.getElementById('latest'), list=document.getElementById('docsList');
-  latest.innerHTML=''; list.innerHTML='';
-  if(items.length){
-    latest.append(renderCard(items[0],true));
-    items.slice(1).forEach(d=>list.append(renderCard(d,false)));
-  }
-}
-function renderCard(doc,featured){
-  const el=h(`<div class="card ${featured?'feature':''}">
-    <div style="display:flex;gap:12px;align-items:center;min-width:0">
+function renderCard(doc, featured=false){
+  const el = h(`<div class="card">
+    <div class="info">
       ${thumb(doc).outerHTML}
       <div style="min-width:0">
         <div class="title">${featured?'Neu • ':''}${doc.title||'—'}</div>
-        <div class="muted" style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-          ${(doc.category||'—')}${doc.tags?.length?' • '+doc.tags.join(', '):''}
-        </div>
+        <div class="meta">${doc.category||'—'}${doc.tags?.length?' • '+fmtTags(doc.tags):''}</div>
       </div>
     </div>
-    <div style="display:flex;gap:6px">
+    <div class="actions">
       <button class="btn" data-a="open">Öffnen</button>
       <button class="btn" data-a="edit">Bearbeiten</button>
     </div>
   </div>`);
   el.querySelector('[data-a="open"]').onclick=()=>openViewer(doc);
-  el.querySelector('[data-a="edit"]').onclick=()=>openEditor(doc);
+  el.querySelector('[data-a="edit"]').onclick=()=>openEditor(doc.id);
   return el;
 }
 
-/* ========= Boot ========= */
-mountAppBar();
+function render(){
+  renderCatbar();
+  const list = $('#list'); list.innerHTML='';
+  // sort by createdAt desc
+  const items = [...DOCS].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))
+    .filter(d=>{
+      const okCat = FILTER.cat==='__ALL__' || d.category===FILTER.cat;
+      const q = FILTER.q;
+      const hay = (d.title+' '+(d.desc||'')+' '+fmtTags(d.tags)).toLowerCase();
+      return okCat && (!q || hay.includes(q));
+    });
+  items.forEach((d,i)=> list.append( renderCard(d, i===0) ));
+  // пусто?
+  if(!items.length){
+    list.append(h(`<div class="muted" style="padding:10px 6px">Noch keine Dokumente.</div>`));
+  }
+}
+
+/* ====== editor ====== */
+const mdlEd = $('#editor');
+function openEditor(id){
+  const isNew = !id;
+  $('#edTitle').textContent = isNew ? 'Neues Dokument' : 'Dokument bearbeiten';
+  editingId = id || crypto.randomUUID();
+  // fill selects
+  fillCatSelect();
+  // data
+  const data = DOCS.find(x=>x.id===editingId) || {title:'',desc:'',category:CATS[0]||'Allgemein',tags:[],img:''};
+  $('#f_title').value = data.title || '';
+  $('#f_desc').value  = data.desc  || '';
+  $('#f_cat').value   = data.category || (CATS[0]||'Allgemein');
+  $('#f_tags').value  = data.tags?.join(', ') || '';
+  $('#f_img').value   = data.img || '';
+  $('#btnDel').style.display = isNew ? 'none' : 'inline-flex';
+  mdlEd.classList.add('show');
+}
+function closeEditor(){ mdlEd.classList.remove('show') }
+
+$('[data-close]', mdlEd).addEventListener('click', closeEditor);
+$('#btnSave').onclick = ()=>{
+  const rec = {
+    id: editingId,
+    title: $('#f_title').value.trim() || '—',
+    desc:  $('#f_desc').value.trim(),
+    category: $('#f_cat').value,
+    tags: ($('#f_tags').value||'').split(',').map(s=>s.trim()).filter(Boolean),
+    img: $('#f_img').value.trim(),
+  };
+  const i = DOCS.findIndex(x=>x.id===editingId);
+  if(i<0){ rec.createdAt = Date.now(); DOCS.push(rec) } else { rec.createdAt = DOCS[i].createdAt||Date.now(); DOCS[i]=rec }
+  save(K_DOCS,DOCS);
+  closeEditor(); render();
+};
+$('#btnDel').onclick = ()=>{
+  if(confirm('Dokument löschen?')){
+    DOCS = DOCS.filter(x=>x.id!==editingId);
+    save(K_DOCS,DOCS);
+    closeEditor(); render();
+  }
+};
+$('#btnNewDoc').onclick = ()=>openEditor(null);
+
+/* кат. селект + менеджер */
+function fillCatSelect(){
+  const sel = $('#f_cat'); sel.innerHTML='';
+  CATS.forEach(c=> sel.append( new Option(c,c) ));
+  sel.append( new Option('— Neue Kategorie…','__NEW__') );
+  sel.onchange = ()=>{
+    if(sel.value==='__NEW__'){ openCats(); setTimeout(()=>sel.value=CATS[0]||'Allgemein',0); }
+  };
+}
+
+/* ====== Kategorien модалка ====== */
+const mdlCats = $('#cats');
+function openCats(){ mdlCats.classList.add('show'); renderCats() }
+function closeCats(){ mdlCats.classList.remove('show') }
+$('[data-close]', mdlCats).addEventListener('click', closeCats);
+
+function renderCats(){
+  const box = $('#catsList'); box.innerHTML='';
+  CATS.forEach(c=>{
+    const used = DOCS.some(d=>d.category===c);
+    const row = h(`<div class="card">
+      <div class="info" style="min-width:0"><div class="title">${c}</div>
+        <div class="meta">${used?'verwendet in Dokumenten':'—'}</div>
+      </div>
+      <div class="actions">
+        <button class="btn red" ${c==='Allgemein'?'disabled':''} data-del>Löschen</button>
+      </div>
+    </div>`);
+    row.querySelector('[data-del]')?.addEventListener('click', ()=>{
+      if(used){
+        if(!confirm(`Kategorie "${c}" ist in Dokumenten benutzt.\nBeim Löschen werden sie auf "Allgemein" umgestellt.\nFortfahren?`)) return;
+        DOCS.forEach(d=>{ if(d.category===c) d.category='Allgemein' });
+        save(K_DOCS,DOCS);
+      }
+      CATS = CATS.filter(x=>x!==c);
+      if(!CATS.includes('Allgemein')) CATS.unshift('Allgemein');
+      save(K_CATS,CATS);
+      renderCats(); render();
+    });
+    box.append(row);
+  });
+}
+$('#addCat').onclick = ()=>{
+  const name = $('#newCatName').value.trim();
+  if(!name) return;
+  if(!CATS.includes(name)) CATS.push(name);
+  save(K_CATS,CATS);
+  $('#newCatName').value=''; renderCats(); render();
+};
+
+/* ====== open viewer (заглушка) ====== */
+function openViewer(doc){
+  alert(`Öffnen:\n${doc.title}\n(${doc.category}${doc.tags?.length? ' • '+doc.tags.join(', '):''})`);
+}
+
+/* ====== init ====== */
 render();
 </script>
 </body>
