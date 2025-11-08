@@ -19,11 +19,7 @@
       <div class="ct-word"><b>CITI‧TOOL</b></div>
     </div>
     <div class="actions">
-      <!-- Контекстные «Neu…» для дэшборда: три быстрых -->
-      <a class="btn brand" href="./setup.html" id="newProg">Neues Programm</a>
-      <a class="btn" href="./docs.html" id="newDoc">Neues Dokument</a>
-      <a class="btn" href="./tools.html" id="newTool">Neues Werkzeug</a>
-
+      <!-- На дэшборде нет “Neu …” -->
       <div class="search" id="searchBox">
         <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
         <input type="search" placeholder="Suchen…" id="q" autocomplete="off">
@@ -35,16 +31,8 @@
 <!-- Hero -->
 <div class="hero">
   <div class="hero-card">
-    <div class="hero-title">
-      <h1>Setup • Tools • Docs</h1>
-      <div style="display:flex;gap:8px">
-        <a class="btn brand" href="./setup.html" id="newProgTop">Neues Programm</a>
-        <a class="btn" href="./docs.html">Neues Dokument</a>
-        <a class="btn" href="./tools.html">Neues Werkzeug</a>
-      </div>
-    </div>
+    <div class="hero-title"><h1>Setup • Tools • Docs</h1></div>
     <p class="hero-sub">Светлый минимализм в стиле Behance: крупный логотип, анимированный поиск, стеклянные карточки, мягкая динамика.</p>
-
     <!-- Последние добавления -->
     <div id="latest" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"></div>
   </div>
@@ -53,44 +41,21 @@
 <!-- Content -->
 <main class="main">
 
-  <!-- Модули -->
-  <section class="section">
-    <h2>Module</h2>
-    <div class="grid">
-      <a class="mod" href="./setup.html">
-        <div class="thumb"><svg viewBox="0 0 24 24"><path d="M3 4h18v2H3zM3 8h12v2H3zM3 12h18v2H3zM3 16h12v2H3z"/></svg></div>
-        <div class="meta"><div class="name">Programme</div><div class="sub">Live-Setup, Slots, Zeichnung</div></div>
-      </a>
-      <a class="mod" href="./tools.html">
-        <div class="thumb"><svg viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg></div>
-        <div class="meta"><div class="name">Tools</div><div class="sub">Schrank, Kategorien, Fotos</div></div>
-      </a>
-      <a class="mod" href="./docs.html">
-        <div class="thumb"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/></svg></div>
-        <div class="meta"><div class="name">Docs</div><div class="sub">PDF/DOC/PPT + поиск</div></div>
-      </a>
-      <a class="mod" href="./index.html">
-        <div class="thumb"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg></div>
-        <div class="meta"><div class="name">Dashboard</div><div class="sub">Schnellaktionen, Produktion</div></div>
-      </a>
-    </div>
-  </section>
-
   <!-- Schnellaktionen -->
   <section class="section">
     <h2>Schnellaktionen</h2>
     <div class="list">
       <div class="row">
         <div><div class="title">Neues Setup</div><div class="meta">Live-Setup anlegen</div></div>
-        <a class="btn link" href="./setup.html">Öffnen</a>
+        <a class="btn btn--outline is-sm" href="./setup.html">Öffnen</a>
       </div>
       <div class="row">
         <div><div class="title">Neues Werkzeug</div><div class="meta">In den Schrank hinzufügen</div></div>
-        <a class="btn link" href="./tools.html">Öffnen</a>
+        <a class="btn btn--outline is-sm" href="./tools.html">Öffnen</a>
       </div>
       <div class="row">
         <div><div class="title">Material-Assist</div><div class="meta">Schnittdaten schnell berechnen</div></div>
-        <a class="btn link" href="./assist.html">Öffnen</a>
+        <a class="btn btn--outline is-sm" href="./assist.html">Öffnen</a>
       </div>
     </div>
   </section>
@@ -102,7 +67,7 @@
     <div class="kbd" style="margin-top:6px">Tipp: перетаскивай строку за ☰</div>
   </section>
 
-  <!-- Produktion (CRUD) -->
+  <!-- Produktion -->
   <section class="section">
     <h2>Produktion</h2>
     <div class="list" id="prodList"></div>
@@ -127,23 +92,54 @@
 
 <script src="./ui/neo.js"></script>
 <script>
-// Общие утилиты подключены из neo.js
-
-/* Поиск */
 CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
-CT.neo.mirrorClicks(document.getElementById('newProg'), document.getElementById('newProgTop'), 'action:new-program');
 CT.neo.shrinkOnScroll();
 CT.neo.setActiveDock('dash');
 
-/* Последние добавления — берём три последних из Tools/Docs/Programs */
+/* ==== SEED DEMO (строго 5) — только если пусто ==== */
+(function seedDemo(){
+  const now = CT.now();
+  if(!CT.load('CT_TOOLS_V1', null)){
+    CT.save('CT_TOOLS_V1', Array.from({length:5}, (_,i)=>({
+      id:CT.id(), name:`Demo Tool ${i+1}`, iso:`CNMG1204${i}08`, code:`T${100+i}`, category:'Allgemein',
+      createdAt:now, updatedAt:now
+    })));
+  }
+  if(!CT.load('CT_DOCS_V1', null)){
+    CT.save('CT_DOCS_V1', Array.from({length:5}, (_,i)=>({
+      id:CT.id(), title:`Demo Doku ${i+1}`, desc:`Beschreibung ${i+1}`, category:'Allgemein', tags:['demo','docs'],
+      createdAt:now, updatedAt:now
+    })));
+  }
+  if(!CT.load('CT_PROGS_V1', null)){
+    CT.save('CT_PROGS_V1', Array.from({length:5}, (_,i)=>({
+      id:CT.id(), title:`Prog ${i+1}`, nr:`O10${i+1}`, side: i%2? 'RU':'RO',
+      slots: Array.from({length:12},(_,s)=>({pos:s+1, tnum: (i+1)+''+String(s+1).padStart(2,'0')})),
+      status:'draft', createdAt:now, updatedAt:now
+    })));
+  }
+  if(!CT.load('CT_CHECK_V1', null)){
+    CT.save('CT_CHECK_V1', Array.from({length:5}, (_,i)=>({
+      id:CT.id(), text:['Nullpunkt prüfen','Werkzeuglänge messen','Spannbacken kontrollieren','KSS prüfen','Programm simulieren'][i],
+      done:false, sort:i+1, createdAt:now, updatedAt:now
+    })));
+  }
+  if(!CT.load('CT_PROD_V1', null)){
+    CT.save('CT_PROD_V1', Array.from({length:5}, (_,i)=>({
+      id:CT.id(), name:`Los ${123+i}`, done:[20,58,0,75,10][i], total:[100,200,150,100,50][i],
+      due:['Heute','Woche','Morgen','Heute','Woche'][i], createdAt:now, updatedAt:now
+    })));
+  }
+})();
+
+/* Последние добавления (6 элементов) */
 (function latest(){
   const L = document.getElementById('latest');
   const tools = (CT.load('CT_TOOLS_V1',[])||[]).map(x=>({...x,_t:'Tool'}));
   const docs  = (CT.load('CT_DOCS_V1',[])||[]).map(x=>({...x,_t:'Doc'}));
   const progs = (CT.load('CT_PROGS_V1',[])||[]).map(x=>({...x,_t:'Prog'}));
   const all = [...tools, ...docs, ...progs].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).slice(0,6);
-  if(all.length===0){ L.innerHTML = '<span class="muted">Noch nichts hinzugefügt</span>'; return; }
-  L.innerHTML = '';
+  L.innerHTML = all.length? '' : '<span class="muted">Noch nichts hinzugefügt</span>';
   all.forEach(x=>{
     const a = document.createElement('a'); a.className='tag';
     a.href = x._t==='Tool'?'./tools.html' : x._t==='Doc'?'./docs.html' : './setup.html';
@@ -152,40 +148,30 @@ CT.neo.setActiveDock('dash');
   });
 })();
 
-/* Checklist (drag+edit+add) — хранение в CT_CHECK_V1 */
+/* Checklist */
 (function checklist(){
   let items = CT.load('CT_CHECK_V1', []) || [];
-  if(items.length===0){
-    items = [
-      {id:CT.id(), text:'Nullpunkt prüfen', done:false, sort:1, createdAt:CT.now(), updatedAt:CT.now()},
-      {id:CT.id(), text:'Werkzeuglänge messen', done:false, sort:2, createdAt:CT.now(), updatedAt:CT.now()}
-    ];
-    CT.save('CT_CHECK_V1', items);
-  }
-  const mount = document.getElementById('checklist');
-  CT.neo.checklist(mount, items, { onChange:(arr)=> CT.save('CT_CHECK_V1', arr) });
+  CT.neo.checklist(document.getElementById('checklist'), items, { onChange:(arr)=> CT.save('CT_CHECK_V1', arr) });
 })();
 
-/* Produktion CRUD — CT_PROD_V1 */
+/* Produktion + прогрессбар */
 (function prod(){
   const key='CT_PROD_V1';
   const listEl = document.getElementById('prodList');
   let rows = CT.load(key, []) || [];
-
   function save(){ CT.save(key, rows); render(); }
-
   function add(){
     const name = prompt('Auftrag-Name?'); if(!name) return;
     const total = +prompt('Total?') || 0;
     rows.unshift({ id:CT.id(), name, done:0, total, due:'', createdAt:CT.now(), updatedAt:CT.now() });
     save();
   }
-
   function edit(r){
     const name = prompt('Name:', r.name)||r.name;
     const total = +prompt('Total:', r.total)||r.total;
     r.name=name; r.total=total; r.updatedAt=CT.now(); save();
   }
+  function bar(fill, pct){ fill.style.width = Math.max(0, Math.min(100, pct)) + '%'; }
 
   function render(){
     listEl.innerHTML='';
@@ -198,14 +184,19 @@ CT.neo.setActiveDock('dash');
           <div class="title">${r.name} • ${r.done} / ${r.total} ${r.due?`• ${r.due}`:''}</div>
           <div class="meta">${new Date(r.updatedAt||r.createdAt).toLocaleString()}</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center">
-          <button class="btn link" data-act="minus">-10</button>
-          <span class="badge">${pct}%</span>
-          <button class="btn link" data-act="plus">+10</button>
-          <button class="btn" data-act="edit">Bearbeiten</button>
-          <button class="btn" data-act="del">Löschen</button>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:220px">
+          <div class="bar" aria-label="Fortschritt ${pct}%"><div class="bar__fill"></div></div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="btn btn--outline is-sm" data-act="minus">-10</button>
+            <span class="btn btn--chip" style="pointer-events:none">${pct}%</span>
+            <button class="btn btn--outline is-sm" data-act="plus">+10</button>
+            <button class="btn is-sm" data-act="edit">Edit</button>
+            <button class="btn is-sm" data-act="del">Del</button>
+          </div>
         </div>
       `;
+      const fill = row.querySelector('.bar__fill'); requestAnimationFrame(()=> bar(fill, pct));
+
       row.querySelector('[data-act=plus]').onclick = ()=>{ r.done = Math.min(r.total, (r.done||0)+10); r.updatedAt=CT.now(); save() };
       row.querySelector('[data-act=minus]').onclick= ()=>{ r.done = Math.max(0, (r.done||0)-10); r.updatedAt=CT.now(); save() };
       row.querySelector('[data-act=edit]').onclick = ()=> edit(r);
@@ -213,7 +204,6 @@ CT.neo.setActiveDock('dash');
       listEl.append(row);
     });
   }
-
   document.getElementById('addOrder').onclick = add;
   document.getElementById('clearDone').onclick = ()=>{ rows = rows.filter(r=> r.done < r.total); save(); };
   render();
