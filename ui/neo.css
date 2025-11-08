@@ -2,7 +2,6 @@
   --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --accent:#ff4b4b;
   --glass:#ffffffcc; --hair:#e9eef6; --r1:18px; --r2:22px; --shadow:0 10px 30px rgba(13,27,42,.08);
 }
-
 *{box-sizing:border-box} html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
@@ -43,12 +42,19 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .search input{border:0; outline:0; width:100%; height:100%; padding:0 12px 0 38px; background:transparent;
   font:600 14px/1.2 Inter,system-ui; color:var(--ink)}
 
-/* buttons — аккуратные */
-.btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:700}
-.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff; box-shadow:0 8px 20px rgba(45,108,223,.25)}
-.btn.link{height:34px; padding:0 12px; border-radius:12px; font-weight:800; color:var(--brand);
-  background:#f6faff; border:1px solid #d6e5ff}
-.btn.link:active, .btn:active{transform:translateY(1px)}
+/* Buttons — компактные, аккуратные */
+.btn{
+  height:36px; padding:0 13px; border-radius:12px; font-weight:800;
+  border:1px solid #dbe5ff; background:#fff; color:#223; letter-spacing:.1px;
+  box-shadow:0 1px 0 rgba(0,0,0,.02);
+}
+.btn.brand{background:var(--brand); border-color:var(--brand); color:#fff; box-shadow:0 8px 20px rgba(45,108,223,.22)}
+.btn.link{
+  height:32px; padding:0 10px; border-radius:11px; font-weight:800;
+  background:#f7faff; color:var(--brand); border:1px solid #d6e5ff;
+}
+.btn:active, .btn.link:active{transform:translateY(1px)}
+.btn.sm{height:30px; padding:0 10px; border-radius:10px; font-weight:700}
 
 /* Hero */
 .hero{max-width:1040px;margin:0 auto;padding:26px 16px 8px}
@@ -63,18 +69,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter,system-ui}
 .list{display:grid; gap:10px}
 .row{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:14px;border:1px solid #edf1f7;border-radius:16px}
-.row .title{font-weight:700}
-.row .meta{color:var(--muted)}
-
-/* Module grid */
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.mod{background:#fff;border-radius:18px;overflow:hidden;border:1px solid var(--hair);box-shadow:var(--shadow);transition:transform .25s}
-.mod:hover{transform:translateY(-2px)}
-.mod .thumb{height:140px;background:linear-gradient(180deg,#eaf2ff,#fff);display:grid;place-items:center}
-.mod .thumb svg{width:58px;height:58px;opacity:.25}
-.mod .meta{padding:12px}
-.mod .name{font-weight:800}
-.mod .sub{color:var(--muted);font-size:13px}
+.row .title{font-weight:800}
+.row .meta{color:var(--muted); font-weight:600}
 
 /* Dock */
 .dock{position:fixed; left:0; right:0; bottom:0; z-index:40;
@@ -99,4 +95,4 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .cl-item input[type="text"]{flex:1; border:0; outline:0; background:transparent; font-weight:600}
 .cl-handle{cursor:grab; user-select:none; color:#90a0bb}
 .tag{display:inline-grid;place-items:center;height:22px;padding:0 8px;border-radius:8px;background:#eef3ff;color:#2d6cdf;font-weight:800;font-size:12px}
-@media (max-width:560px){ .grid{grid-template-columns:1fr} .hero-title h1{font-size:28px} }
+@media (max-width:560px){ .hero-title h1{font-size:28px} }
