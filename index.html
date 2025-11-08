@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<!-- BG -->
+<!-- fixed blueprint bg -->
 <div class="hero-bg"><div class="hero-grid"></div></div>
 
 <!-- AppBar -->
@@ -19,7 +19,7 @@
       <div class="ct-word"><b>CITI‧TOOL</b></div>
     </div>
     <div class="actions">
-      <!-- На дэшборде нет “Neu …” -->
+      <!-- На дэшборде НЕТ “Neu …” -->
       <div class="search" id="searchBox">
         <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
         <input type="search" placeholder="Suchen…" id="q" autocomplete="off">
@@ -41,7 +41,7 @@
 <!-- Content -->
 <main class="main">
 
-  <!-- Schnellaktionen -->
+  <!-- Schnellaktionen (кнопки как у Löschen: outline is-sm) -->
   <section class="section">
     <h2>Schnellaktionen</h2>
     <div class="list">
@@ -92,11 +92,12 @@
 
 <script src="./ui/neo.js"></script>
 <script>
+/* base */
 CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
 CT.neo.shrinkOnScroll();
 CT.neo.setActiveDock('dash');
 
-/* ==== SEED DEMO (строго 5) — только если пусто ==== */
+/* ==== SEED DEMО (5 штук в каждом домене, если пусто) ==== */
 (function seedDemo(){
   const now = CT.now();
   if(!CT.load('CT_TOOLS_V1', null)){
@@ -154,57 +155,77 @@ CT.neo.setActiveDock('dash');
   CT.neo.checklist(document.getElementById('checklist'), items, { onChange:(arr)=> CT.save('CT_CHECK_V1', arr) });
 })();
 
-/* Produktion + прогрессбар */
+/* Produktion — модальные формы + прогрессбар */
 (function prod(){
   const key='CT_PROD_V1';
-  const listEl = document.getElementById('prodList');
-  let rows = CT.load(key, []) || [];
-  function save(){ CT.save(key, rows); render(); }
-  function add(){
-    const name = prompt('Auftrag-Name?'); if(!name) return;
-    const total = +prompt('Total?') || 0;
-    rows.unshift({ id:CT.id(), name, done:0, total, due:'', createdAt:CT.now(), updatedAt:CT.now() });
-    save();
+  const listEl=document.getElementById('prodList');
+  let rows=CT.load(key,[])||[];
+
+  function save(){ CT.save(key,rows); render(); }
+
+  function openEditor(r){
+    const form=CT.ui.form.create({
+      values:r||{name:'',total:0,due:'Heute'},
+      fields:[
+        {type:'text',key:'name',label:'Name',placeholder:'Los …'},
+        {type:'number',key:'total',label:'Total',min:0,step:1},
+        {type:'select',key:'due',label:'Fällig',options:['Heute','Woche','Morgen','Terminlos']}
+      ]
+    });
+    CT.ui.modal.open({
+      title:r?'Auftrag bearbeiten':'Neuer Auftrag',
+      contentEl:form.el,
+      footer:[
+        {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
+        {label:'Speichern',kind:'primary',onClick:()=>{
+          const v=form.getValues();
+          if(!v.name){ form.setErrors({name:'Pflichtfeld'}); return; }
+          if(r){ Object.assign(r,v,{updatedAt:CT.now()}); }
+          else { rows.unshift({...v,id:CT.id(),done:0,createdAt:CT.now(),updatedAt:CT.now()}); }
+          save(); CT.ui.modal.close();
+        }}
+      ]
+    });
   }
-  function edit(r){
-    const name = prompt('Name:', r.name)||r.name;
-    const total = +prompt('Total:', r.total)||r.total;
-    r.name=name; r.total=total; r.updatedAt=CT.now(); save();
+
+  function askDel(r){
+    CT.ui.confirm({title:'Löschen?',msg:`${r.name} wirklich entfernen?`})
+      .then(ok=>{ if(ok){ rows = rows.filter(x=>x.id!==r.id); save(); } });
   }
-  function bar(fill, pct){ fill.style.width = Math.max(0, Math.min(100, pct)) + '%'; }
+
+  const setBar = (fill,pct)=> fill.style.width = Math.max(0,Math.min(100,pct))+'%';
 
   function render(){
     listEl.innerHTML='';
     if(rows.length===0){ listEl.innerHTML = '<div class="muted">Keine Aufträge</div>'; return; }
     rows.forEach(r=>{
-      const pct = r.total? Math.round(r.done/r.total*100) : 0;
-      const row = document.createElement('div'); row.className='row';
-      row.innerHTML = `
+      const pct=r.total?Math.round(r.done/r.total*100):0;
+      const row=document.createElement('div'); row.className='row';
+      row.innerHTML=`
         <div>
           <div class="title">${r.name} • ${r.done} / ${r.total} ${r.due?`• ${r.due}`:''}</div>
           <div class="meta">${new Date(r.updatedAt||r.createdAt).toLocaleString()}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:220px">
-          <div class="bar" aria-label="Fortschritt ${pct}%"><div class="bar__fill"></div></div>
+          <div class="bar"><div class="bar__fill"></div></div>
           <div style="display:flex;gap:6px;align-items:center">
             <button class="btn btn--outline is-sm" data-act="minus">-10</button>
             <span class="btn btn--chip" style="pointer-events:none">${pct}%</span>
             <button class="btn btn--outline is-sm" data-act="plus">+10</button>
-            <button class="btn is-sm" data-act="edit">Edit</button>
-            <button class="btn is-sm" data-act="del">Del</button>
+            <button class="btn btn--outline is-sm" data-act="edit">Edit</button>
+            <button class="btn btn--outline is-sm" data-act="del">Löschen</button>
           </div>
-        </div>
-      `;
-      const fill = row.querySelector('.bar__fill'); requestAnimationFrame(()=> bar(fill, pct));
-
-      row.querySelector('[data-act=plus]').onclick = ()=>{ r.done = Math.min(r.total, (r.done||0)+10); r.updatedAt=CT.now(); save() };
-      row.querySelector('[data-act=minus]').onclick= ()=>{ r.done = Math.max(0, (r.done||0)-10); r.updatedAt=CT.now(); save() };
-      row.querySelector('[data-act=edit]').onclick = ()=> edit(r);
-      row.querySelector('[data-act=del]').onclick  = ()=>{ if(confirm('Löschen?')){ rows = rows.filter(x=>x.id!==r.id); save(); } };
+        </div>`;
+      const fill=row.querySelector('.bar__fill'); requestAnimationFrame(()=> setBar(fill,pct));
+      row.querySelector('[data-act=plus]').onclick = ()=>{ r.done = Math.min(r.total,(r.done||0)+10); r.updatedAt=CT.now(); save(); };
+      row.querySelector('[data-act=minus]').onclick= ()=>{ r.done = Math.max(0,(r.done||0)-10); r.updatedAt=CT.now(); save(); };
+      row.querySelector('[data-act=edit]').onclick = ()=> openEditor(r);
+      row.querySelector('[data-act=del]').onclick  = ()=> askDel(r);
       listEl.append(row);
     });
   }
-  document.getElementById('addOrder').onclick = add;
+
+  document.getElementById('addOrder').onclick = ()=> openEditor();
   document.getElementById('clearDone').onclick = ()=>{ rows = rows.filter(r=> r.done < r.total); save(); };
   render();
 })();
