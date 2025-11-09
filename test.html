@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Bohrstahl 93° — SVG Schema</title>
+<style>
+  body {
+    background:#f6f8fb;
+    color:#0d1b2a;
+    font-family:-apple-system, BlinkMacSystemFont, "Inter", Roboto, sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+  }
+  svg {
+    max-width:90vw;
+    max-height:90vh;
+    background:white;
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(13,27,42,.15);
+  }
+  .axis{stroke:#9bb0c9;stroke-width:1;stroke-dasharray:4 4}
+  .tool{stroke:#0d1b2a;stroke-width:2;fill:none}
+  .dim {stroke:#2d6cdf;stroke-width:1;fill:none}
+  .note{font:12px system-ui;fill:#2d6cdf}
+</style>
+</head>
+<body>
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -60 240 140">
+  <!-- Оси токарной системы: Z (вправо), X (вверх) -->
+  <line class="axis" x1="-10" y1="0" x2="210" y2="0"/>
+  <line class="axis" x1="0" y1="60" x2="0" y2="-60"/>
+  <text x="205" y="-6" class="note">Z</text>
+  <text x="6" y="-54" class="note">X</text>
+
+  <!-- ДЕРЖАВКА -->
+  <polyline class="tool" points="0,20 140,20 140,-20 0,-20 0,20"/>
+
+  <!-- РЕЖУЩАЯ ЧАСТЬ: κr = 93° -->
+  <g transform="translate(140,0)">
+    <g transform="rotate(-93)">
+      <line class="tool" x1="0" y1="0" x2="26" y2="0"/>
+    </g>
+    <line class="tool" x1="0" y1="0" x2="-10" y2="-8"/>
+    <line class="tool" x1="-10" y1="-8" x2="-10" y2="8"/>
+    <line class="tool" x1="-10" y1="8" x2="0"  y2="0"/>
+
+    <path class="dim" d="M 0 0 A 22 22 0 0 1 21.9 -1.15"/>
+    <text class="note" x="18" y="-10">93°</text>
+  </g>
+
+  <text x="6" y="34" class="note">Bohrstahl / Innenbearbeitung</text>
+  <text x="6" y="50" class="note">κr = 93°</text>
+</svg>
+
+</body>
+</html>
