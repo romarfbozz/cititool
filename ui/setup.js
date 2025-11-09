@@ -1,14 +1,15 @@
-// CitiTool • Setup (RO/RU) — v7.1 SINGLE OVERLAY + INLINE SLOT EDITOR (full width)
+// CitiTool • Setup (RO/RU) — v7.2
+// Single overlay + inline slot editor + custom tool picker sheet (no browser dialogs)
 ;(function (global) {
   "use strict";
-  console.log('[Setup] v7.1 boot');
+  console.log('[Setup] v7.2 boot');
 
   const K_GROUPS='CT_PROG_GROUPS_V1', K_OLD='CT_PROGS_V1', K_LIVE='CT_LIVE_V1';
   const SLOTS = 12;
 
-  // ---------- CSS (вставляется один раз) ----------
+  // ---------- CSS (one-shot) ----------
   (function injectCSS(){
-    const id='ct-setup-v71-css';
+    const id='ct-setup-v72-css';
     if (document.getElementById(id)) return;
     const css = `
 .ct-editor{position:fixed;inset:0;z-index:9999;display:grid;grid-template-rows:auto 1fr auto;
@@ -52,6 +53,23 @@
 .kp .txt{display:grid}
 .kp .txt .t{font-weight:800}
 .kp .txt .m{color:#6b7a90;font-size:13px}
+
+/* --- Tool Picker Sheet --- */
+.ct-sheet{position:fixed;left:0;right:0;bottom:0;z-index:10050;background:#fff;border-top:1px solid #e9eef6;
+  border-radius:18px 18px 0 0;box-shadow:0 -18px 40px rgba(13,27,42,.12);transform:translateY(100%);transition:transform .25s ease}
+.ct-sheet.show{transform:translateY(0)}
+.ct-sheet .hd{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #eef2f8}
+.ct-sheet .hd .tt{font:900 16px/1 Inter,system-ui}
+.ct-sheet .hd .x{height:34px;padding:0 12px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
+.ct-sheet .body{max-height:55vh;overflow:auto;padding:10px 12px;display:grid;gap:10px}
+.ct-p-search{height:40px;border:1px solid #dbe5ff;border-radius:12px;padding:0 12px;font-weight:700;width:100%}
+.ct-tool{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:14px;padding:8px}
+.ct-tool img{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f5f8ff;border:1px solid #edf1f7}
+.ct-tool .nm{font-weight:800}
+.ct-tool .sub{color:#6b7a90;font-size:12px}
+.ct-tool .pick{height:32px;border-radius:10px}
+.form-row{display:grid;gap:6px}
+.form-row input{height:40px;border:1px solid #dbe5ff;border-radius:12px;padding:0 12px;font-weight:700}
     `;
     const s=document.createElement('style'); s.id=id; s.textContent=css; document.head.appendChild(s);
   })();
@@ -59,10 +77,10 @@
   // ---------- utils ----------
   const storage = {
     get(k, def){
-      try{
-        if (global.CT && typeof global.CT.load==='function') return global.CT.load(k, def);
-        const raw=localStorage.getItem(k); if(raw==null||raw==='') return def; return JSON.parse(raw);
-      }catch{ return def; }
+    try{
+      if (global.CT && typeof global.CT.load==='function') return global.CT.load(k, def);
+      const raw=localStorage.getItem(k); if(raw==null||raw==='') return def; return JSON.parse(raw);
+    }catch{ return def; }
     },
     set(k,v){
       try{
@@ -85,6 +103,91 @@
       const t={id:uid(), name:(name||'Tool').trim(), iso:iso||'', code:code||'', photo:photo||null, category, notes, createdAt:now(), updatedAt:now()};
       storage.set('CT_TOOLS_V1',[t, ...this.list()]); return t;
     }
+  };
+
+  // ---------- Tool Picker Sheet ----------
+  const Picker = {
+    el:null, onPick:null,
+    open({title='Werkzeug wählen', mode='pick', onPick}){
+      this.close(); this.onPick=onPick;
+      const el=document.createElement('div'); el.className='ct-sheet';
+      el.innerHTML=`
+        <div class="hd">
+          <div class="tt">${title}</div>
+          <div>
+            ${mode==='pick' ? `<button class="btn is-sm" data-act="new">+ Neues Werkzeug</button>`:''}
+            <button class="x" data-act="close">Schließen</button>
+          </div>
+        </div>
+        <div class="body"></div>
+      `;
+      document.body.appendChild(el); this.el=el;
+      el.querySelector('[data-act="close"]').onclick=()=>this.close();
+
+      if(mode==='pick'){ this.renderList(); }
+      else if(mode==='new'){ this.renderNew(); }
+
+      requestAnimationFrame(()=> el.classList.add('show'));
+    },
+    renderList(){
+      const body=this.el.querySelector('.body'); body.innerHTML='';
+      const input=document.createElement('input'); input.placeholder='Suchen…'; input.className='ct-p-search';
+      body.append(input);
+
+      const listWrap=document.createElement('div'); listWrap.style.display='grid'; listWrap.style.gap='8px';
+      body.append(listWrap);
+
+      const render=(q='')=>{
+        listWrap.innerHTML='';
+        const qq=q.trim().toLowerCase();
+        const list=Tools.list().filter(t=>{
+          if(!qq) return true;
+          return [t.name,t.iso,t.code,t.category].join(' ').toLowerCase().includes(qq);
+        });
+        if(!list.length){
+          const empty=document.createElement('div'); empty.className='ct-sub'; empty.textContent='Keine Werkzeuge';
+          listWrap.append(empty);
+        }
+        list.forEach(t=>{
+          const row=document.createElement('div'); row.className='ct-tool';
+          const im=document.createElement('img'); im.src=t.photo||ph();
+          const info=document.createElement('div');
+          info.innerHTML=`<div class="nm">${t.name}</div><div class="sub">${t.iso||'-'} • ${t.code||'-'} • ${t.category||'Allgemein'}</div>`;
+          const b=document.createElement('button'); b.className='btn pick is-sm'; b.textContent='Wählen';
+          b.onclick=()=>{ if(this.onPick) this.onPick(t); this.close(); };
+          row.append(im,info,b); listWrap.append(row);
+        });
+      };
+      input.addEventListener('input',()=>render(input.value));
+      render('');
+      // «Neues Werkzeug»
+      const newBtn=this.el.querySelector('[data-act="new"]');
+      if(newBtn) newBtn.onclick=()=> this.open({title:'Neues Werkzeug', mode:'new', onPick:this.onPick});
+    },
+    renderNew(){
+      const body=this.el.querySelector('.body'); body.innerHTML='';
+      const f1=document.createElement('div'); f1.className='form-row';
+      f1.innerHTML=`<label>Name</label><input id="p_name" placeholder="z.B. EFT 16x150">`;
+      const f2=document.createElement('div'); f2.className='form-row';
+      f2.innerHTML=`<label>ISO / Code</label><input id="p_iso" placeholder="ISO / Hersteller">`;
+      const img=document.createElement('img'); img.src=ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px';
+      const bar=document.createElement('div'); bar.style.display='flex'; bar.style.gap='8px'; bar.style.justifyContent='flex-end';
+      const bPhoto=document.createElement('button'); bPhoto.className='btn is-sm'; bPhoto.textContent='Foto';
+      const bCreate=document.createElement('button'); bCreate.className='btn brand is-sm'; bCreate.textContent='Anlegen';
+
+      bPhoto.onclick= async ()=>{
+        try{ const files=await CT.uploader.accept({accept:'image/*', to:'dataURL'}); if(files?.[0]) img.src=files[0].dataUrl; }catch{}
+      };
+      bCreate.onclick=()=>{
+        const t=Tools.createQuick({name:body.querySelector('#p_name').value, iso:body.querySelector('#p_iso').value, photo:img.src.startsWith('data:')?img.src:null});
+        if(this.onPick) this.onPick(t);
+        this.close();
+      };
+
+      bar.append(bPhoto,bCreate);
+      body.append(f1,f2,img,bar);
+    },
+    close(){ if(!this.el) return; this.el.classList.remove('show'); const el=this.el; this.el=null; setTimeout(()=>el.remove(),180); }
   };
 
   // ---------- core data ----------
@@ -244,7 +347,7 @@
           };
           meta.append(b); art.append(phb,meta);
 
-          // --- INLINE EDITOR (разворачивает карточку на всю ширину) ---
+          // --- INLINE EDITOR ---
           if (openPos===slot.pos){
             art.classList.add('expanded');
             const inl=document.createElement('div'); inl.className='inl';
@@ -258,18 +361,16 @@
             const bPick=btn('Aus Tools wählen'); const bNew=btn('Neues Werkzeug',''); const bDetach=btn('Entfernen','is-sm');
             const bCancel=btn('Abbrechen',''); const bSave=btn('Speichern','brand');
 
-            bPick.onclick=()=>{
-              const list=Tools.list();
-              if(!list.length){ CT.ui.toast('Keine Tools vorhanden','warn'); return; }
-              const names=list.map((x,i)=>`${i+1}. ${x.name}`).join('\n');
-              const n=prompt('Werkzeug Nr wählen:\n'+names+'\n\nGib die Nummer ein:');
-              const idx=Number(n)-1; if(list[idx]){ slot.toolId=list[idx].id; img2.src=list[idx].photo||ph(); }
-            };
-            bNew.onclick= async ()=>{
-              const name=prompt('Name des Werkzeugs:')||'Tool';
-              let photo=null; try{ const files=await CT.uploader.accept({accept:'image/*', to:'dataURL'}); if(files?.[0]) photo=files[0].dataUrl; }catch{}
-              const t=Tools.createQuick({name, photo}); slot.toolId=t.id; img2.src=t.photo||ph();
-            };
+            bPick.onclick=()=> Picker.open({
+              title:'Werkzeug wählen',
+              mode:'pick',
+              onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); }
+            });
+            bNew.onclick=()=> Picker.open({
+              title:'Neues Werkzeug',
+              mode:'new',
+              onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); }
+            });
             bDetach.onclick=()=>{ slot.toolId=null; img2.src=ph(); };
             bCancel.onclick=()=>{ openPos=null; drawSlots(); };
             bSave.onclick=()=>{
