@@ -21,7 +21,7 @@
 .tabs{display:flex;gap:8px;margin:0 0 12px}
 .tab{padding:8px 12px;border:1px solid #dbe5ff;background:#fff;border-radius:12px;font-weight:800;cursor:pointer}
 .tab.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
-.hidden{display:none !important}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
@@ -102,7 +102,7 @@
 <nav class="dock">
   <div class="wrap">
     <a href="./index.html"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
-    <a href="./setup.html"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
+    <a href="./setup.html"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2H2V14z"/></svg><small>Setup</small></a>
     <a href="./tools.html"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
     <a href="./setup.html"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
     <a href="./assist.html" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Assist</small></a>
@@ -113,28 +113,24 @@
 <script src="./ui/docs.js"></script>
 <script src="./ui/assist.js"></script>
 <script>
-/* ========== каркас ========== */
+/* ==== каркас ==== */
 CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
 CT.neo.shrinkOnScroll();
 CT.neo.setActiveDock('assist');
 Ass.ensureSeeds();
 
-/* ========== Табы — строго три секции ========== */
+/* ==== Tabs ==== */
 const tabs = document.getElementById('tabs');
-const sections = {
-  mat: document.getElementById('secMat'),
-  fas: document.getElementById('secFasen'),
-  pass: document.getElementById('secPass')
-};
+const sections = { mat:secMat, fas:secFasen, pass:secPass };
 tabs.addEventListener('click', (e)=>{
   const b = e.target.closest('.tab'); if(!b) return;
   tabs.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
-  const key = b.dataset.tab;
+  const key=b.dataset.tab;
   Object.entries(sections).forEach(([k,el])=> el.classList.toggle('hidden', k!==key));
 });
 
-/* ===== MATERIAL ===== */
+/* ================= MATERIAL ================= */
 const matFormWrap = document.getElementById('matFormWrap');
 const matOut = document.getElementById('matOut');
 const matHistory = document.getElementById('matHistory');
@@ -155,45 +151,134 @@ matFormWrap.append(matForm.el);
 
 function applyMaterialDefaults(sel){
   const m = sel.match(/^(.+?)\s+\((.+)\)$/); if(!m) return;
-  const def = Ass.material.suggestDefaults(m[1], m[2]); if(def){ matForm.setValues({ Vc:def.Vc, fn:def.fn }); }
+  const def = Ass.material.suggestDefaults(m[1], m[2]);
+  if(def) matForm.setValues({ Vc:def.Vc, fn:def.fn });
 }
 applyMaterialDefaults(matForm.getValues().material);
-matForm.el.querySelector('select[name="material"]').addEventListener('change', (e)=> applyMaterialDefaults(e.target.value));
+matForm.el.querySelector('select[name="material"]').addEventListener('change', (e)=>applyMaterialDefaults(e.target.value));
 
-let lastMatResult = null;
-document.getElementById('btnMatCalc').onclick = ()=>{
-  const v = matForm.getValues(); const m=v.material.match(/^(.+?)\s+\((.+)\)$/)||[];
-  const input = { material:m[1]||'', D:Number(v.D), Vc:Number(v.Vc), fn:Number(v.fn) };
-  const res = Ass.material.calc(input, {}); lastMatResult = res; Ass.material.history.add(res);
+let lastMatResult=null;
+document.getElementById('btnMatCalc').addEventListener('click', ()=>{
+  const v = matForm.getValues();
+  const m=v.material.match(/^(.+?)\s+\((.+)\)$/)||[];
+  const res = Ass.material.calc({ material:m[1]||'', D:Number(v.D), Vc:Number(v.Vc), fn:Number(v.fn) }, {});
+  lastMatResult=res; Ass.material.history.add(res);
+
   matOut.innerHTML='';
-  const info=document.createElement('div'); info.className='list';
-  const r1=document.createElement('div'); r1.className='row'; r1.innerHTML=`<div class="title">n</div><div class="badge">${res.n} 1/min</div>`;
-  const r2=document.createElement('div'); r2.className='row'; r2.innerHTML=`<div class="title">Vf</div><div class="badge">${res.Vf} mm/min</div>`;
-  info.append(r1,r2);
-  if((res.warnings||[]).length){ const w=document.createElement('div'); w.style.marginTop='8px'; res.warnings.forEach(s=>{ const b=document.createElement('span'); b.className='badge-warn'; b.textContent=s; b.style.marginRight='6px'; w.append(b);}); matOut.append(w); }
-  if((res.info||[]).length){ const i=document.createElement('div'); i.style.marginTop='6px'; res.info.forEach(s=>{ const b=document.createElement('span'); b.className='badge-info'; b.textContent=s; b.style.marginRight='6px'; i.append(b);}); matOut.append(i); }
-  matOut.append(info); renderMatHistory();
-};
-document.getElementById('btnMatToNote').onclick = ()=>{
+  const list=document.createElement('div'); list.className='list';
+  list.innerHTML = `
+    <div class="row"><div class="title">n</div><div class="badge">${res.n} 1/min</div></div>
+    <div class="row"><div class="title">Vf</div><div class="badge">${res.Vf} mm/min</div></div>`;
+  matOut.append(list);
+
+  if(res.warnings?.length){ const w=document.createElement('div'); res.warnings.forEach(s=>{const b=document.createElement('span'); b.className='badge-warn'; b.textContent=s; b.style.marginRight='6px'; w.append(b)}); matOut.append(w); }
+  if(res.info?.length){ const i=document.createElement('div'); res.info.forEach(s=>{const b=document.createElement('span'); b.className='badge-info'; b.textContent=s; b.style.marginRight='6px'; i.append(b)}); matOut.append(i); }
+  renderMatHistory();
+});
+
+document.getElementById('btnMatToNote').addEventListener('click', ()=>{
   if(!lastMatResult){ CT.ui.toast('Nichts zu speichern','warn'); return; }
-  const note = Ass.material.toNote(lastMatResult);
-  Docs.create({ title:note.title, category:note.category, tags:note.tags, text:note.text });
+  const n = Ass.material.toNote(lastMatResult);
+  Docs.create({ title:n.title, category:n.category, tags:n.tags, text:n.text });
   CT.ui.toast('Als Notiz gespeichert','ok');
-};
+});
+
+/* --- Presets MODAL (WORKING) --- */
+function openMatPresetsModal(){
+  const box=document.createElement('div');
+  const list=document.createElement('div');
+
+  function refresh(){
+    list.innerHTML='';
+    Ass.material.listPresets({}).forEach(p=>{
+      const row=document.createElement('div'); row.className='row';
+      row.innerHTML=`<div><div class="title">${p.name} (${p.mode})</div><div class="meta">Vc ${p.defaults.Vc} • fn ${p.defaults.fn}</div></div>`;
+      const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
+      const bE=document.createElement('button'); bE.className='btn btn--outline is-sm'; bE.textContent='Bearbeiten';
+      const bD=document.createElement('button'); bD.className='btn btn--outline is-sm'; bD.textContent='Löschen';
+      bE.onclick=()=>{
+        const f=CT.ui.form.create({
+          values:{ name:p.name, procedure:p.procedure, mode:p.mode, Vc:p.defaults.Vc, fn:p.defaults.fn, notes:p.notes||'' },
+          fields:[
+            {type:'text', key:'name', label:'Name'},
+            {type:'select', key:'procedure', label:'Verfahren', options:['drehen','fraesen','bohren','eco-cut','nut','reib']},
+            {type:'select', key:'mode', label:'Mode', options:['schruppen','schlichten']},
+            {type:'number', key:'Vc', label:'Vc (m/min)', min:0, step:'1'},
+            {type:'number', key:'fn', label:'fn (mm/U)', min:0, step:'0.01'},
+            {type:'textarea', key:'notes', label:'Notizen', rows:3},
+          ]
+        });
+        CT.ui.modal.open({
+          title:'Preset bearbeiten',
+          contentEl:f.el,
+          footer:[
+            {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
+            {label:'Speichern', kind:'primary', onClick:()=>{
+              const v=f.getValues();
+              Ass.material.updatePreset(p.id, { name:v.name, procedure:v.procedure, mode:v.mode, defaults:{Vc:Number(v.Vc), fn:Number(v.fn)}, notes:v.notes });
+              CT.ui.modal.close(); refresh(); CT.ui.toast('Gespeichert','ok');
+            }}
+          ],
+          wide:true
+        });
+      };
+      bD.onclick=()=> CT.ui.confirm({title:'Löschen?',msg:`${p.name} (${p.mode}) entfernen?`}).then(ok=>{
+        if(ok){ Ass.material.removePreset(p.id); refresh(); }
+      });
+      right.append(bE,bD); row.append(right); list.append(row);
+    });
+  }
+
+  const add=document.createElement('div'); add.className='row';
+  const btn=document.createElement('button'); btn.className='btn'; btn.textContent='+ Hinzufügen';
+  btn.onclick=()=>{
+    const f=CT.ui.form.create({
+      values:{ name:'', procedure:'drehen', mode:'schruppen', Vc:180, fn:0.2, notes:'' },
+      fields:[
+        {type:'text', key:'name', label:'Name'},
+        {type:'select', key:'procedure', label:'Verfahren', options:['drehen','fraesen','bohren','eco-cut','nut','reib']},
+        {type:'select', key:'mode', label:'Mode', options:['schruppen','schlichten']},
+        {type:'number', key:'Vc', label:'Vc (m/min)', min:0, step:'1'},
+        {type:'number', key:'fn', label:'fn (mm/U)', min:0, step:'0.01'},
+        {type:'textarea', key:'notes', label:'Notizen', rows:3},
+      ]
+    });
+    CT.ui.modal.open({
+      title:'Neues Preset',
+      contentEl:f.el,
+      footer:[
+        {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
+        {label:'Hinzufügen', kind:'primary', onClick:()=>{
+          const v=f.getValues();
+          Ass.material.addPreset({ name:v.name, procedure:v.procedure, mode:v.mode, defaults:{Vc:Number(v.Vc), fn:Number(v.fn)}, notes:v.notes });
+          CT.ui.modal.close(); refresh(); CT.ui.toast('Hinzugefügt','ok');
+        }}
+      ],
+      wide:true
+    });
+  };
+  add.append(document.createElement('div'), btn);
+
+  box.append(add, list); refresh();
+  CT.ui.modal.open({ title:'Material-Presets', contentEl:box, footer:[{label:'Schließen', onClick:()=>CT.ui.modal.close()}], wide:true });
+}
+document.getElementById('btnMatPresets').addEventListener('click', openMatPresetsModal);
+
 function renderMatHistory(){
-  matHistory.innerHTML=''; const arr=Ass.material.history.list(5);
+  matHistory.innerHTML='';
+  const arr=Ass.material.history.list(5);
   if(!arr.length){ matHistory.innerHTML='<div class="muted">Keine Einträge</div>'; return; }
   arr.forEach(r=>{
     const row=document.createElement('div'); row.className='row';
     row.innerHTML=`<div><div class="title">Ø ${r.input.D} • Vc ${r.input.Vc} • fn ${r.input.fn}</div><div class="meta">${new Date(r.createdAt).toLocaleString()}</div></div>`;
     const right=document.createElement('div'); const b=document.createElement('button'); b.className='btn btn--outline is-sm'; b.textContent='Übernehmen';
-    b.onclick=()=>{ matForm.setValues({ D:r.input.D, Vc:r.input.Vc, fn:r.input.fn }); };
+    b.onclick=()=> matForm.setValues({ D:r.input.D, Vc:r.input.Vc, fn:r.input.fn });
     right.append(b); row.append(right); matHistory.append(row);
   });
 }
 renderMatHistory();
 
-/* ===== FASEN (с Z) ===== */
+/* ================= FASEN (с Z) ================= */
 const fasForm = CT.ui.form.create({
   values: { angle:45, Xstart:'', Xend:'', L:'', Zstart:'', Zend:'' },
   fields: [
@@ -208,114 +293,106 @@ const fasForm = CT.ui.form.create({
 document.getElementById('fasFormWrap').append(fasForm.el);
 
 const fasOut = document.getElementById('fasOut');
-let fasSolved = null;
+let fasSolved=null;
 CT.__round = CT.__round || ((v,p)=>{ const m=Math.pow(10,p|0); return Math.round((+v+Number.EPSILON)*m)/m; });
 
-document.getElementById('btnFasenSolve').onclick = ()=>{
+document.getElementById('btnFasenSolve').addEventListener('click', ()=>{
   const v = fasForm.getValues();
-  const numOrU = (x)=> (x===''||x==null) ? undefined : Number(x);
-  const s = Ass.fasen.solve({
-    angle:Number(v.angle),
-    Xstart:numOrU(v.Xstart),
-    Xend:numOrU(v.Xend),
-    L:numOrU(v.L),
-    Zstart:numOrU(v.Zstart),
-    Zend:numOrU(v.Zend)
-  });
-  fasSolved = s;
-
-  fasOut.innerHTML='';
-  if ((s.errors||[]).length){
-    const err=document.createElement('div');
-    s.errors.forEach(e=>{ const b=document.createElement('span'); b.className='badge-warn'; b.textContent=e; b.style.marginRight='6px'; err.append(b); });
-    fasOut.append(err);
-  }
-  if (s.valid){
+  const numOrU = x => (x===''||x==null)?undefined:Number(x);
+  const s = Ass.fasen.solve({ angle:Number(v.angle), Xstart:numOrU(v.Xstart), Xend:numOrU(v.Xend), L:numOrU(v.L), Zstart:numOrU(v.Zstart), Zend:numOrU(v.Zend) });
+  fasSolved=s; fasOut.innerHTML='';
+  if(s.errors?.length){ const e=document.createElement('div'); s.errors.forEach(t=>{const b=document.createElement('span'); b.className='badge-warn'; b.textContent=t; b.style.marginRight='6px'; e.append(b)}); fasOut.append(e); }
+  if(s.valid){
     const list=document.createElement('div'); list.className='list';
-    list.innerHTML = `
+    list.innerHTML=`
       <div class="row"><div class="title">Xstart</div><div class="badge">${CT.__round(s.Xstart,3)}</div></div>
       <div class="row"><div class="title">Xend</div><div class="badge">${CT.__round(s.Xend,3)}</div></div>
       <div class="row"><div class="title">L (Z)</div><div class="badge">${CT.__round(s.L,3)} mm</div></div>
-      <div class="row"><div class="title">Tiefe</div><div class="badge">${CT.__round(s.depth,3)} mm</div></div>
-    `;
-    if (typeof s.Zstart==='number' || typeof s.Zend==='number'){
+      <div class="row"><div class="title">Tiefe</div><div class="badge">${CT.__round(s.depth,3)} mm</div></div>`;
+    if(typeof s.Zstart==='number'||typeof s.Zend==='number'){
       const z=document.createElement('div'); z.className='row';
-      z.innerHTML = `<div class="title">Z</div><div class="badge">${ typeof s.Zstart==='number'&&typeof s.Zend==='number' ? `${CT.__round(s.Zstart,3)} → ${CT.__round(s.Zend,3)}` : (typeof s.Zend==='number' ? `? → ${CT.__round(s.Zend,3)}` : `${CT.__round(s.Zstart,3)} → ?`) }</div>`;
+      z.innerHTML=`<div class="title">Z</div><div class="badge">${ typeof s.Zstart==='number'&&typeof s.Zend==='number' ? `${CT.__round(s.Zstart,3)} → ${CT.__round(s.Zend,3)}` : (typeof s.Zend==='number' ? `? → ${CT.__round(s.Zend,3)}` : `${CT.__round(s.Zstart,3)} → ?`) }</div>`;
       list.append(z);
     }
     fasOut.append(list);
   }
-};
+});
 
-document.getElementById('btnFasenGcode').onclick = ()=>{
-  if(!fasSolved || !fasSolved.valid){ CT.ui.toast('Erst berechnen', 'warn'); return; }
-  const fform = CT.ui.form.create({
-    values:{ side:'ro', feed:0.15, toolT:'T0101' },
-    fields:[
-      {type:'select', key:'side', label:'Seite', options:['ro','ru']},
-      {type:'number', key:'feed', label:'F (Feed)', step:'0.001'},
-      {type:'text', key:'toolT', label:'T (optional)'}
-    ]
-  });
-
-  const box=document.createElement('div');
-  const codeEl=document.createElement('div'); codeEl.className='codebox';
-  const renderCode=()=>{
-    const o=fform.getValues();
-    const out=Ass.fasen.gcode(fasSolved, { side:o.side, feed:Number(o.feed), toolT:o.toolT||undefined });
-    codeEl.textContent = (out.lines||[]).join('\n');
-  }; renderCode();
-
-  fform.el.addEventListener('input', renderCode);
-  box.append(fform.el, codeEl);
-
-  CT.ui.modal.open({
-    title:'G-Code für Fase',
-    contentEl:box,
+document.getElementById('btnFasenGcode').addEventListener('click', ()=>{
+  if(!fasSolved || !fasSolved.valid){ CT.ui.toast('Erst berechnen','warn'); return; }
+  const fform=CT.ui.form.create({ values:{side:'ro',feed:0.15,toolT:'T0101'},
+    fields:[{type:'select',key:'side',label:'Seite',options:['ro','ru']},{type:'number',key:'feed',label:'F (Feed)',step:'0.001'},{type:'text',key:'toolT',label:'T (optional)'}]});
+  const box=document.createElement('div'); const codeEl=document.createElement('div'); codeEl.className='codebox';
+  const render=()=>{ const o=fform.getValues(); const out=Ass.fasen.gcode(fasSolved,{side:o.side,feed:Number(o.feed),toolT:o.toolT||undefined}); codeEl.textContent=(out.lines||[]).join('\n');};
+  render(); fform.el.addEventListener('input',render); box.append(fform.el,codeEl);
+  CT.ui.modal.open({ title:'G-Code für Fase', contentEl:box,
     footer:[
       {label:'Kopieren', onClick:()=>{ CT.copy(codeEl.textContent); CT.ui.toast('Kopiert','ok'); }},
-      {label:'Als Notiz speichern', onClick:()=>{
-        const o=fform.getValues();
-        const out=Ass.fasen.gcode(fasSolved, { side:o.side, feed:Number(o.feed), toolT:o.toolT||undefined });
-        Docs.create({ title:`Fase ${CT.__round(fasSolved.angle,1)}°`, category:'Setup', text: out.note + '\n' + (out.lines||[]).join('\n') });
-        CT.ui.toast('Gespeichert','ok');
-      }},
+      {label:'Als Notiz speichern', onClick:()=>{ const o=fform.getValues(); const out=Ass.fasen.gcode(fasSolved,{side:o.side,feed:Number(o.feed),toolT:o.toolT||undefined}); Docs.create({title:`Fase ${CT.__round(fasSolved.angle,1)}°`,category:'Setup',text: out.note+'\n'+(out.lines||[]).join('\n')}); CT.ui.toast('Gespeichert','ok'); }},
       {label:'Schließen', onClick:()=>CT.ui.modal.close()}
-    ],
-    wide:true
-  });
-};
-
-/* ===== PASSMASSEN ===== */
-const passForm = CT.ui.form.create({
-  values:{ raw:'' },
-  fields:[ {type:'text', key:'raw', label:'Eingabe (z.B. "d12 h6" oder "H7/g6" oder "D=25 H7")'} ]
+    ], wide:true });
 });
+
+/* ================= PASSMASSEN ================= */
+const passForm = CT.ui.form.create({ values:{raw:''}, fields:[{type:'text',key:'raw',label:'Eingabe (z.B. "d12 h6" oder "H7/g6" oder "D=25 H7")'}]});
 document.getElementById('passFormWrap').append(passForm.el);
+const passOut=document.getElementById('passOut');
 
-const passOut = document.getElementById('passOut');
-document.getElementById('btnPassSearch').onclick = ()=>{
+document.getElementById('btnPassSearch').addEventListener('click', ()=>{
   const v=passForm.getValues(); const r=Ass.pass.search(v.raw||''); passOut.innerHTML='';
-  function renderSide(name, res){
-    const box=document.createElement('div'); box.style.marginTop='8px';
-    const h=document.createElement('div'); h.className='title'; h.textContent=name; box.append(h);
-    if(res && res.ok){
-      const t=document.createElement('table'); t.className='table';
-      t.innerHTML=`<thead><tr><th>Nominal</th><th>Symbol</th><th>Unteres</th><th>Oberes</th><th>Bereich</th></tr></thead>
-        <tbody><tr><td>${res.entry.nominal}</td><td>${res.entry.symbol}</td><td>${res.entry.lower}</td><td>${res.entry.upper}</td>
-        <td>${res.entry.nominal + res.entry.lower} .. ${res.entry.nominal + res.entry.upper}</td></tr></tbody>`;
-      box.append(t);
-    } else if (res){
-      const w=document.createElement('div'); w.className='muted'; w.textContent=res.text||'Keine Treffer'; box.append(w);
-    }
-    return box;
-  }
-  if (r.shaft) passOut.append(renderSide('Schaft (Welle)', r.shaft));
-  if (r.hole)  passOut.append(renderSide('Bohrung (Loch)', r.hole));
-  if (!r.shaft && !r.hole){ passOut.textContent='Keine erkennbaren Angaben'; }
-};
+  const renderSide=(name,res)=>{ const box=document.createElement('div'); box.style.marginTop='8px'; const h=document.createElement('div'); h.className='title'; h.textContent=name; box.append(h);
+    if(res && res.ok){ const t=document.createElement('table'); t.className='table'; t.innerHTML=`<thead><tr><th>Nominal</th><th>Symbol</th><th>Unteres</th><th>Oberes</th><th>Bereich</th></tr></thead>
+      <tbody><tr><td>${res.entry.nominal}</td><td>${res.entry.symbol}</td><td>${res.entry.lower}</td><td>${res.entry.upper}</td><td>${res.entry.nominal + res.entry.lower} .. ${res.entry.nominal + res.entry.upper}</td></tr></tbody>`; box.append(t);
+    } else if(res){ const w=document.createElement('div'); w.className='muted'; w.textContent=res.text||'Keine Treffer'; box.append(w); }
+    return box; };
+  if(r.shaft) passOut.append(renderSide('Schaft (Welle)', r.shaft));
+  if(r.hole)  passOut.append(renderSide('Bohrung (Loch)', r.hole));
+  if(!r.shaft && !r.hole) passOut.textContent='Keine erkennbaren Angaben';
+});
 
-/* мелочь */
+/* --- Tabelle MODAL (WORKING) --- */
+function openPassTableModal(){
+  const box=document.createElement('div'); const list=document.createElement('div');
+
+  function refresh(){
+    list.innerHTML='';
+    const tbl=CT.load('CT_AS_PASS_TABLE_V1',[]);
+    tbl.forEach(e=>{
+      const row=document.createElement('div'); row.className='row';
+      row.innerHTML=`<div><div class="title">${e.system} • ${e.nominal} • ${e.symbol}</div><div class="meta">${e.lower} .. ${e.upper}</div></div>`;
+      const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
+      const bE=document.createElement('button'); bE.className='btn btn--outline is-sm'; bE.textContent='Bearbeiten';
+      const bD=document.createElement('button'); bD.className='btn btn--outline is-sm'; bD.textContent='Löschen';
+      bE.onclick=()=>{ const f=CT.ui.form.create({ values:{system:e.system,nominal:e.nominal,symbol:e.symbol,lower:e.lower,upper:e.upper},
+        fields:[{type:'select',key:'system',label:'System',options:['shaft','hole']},{type:'number',key:'nominal',label:'Nominal',step:'0.001'},
+                {type:'text',key:'symbol',label:'Symbol'},{type:'number',key:'lower',label:'Unteres',step:'0.001'},{type:'number',key:'upper',label:'Oberes',step:'0.001'}]});
+        CT.ui.modal.open({ title:'Eintrag bearbeiten', contentEl:f.el, footer:[
+          {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
+          {label:'Speichern', kind:'primary', onClick:()=>{ const v=f.getValues(); Ass.pass.update({system:e.system,nominal:e.nominal,symbol:e.symbol},
+            {system:v.system,nominal:Number(v.nominal),symbol:v.symbol,lower:Number(v.lower),upper:Number(v.upper)}); CT.ui.modal.close(); refresh(); }}], wide:true });
+      };
+      bD.onclick=()=> CT.ui.confirm({title:'Löschen?',msg:`${e.system} ${e.nominal} ${e.symbol} entfernen?`}).then(ok=>{ if(ok){ Ass.pass.remove({system:e.system,nominal:e.nominal,symbol:e.symbol}); refresh(); }});
+      right.append(bE,bD); row.append(right); list.append(row);
+    });
+  }
+
+  const add=document.createElement('div'); add.className='row';
+  const btn=document.createElement('button'); btn.className='btn'; btn.textContent='+ Hinzufügen';
+  btn.onclick=()=>{ const f=CT.ui.form.create({ values:{system:'shaft',nominal:'',symbol:'',lower:'',upper:''},
+    fields:[{type:'select',key:'system',label:'System',options:['shaft','hole']},{type:'number',key:'nominal',label:'Nominal',step:'0.001'},
+            {type:'text',key:'symbol',label:'Symbol'},{type:'number',key:'lower',label:'Unteres',step:'0.001'},{type:'number',key:'upper',label:'Oberes',step:'0.001'}]});
+    CT.ui.modal.open({ title:'Neuer Eintrag', contentEl:f.el, footer:[
+      {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
+      {label:'Hinzufügen', kind:'primary', onClick:()=>{ const v=f.getValues(); Ass.pass.add({system:v.system,nominal:Number(v.nominal),symbol:v.symbol,lower:Number(v.lower),upper:Number(v.upper)}); CT.ui.modal.close(); refresh(); }}], wide:true });
+  };
+  add.append(document.createElement('div'), btn);
+
+  box.append(add, list); refresh();
+  CT.ui.modal.open({ title:'Passmassen-Tabelle', contentEl:box, footer:[{label:'Schließen', onClick:()=>CT.ui.modal.close()}], wide:true });
+}
+document.getElementById('btnPassTable').addEventListener('click', openPassTableModal);
+
+/* утилита округления если вдруг нет */
 CT.__round = CT.__round || ((v,p)=>{ const m=Math.pow(10,p|0); return Math.round((+v+Number.EPSILON)*m)/m; });
 </script>
 </body>
