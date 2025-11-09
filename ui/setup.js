@@ -1,14 +1,14 @@
-// CitiTool • Setup (RO/RU) — v7 SINGLE OVERLAY + INLINE SLOT EDITOR
+// CitiTool • Setup (RO/RU) — v7.1 SINGLE OVERLAY + INLINE SLOT EDITOR (full width)
 ;(function (global) {
   "use strict";
-  console.log('[Setup] v7 boot');
+  console.log('[Setup] v7.1 boot');
 
   const K_GROUPS='CT_PROG_GROUPS_V1', K_OLD='CT_PROGS_V1', K_LIVE='CT_LIVE_V1';
   const SLOTS = 12;
 
-  // ---------- CSS ----------
+  // ---------- CSS (вставляется один раз) ----------
   (function injectCSS(){
-    const id='ct-setup-v7-css';
+    const id='ct-setup-v71-css';
     if (document.getElementById(id)) return;
     const css = `
 .ct-editor{position:fixed;inset:0;z-index:9999;display:grid;grid-template-rows:auto 1fr auto;
@@ -24,19 +24,22 @@
 .tab.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
 .ct-editor .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 @media (max-width:560px){.ct-editor .grid{grid-template-columns:repeat(2,1fr)}}
-.slot{border:1px solid #edf1f7;border-radius:16px;background:#fff;box-shadow:var(--shadow,0 10px 30px rgba(13,27,42,.08));overflow:hidden}
+
+.slot{border:1px solid #edf1f7;border-radius:16px;background:#fff;box-shadow:var(--shadow,0 10px 30px rgba(13,27,42,.08));overflow:visible}
 .slot .ph{height:84px;background:#f5f8ff;display:grid;place-items:center;border-bottom:1px solid #edf1f7}
 .slot .ph img{max-width:100%;max-height:84px;object-fit:cover}
 .slot .meta{padding:10px}
 .slot .meta .t{font-weight:800}
 .slot .meta .n{color:#6b7a90;font-size:13px}
-.inl{border-top:1px dashed #e7ecf6;background:#fbfcff}
-.inl .wrap{padding:10px;display:grid;gap:8px}
+.slot.expanded{grid-column:1 / -1}
+
+.inl{background:#fbfcff;border-top:1px dashed #e7ecf6}
+.inl .wrap{padding:12px;display:grid;gap:8px}
 .inl .row{display:grid;gap:6px}
 .inl label{font-weight:800}
 .inl input{height:40px;border-radius:12px;border:1px solid #dbe5ff;padding:0 12px;font-weight:700}
-.inl .img{width:100%;border:1px solid #edf1f7;border-radius:12px}
-.inl .btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.inl .img{width:100%;display:block;border-radius:12px;border:1px solid #edf1f7}
+
 .ct-editor .ft{display:flex;gap:8px;justify-content:flex-end;padding:12px;border-top:1px solid #e9eef6;background:#fff}
 .btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn--ghost{background:transparent}
@@ -157,7 +160,7 @@
     }
   };
 
-  // ---------- SINGLE overlay editor ----------
+  // ---------- OVERLAY EDITOR ----------
   const Editor = {
     open(group){
       if (this.el) { this.render(group); return; }
@@ -212,7 +215,7 @@
                  {type:'textarea',key:'notes',label:'Notizen',rows:3} ]
       }) : null);
 
-      let side='RO', openPos=null; // открыт ли инлайн-редактор
+      let side='RO', openPos=null;
       const tabs=document.createElement('div'); tabs.className='tabs';
       const bRO=btn('RO','tab'); bRO.classList.add('active');
       const bRU=btn('RU','tab');
@@ -237,11 +240,13 @@
           b.onclick=()=>{
             openPos = (openPos===slot.pos ? null : slot.pos);
             drawSlots();
+            if (openPos===slot.pos) requestAnimationFrame(()=> art.scrollIntoView({behavior:'smooth', block:'start'}));
           };
           meta.append(b); art.append(phb,meta);
 
-          // --- INLINE EDITOR ---
+          // --- INLINE EDITOR (разворачивает карточку на всю ширину) ---
           if (openPos===slot.pos){
+            art.classList.add('expanded');
             const inl=document.createElement('div'); inl.className='inl';
             const wrap=document.createElement('div'); wrap.className='wrap';
 
@@ -249,7 +254,7 @@
             const row1=field('T-Nummer (z.B. T0101)','tn', slot.tnum||'');
             const row2=field('Alias / Titel','al', slot.alias||'');
 
-            const btns=document.createElement('div'); btns.className='btns';
+            const btns=document.createElement('div'); btns.style.display='flex'; btns.style.gap='8px'; btns.style.flexWrap='wrap'; btns.style.justifyContent='flex-end';
             const bPick=btn('Aus Tools wählen'); const bNew=btn('Neues Werkzeug',''); const bDetach=btn('Entfernen','is-sm');
             const bCancel=btn('Abbrechen',''); const bSave=btn('Speichern','brand');
 
@@ -285,7 +290,6 @@
       };
       const switchSide = (s)=>{ side=s; bRO.classList.toggle('active',s==='RO'); bRU.classList.toggle('active',s==='RU'); openPos=null; drawSlots(); };
 
-      // сборка
       row.append(bSet,bClr);
       cnt.innerHTML=''; cnt.append(img,row);
       if (form) cnt.append(form.el);
