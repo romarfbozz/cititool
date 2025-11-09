@@ -3,22 +3,23 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Fasen-Assistent • OD Angle → Radius</title>
+<title>Fasen-Assistent • OD Angle → Radius (Auto Rmax)</title>
 <style>
-  :root{
-    --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --hair:#e9eef6;
-  }
-  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);
-    font:15px/1.45 -apple-system,BlinkMacSystemFont,Inter,Segoe UI,Roboto,sans-serif}
+  :root{ --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --hair:#e9eef6; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.45 -apple-system,BlinkMacSystemFont,Inter,Segoe UI,Roboto,sans-serif}
   .wrap{max-width:1100px;margin:18px auto;padding:0 12px;display:grid;gap:12px}
   h1{font:900 22px/1.2 Inter,system-ui;margin:8px 0}
   .grid{display:grid;grid-template-columns:360px 1fr;gap:12px}
   .card{background:#fff;border:1px solid var(--hair);border-radius:16px;padding:14px;
         box-shadow:0 6px 20px rgba(13,27,42,.08)}
-  .row{display:grid;grid-template-columns:1fr 120px;gap:8px;align-items:center;margin:6px 0}
-  input{height:40px;border:1px solid #d9e3f5;border-radius:10px;padding:0 10px}
+  .row{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin:6px 0}
+  input,select{height:40px;border:1px solid #d9e3f5;border-radius:10px;padding:0 10px}
   .btn{height:40px;border-radius:10px;background:var(--brand);color:#fff;border:0;padding:0 14px;font-weight:700}
   .muted{color:var(--muted)}
+  .note{background:#fff8e1;border:1px solid #f3d27a;color:#584000;border-radius:12px;padding:10px;margin-top:8px}
+  .ok{background:#e8f4ff;border:1px solid #cfe6ff;color:#0f3b7a;border-radius:12px;padding:10px;margin-top:8px}
   pre{background:#0e1220;color:#eaf2ff;border-radius:12px;padding:12px;overflow:auto}
   code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   svg{width:100%;height:520px;background:#fff;border:1px solid var(--hair);border-radius:16px}
@@ -32,25 +33,27 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Fasen-Assistent (Außen) — Winkel в радиус</h1>
+  <h1>Fasen-Assistent (Außen) — Winkel → Übergangs-Radius</h1>
   <div class="grid">
     <!-- Параметры -->
     <div class="card">
-      <div class="row"><label>Start-Durchmesser X<sub>start</sub> (mm)</label><input id="xStart" type="number" step="0.001" value="20"></div>
-      <div class="row"><label>End-Durchmesser X<sub>end</sub> (mm)</label><input id="xEnd" type="number" step="0.001" value="12"></div>
-      <div class="row"><label>Länge bis начала фаски L (mm)</label><input id="len" type="number" step="0.001" value="6"></div>
+      <div class="row"><label>Start-Ø X<sub>start</sub> (mm)</label><input id="xStart" type="number" step="0.001" value="20"></div>
+      <div class="row"><label>End-Ø X<sub>end</sub> (mm)</label><input id="xEnd" type="number" step="0.001" value="12"></div>
+      <div class="row"><label>Länge bis фаски L (mm)</label><input id="len" type="number" step="0.001" value="6"></div>
       <div class="row"><label>Winkel α (°)</label><input id="angle" type="number" step="0.1" value="30"></div>
       <div class="row"><label>Übergangs-Radius R (mm)</label><input id="R" type="number" step="0.001" value="0.5"></div>
       <div class="row"><label>Vorschub F (optional)</label><input id="feed" type="number" step="0.001" placeholder="z.B. 0.15"></div>
       <div class="row"><label>Start-Z (Datum) Z<sub>0</sub> (mm)</label><input id="z0" type="number" step="0.001" value="0"></div>
-      <div class="row"><label class="muted">Ausgabe-Modus</label>
+      <div class="row"><label class="muted">X-Modus</label>
         <select id="mode">
-          <option value="diameter">X in Durchmesser (typisch)</option>
-          <option value="radius">X in Radius (X = Ø/2)</option>
+          <option value="diameter">X als Durchmesser (typisch)</option>
+          <option value="radius">X als Radius (X = Ø/2)</option>
         </select>
       </div>
       <div class="row"><span></span><button class="btn" id="calc">Berechnen</button></div>
-      <div id="msg" class="muted"></div>
+      <div id="hint" class="ok"></div>
+      <div id="warn" class="note" style="display:none"></div>
+      <div id="err"  class="err"></div>
     </div>
 
     <!-- Чертёж + G-code -->
@@ -63,7 +66,6 @@
         <g id="shape"></g>
         <g id="dim"></g>
       </svg>
-      <div id="err" class="err"></div>
       <h3>G-Code</h3>
       <pre><code id="g"></code></pre>
     </div>
@@ -72,80 +74,63 @@
 
 <script>
 const $ = id => document.getElementById(id);
+const fmt = v => (Math.round(v*10000)/10000).toFixed(4);
 
-function fmt(v){ return (Math.round(v*10000)/10000).toFixed(4); }
+function geometry(params){
+  const {Xs,Xe,L,a,R,Z0} = params;
+  const m = -Math.tan(a);     // наклон фаски
+  const b = Xs - m*(Z0+L);    // прямая фаски: x = m z + b
 
-/**
- * Геометрия:
- *  - Ось Z вправо (+), ось X вверх (+). В токарных — OD «диаметр вверх».
- *  - Вертикальная стенка на X = Xend.
- *  - Прямая фаски начинается в P0 = (Xs, Z0+L) и идёт углом α: slope m = -tan(α).
- *  - Скругление R между прямой и вертикалью: центр = пересечение смещённых на R линий.
- *    Линия: x - m z - b = 0, смещение: x - m z - (b - s*R*sqrt(1+m*m)) = 0.
- *    Вертикаль: x = Xe, смещение: x = Xe - R (влево).
- */
-function solve(){
-  $('err').textContent = '';
-  $('msg').textContent = '';
-  const Xs = Number($('xStart').value);
-  const Xe = Number($('xEnd').value);
-  const L  = Number($('len').value);
-  const a  = Number($('angle').value)*Math.PI/180;
-  const R  = Number($('R').value);
-  const Z0 = Number($('z0').value);
-  const mode = $('mode').value;
-
-  if(!(Xs>0 && Xe>0 && L>=0 && R>=0 && a>0 && a<89.9)){ $('err').textContent='Проверь входные данные.'; return; }
-
-  const m = -Math.tan(a);                 // наклон фаски
-  const b = Xs - m*(Z0+L);                // коэффициент прямой x = m z + b
-  const sgn = +1;                         // смещение линии «внутрь» (к вертикали)
   const offs = R*Math.sqrt(1+m*m);
+  const xC = Xe - R;                          // центр смещённой вертикали
+  const zC = (xC - (b - offs)) / m;           // пересечение с оффсет-линией (смещение внутрь)
+  const TV = {x: Xe, z: zC};                  // касание на вертикали
 
-  const xC = Xe - R;                      // центр окружности: x от вертикали
-  const zC = (xC - (b - sgn*offs)) / m;   // пересечение со смещённой прямой
-
-  // точка касания на вертикали:
-  const TV = {x: Xe, z: zC};
-
-  // точка касания на прямой — проекция центра на исходную линию
+  // проекция центра на исходную линию → точка касания TL
   const zTL = (m*(xC - b) + zC) / (m*m + 1);
   const xTL = m*zTL + b;
   const TL = {x:xTL, z:zTL};
 
-  // начальная точка фаски (после вертикали стартовой)
   const P0 = {x: Xs, z: Z0 + L};
-
-  // проверка на корректность последовательности
-  if(!(zTL >= P0.z && TV.z >= zTL)){ $('err').textContent='Комбинация параметров невозможна (R слишком большой или угол/диаметры конфликтуют).'; return; }
-
-  // Рисуем профиль
-  draw(P0, TL, TV, R, Xe);
-
-  // G-код (в диаметрах по умолчанию)
-  const diam = (x)=> mode==='diameter' ? x : (x/2);
-
-  let g = [];
-  g.push(`(OD Angle → Radius)`);
-  g.push(`G0 X${fmt(diam(Xs))} Z${fmt(Z0)}`);
-  g.push(`G1 Z${fmt(P0.z)}`);
-  g.push(`G1 X${fmt(diam(TL.x))} Z${fmt(TL.z)}   (fasen)`);
-  g.push(`G3 X${fmt(diam(TV.x))} Z${fmt(TV.z)} R${fmt(R)}  (Übergang)`);
-  g.push(`G1 X${fmt(diam(Xe))}                 (senkrecht)`);
-  const F = Number($('feed').value);
-  if(F>0) g = g.map(line => line.startsWith('G1')||line.startsWith('G3') ? `${line} F${F}` : line);
-
-  $('g').textContent = g.join('\n');
-
-  // Подсказка по вводу
-  $('msg').textContent = `Вход: Xs=${Xs}, Xe=${Xe}, L=${L}, α=${(a*180/Math.PI).toFixed(1)}°, R=${R}`;
+  return {m,b,P0,TL,TV,xC,zC};
 }
 
-function draw(P0, TL, TV, R, Xe){
-  const S = $('shape'), D = $('dim');
-  S.innerHTML = ''; D.innerHTML = '';
+/* Проверяем валидность: TL должна быть правее/не левее старта фаски */
+function isValid(params){
+  const {P0,TL,TV} = geometry(params);
+  return (TL.z >= P0.z) && (TV.z >= TL.z) && isFinite(TL.z) && isFinite(TV.z);
+}
 
-  // Вспомогательные фрагменты
+/* Численно находим Rmax для фикс. Xs,Xe,L,a (бинарный поиск) */
+function findRmax(params){
+  const p = {...params};
+  let lo = 0, hi = 1000; // верхнюю границу расширим по мере надобности
+  // увеличиваем hi пока решение существует
+  while(isValid({...p,R:hi})) hi *= 2;
+  // теперь hi — уже невалидно, lo — ещё валидно
+  while(hi - lo > 1e-6){
+    const mid = (lo + hi)/2;
+    if(isValid({...p,R:mid})) lo = mid; else hi = mid;
+  }
+  return lo; // максимально допустимый
+}
+
+/* Для заданного R найдём минимально нужную L, чтобы стало валидно */
+function findLmin(params){
+  const p = {...params};
+  let lo = 0, hi = Math.max(1, p.L);
+  // увеличиваем верхнюю границу L, пока решение не станет валидным
+  while(!isValid({...p,L:hi})) hi *= 2;
+  // бинарный поиск L
+  for(let k=0;k<60;k++){
+    const mid = (lo+hi)/2;
+    if(isValid({...p,L:mid})) hi = mid; else lo = mid;
+  }
+  return hi;
+}
+
+function draw(P0, TL, TV, R){
+  const S = $('shape'), D = $('dim'); S.innerHTML=''; D.innerHTML='';
   const seg = (p,q,cls='shape') => {
     const e = document.createElementNS('http://www.w3.org/2000/svg','line');
     e.setAttribute('class',cls);
@@ -153,34 +138,70 @@ function draw(P0, TL, TV, R, Xe){
     e.setAttribute('x2',q.z); e.setAttribute('y2',-q.x);
     S.appendChild(e);
   };
-
-  // Вертикаль (финиш)
+  // вспомогательные оси вокруг TV
   seg({x:TV.x, z:TV.z-35}, {x:TV.x, z:TV.z+35}, 'axis');
 
-  // Участки: от Z0 до L вертикаль отсутствует — рисуем только фаску и дугу
-  // Прямая фаски от P0 до TL
+  // фаска
   seg(P0, TL);
-
-  // Дуга R (центр из геометрии офсетов)
-  // Рисуем через path (SVG дуга)
+  // дуга TL→TV
   const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-  const large=false, sweep=true; // G03 — CCW; в нашей системе CCW соответствует sweep=1
-  const d = `M ${TL.z} ${-TL.x} A ${R} ${R} 0 ${large?1:0} ${sweep?1:0} ${TV.z} ${-TV.x}`;
-  path.setAttribute('d', d); path.setAttribute('class','shape');
-  S.appendChild(path);
+  const d = `M ${TL.z} ${-TL.x} A ${R} ${R} 0 0 1 ${TV.z} ${-TV.x}`;
+  path.setAttribute('d',d); path.setAttribute('class','shape'); S.appendChild(path);
 
-  // подписи
-  const t = (x,y,txt)=>{const e=document.createElementNS('http://www.w3.org/2000/svg','text');e.setAttribute('class','txt');e.setAttribute('x',x);e.setAttribute('y',y);e.textContent=txt;D.appendChild(e);}
+  const t=(x,y,txt)=>{const e=document.createElementNS('http://www.w3.org/2000/svg','text');
+    e.setAttribute('class','txt'); e.setAttribute('x',x); e.setAttribute('y',y); e.textContent=txt; D.appendChild(e);}
   t(TV.z+2, -TV.x-6, 'Xend');
   t(P0.z-2, -P0.x-6, 'Start');
-  // размер угла как дуга (условно)
-  const arc=document.createElementNS('http://www.w3.org/2000/svg','path');
-  arc.setAttribute('d',`M ${TL.z} ${-TL.x} A 18 18 0 0 1 ${TL.z+16} ${-TL.x-6}`);
-  arc.setAttribute('class','dim'); D.appendChild(arc);
+}
+
+function solve(){
+  $('err').textContent=''; $('warn').style.display='none';
+  const Xs = Number($('xStart').value);
+  const Xe = Number($('xEnd').value);
+  const L  = Number($('len').value);
+  const a  = Number($('angle').value)*Math.PI/180;
+  let   R  = Number($('R').value);
+  const Z0 = Number($('z0').value);
+  const mode = $('mode').value;
+
+  if(!(Xs>0 && Xe>0 && L>=0 && R>=0 && a>0 && a<89.9)){
+    $('err').textContent='Проверь входные данные.'; return;
+  }
+
+  // если невалидно — автоснэп к Rmax, плюс подсказка Lmin
+  const params = {Xs,Xe,L,a,R,Z0};
+  let usedR = R;
+  if(!isValid(params)){
+    const Rmax = findRmax({...params,R:0});         // максимально допустимый
+    const Lmin = findLmin({...params});             // нужная длина при исходном R
+    usedR = Rmax;
+    $('warn').style.display='block';
+    $('warn').textContent = `Введённый R=${fmt(R)} слишком большой. `+
+      `Максимально допустимый при этих Xs,Xe,L,α: Rmax=${fmt(Rmax)}. `+
+      `Я применил R=${fmt(Rmax)}. `+
+      `Либо увеличьте L ≥ ${fmt(Lmin)} для сохранения вашего R.`;
+  }
+  const geom = geometry({Xs,Xe,L,a,R:usedR,Z0});
+  draw(geom.P0, geom.TL, geom.TV, usedR);
+
+  // G-код
+  const diam = (x)=> mode==='diameter' ? x : (x/2);
+  const F = Number($('feed').value);
+  let g = [];
+  g.push(`(OD Angle → Radius)`);
+  g.push(`G0 X${fmt(diam(Xs))} Z${fmt(Z0)}`);
+  g.push(`G1 Z${fmt(geom.P0.z)}`);
+  g.push(`G1 X${fmt(diam(geom.TL.x))} Z${fmt(geom.TL.z)}   (fasen)`);
+  g.push(`G3 X${fmt(diam(geom.TV.x))} Z${fmt(geom.TV.z)} R${fmt(usedR)}  (Übergang)`);
+  g.push(`G1 X${fmt(diam(Xe))}                 (senkrecht)`);
+  if(F>0) g = g.map(line => (line.startsWith('G1')||line.startsWith('G3')) ? `${line} F${F}` : line);
+  $('g').textContent = g.join('\n');
+
+  $('hint').textContent = `Вход: Xs=${Xs}, Xe=${Xe}, L=${L}, α=${(a*180/Math.PI).toFixed(1)}°, R=${fmt(usedR)} (режим X: ${$('mode').value})`;
 }
 
 $('calc').addEventListener('click', solve);
-solve(); // первичный расчёт
+solve();
 </script>
 </body>
 </html>
