@@ -1,39 +1,57 @@
-// CitiTool • Setup (RO/RU) — v5 editor + slots + safe init
+// CitiTool • Setup (RO/RU) — v6 SINGLE EDITOR (no stacking) + safe init
 ;(function (global) {
   "use strict";
-  console.log('[Setup] v5 boot');
+  console.log('[Setup] v6 boot');
 
   const K_GROUPS='CT_PROG_GROUPS_V1', K_OLD='CT_PROGS_V1', K_LIVE='CT_LIVE_V1';
   const SLOTS = 12;
 
-  // ---- style injection (минимум для слотов) ----
-  (function inject(){
+  // ---------- CSS (overlay + slots) ----------
+  (function injectCSS(){
+    const id='ct-setup-v6-css';
+    if (document.getElementById(id)) return;
     const css = `
-.grid-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.ct-editor{position:fixed;inset:0;z-index:9999;display:grid;grid-template-rows:auto 1fr auto;
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.9));
+  backdrop-filter:saturate(1.1) blur(10px); border-top:1px solid #e9eef6}
+.ct-editor .bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid #e9eef6;background:#fff}
+.ct-editor .bar .ttl{font:900 18px/1.1 Inter,system-ui}
+.ct-editor .bar .x{border:1px solid #dbe5ff;border-radius:12px;background:#fff;height:36px;padding:0 12px;font-weight:800}
+.ct-editor .cnt{overflow:auto;padding:14px;max-width:980px;margin:0 auto;width:100%}
+.ct-editor .f{display:grid;gap:10px}
+.ct-editor .img{width:100%;border:1px solid #edf1f7;border-radius:12px;object-fit:cover;margin-bottom:8px}
+.ct-editor .rowbtns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.ct-editor .tabs{display:flex;gap:8px;margin:8px 0 12px}
+.ct-editor .tab{padding:8px 12px;border:1px solid #dbe5ff;background:#fff;border-radius:12px;font-weight:800}
+.ct-editor .tab.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
+.ct-editor .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (max-width:560px){.ct-editor .grid{grid-template-columns:repeat(2,1fr)}}
 .slot{border:1px solid #edf1f7;border-radius:16px;background:#fff;box-shadow:var(--shadow,0 10px 30px rgba(13,27,42,.08));overflow:hidden}
 .slot .ph{height:84px;background:#f5f8ff;display:grid;place-items:center;border-bottom:1px solid #edf1f7}
 .slot .ph img{max-width:100%;max-height:84px;object-fit:cover}
 .slot .meta{padding:10px}
 .slot .meta .t{font-weight:800}
 .slot .meta .n{color:#6b7a90;font-size:13px}
-.ro-ru{display:flex;gap:8px;margin:6px 0 12px}
-.ro-ru .tab{padding:8px 12px;border:1px solid #dbe5ff;background:#fff;border-radius:12px;font-weight:800;cursor:pointer}
-.ro-ru .tab.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
+.ct-editor .ft{display:flex;gap:8px;justify-content:flex-end;padding:12px;border-top:1px solid #e9eef6;background:#fff}
+.btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
+.btn--ghost{background:transparent}
+.btn.brand{background:#2d6cdf;border-color:#2d6cdf;color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
+.btn.is-sm{height:32px;border-radius:12px;font-weight:800}
 .badge-live{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:#2d6cdf;font-weight:800;padding:0 10px}
-.kp{display:flex;align-items:center;gap:10px}
-.kp img{width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid #edf1f7;background:#fff}
-.kp .txt{display:grid}
-.kp .txt .t{font-weight:800}
-.kp .txt .m{color:#6b7a90;font-size:13px}
-@media (max-width:560px){ .grid-slots{grid-template-columns:repeat(2,1fr)} }
+.ct-sub{color:#6b7a90;font-size:13px}
+
+/* inline subpanel (slot editor) */
+.subpanel{position:fixed;inset:auto 0 0 0;z-index:10000;background:#fff;border-top:1px solid #e9eef6;box-shadow:0 -12px 30px rgba(13,27,42,.08);padding:12px}
+.subpanel .row{display:grid;gap:6px;margin:8px 0}
+.subpanel .row label{font-weight:800}
+.subpanel .row input{height:40px;border-radius:12px;border:1px solid #dbe5ff;padding:0 12px;font-weight:700}
+.subpanel .img{width:100%;border:1px solid #edf1f7;border-radius:12px;margin:6px 0}
+.subpanel .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
     `;
-    const id='ct-setup-v5-css';
-    if (!document.getElementById(id)) {
-      const s=document.createElement('style'); s.id=id; s.textContent=css; document.head.appendChild(s);
-    }
+    const s=document.createElement('style'); s.id=id; s.textContent=css; document.head.appendChild(s);
   })();
 
-  // ---- safe storage ----
+  // ---------- utils ----------
   const storage = {
     get(k, def){
       try{
@@ -43,8 +61,8 @@
     },
     set(k,v){
       try{
-        if (global.CT && typeof global.CT.save==='function') global.CT.save(k,v);
-        else localStorage.setItem(k, JSON.stringify(v));
+        if (global.CT && typeof global.CT.save==='function') return global.CT.save(k, v);
+        localStorage.setItem(k, JSON.stringify(v));
       }catch{}
     }
   };
@@ -54,28 +72,17 @@
   const emptySide=(name)=>({name, slots:Array.from({length:SLOTS},(_,i)=>({pos:i+1,tnum:null,toolId:null,alias:''}))});
   const ph=()=>'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="120"><rect width="100%" height="100%" fill="#f5f8ff"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Inter,system-ui" font-size="14" fill="#8aa0c4">kein Foto</text></svg>`);
 
-  // ---- Tools mini ----
+  // ----- Tools mini -----
   const Tools = {
     list(){ return storage.get('CT_TOOLS_V1',[])||[]; },
     byId(id){ return this.list().find(t=>t.id===id); },
     createQuick({name,iso,code,photo,category='Allgemein',notes=''}) {
       const t={id:uid(), name:(name||'Tool').trim(), iso:iso||'', code:code||'', photo:photo||null, category, notes, createdAt:now(), updatedAt:now()};
       storage.set('CT_TOOLS_V1',[t, ...this.list()]); return t;
-    },
-    pick(cb){
-      if (global.CT && CT.selector && CT.selector.tools){ CT.selector.tools({onPick:cb, allowNew:true}); return; }
-      // fallback простой список
-      const box=document.createElement('div');
-      const list=this.list(); if(!list.length){ box.textContent='Noch keine Tools.'; }
-      list.forEach(t=>{
-        const r=document.createElement('div'); r.className='row'; r.innerHTML=`<div class="title">${t.name}</div><div class="badge">${t.iso||t.code||'—'}</div>`;
-        r.onclick=()=>{ cb(t); CT.ui.modal.close(); }; box.append(r);
-      });
-      CT.ui.modal.open({title:'Werkzeug wählen', contentEl:box, footer:[{label:'Abbrechen', onClick:()=>CT.ui.modal.close()}]});
     }
   };
 
-  // ---- Core ----
+  // ---------- core data ----------
   const Setup = {
     _hardSeed(){
       const demo=[];
@@ -91,7 +98,6 @@
       }
       storage.set(K_GROUPS, demo.sort(byCreatedDesc));
       if(!storage.get(K_LIVE,null)) storage.set(K_LIVE,{RO:null,RU:null});
-      console.log('[Setup] seeded:', demo.length);
     },
     _migrateOld(){
       const old=storage.get(K_OLD,[]);
@@ -110,7 +116,6 @@
         });
       });
       storage.set(K_GROUPS, [...map.values()].sort(byCreatedDesc));
-      console.log('[Setup] migrated');
       return true;
     },
     ensure(){
@@ -150,7 +155,173 @@
     }
   };
 
-  // ---- UI ----
+  // ---------- SINGLE overlay editor ----------
+  const Editor = {
+    open(group){
+      // если уже есть — просто перерисуем содержимое
+      if (this.el) { this.render(group); return; }
+      this.el = document.createElement('div');
+      this.el.className = 'ct-editor';
+      this.el.innerHTML = `
+        <div class="bar">
+          <div class="ttl"></div>
+          <div class="r">
+            <button class="btn is-sm" data-act="live-ro">In Live (RO)</button>
+            <button class="btn is-sm" data-act="live-ru">In Live (RU)</button>
+            <button class="btn is-sm" data-act="del">Löschen</button>
+            <button class="btn is-sm btn--ghost" data-act="cancel">Abbrechen</button>
+            <button class="btn brand is-sm" data-act="save">Speichern</button>
+          </div>
+        </div>
+        <div class="cnt"></div>
+        <div class="ft ct-sub">Nur ein Editor geöffnet • Tippe «Abbrechen» zum Schließen</div>
+      `;
+      document.body.appendChild(this.el);
+      // навесим обработчики один раз
+      this.el.addEventListener('click',(e)=>{
+        const b=e.target.closest('button[data-act]'); if(!b) return;
+        const act=b.dataset.act;
+        if(act==='cancel'){ this.close(); }
+        else if(act==='save'){ this._save(); }
+        else if(act==='del'){ CT.ui.confirm({title:'Programm löschen?', msg:`${this.draft.title} — ${this.draft.nr}`}).then(ok=>{ if(ok){ Setup.remove(this.draft.id); this.close(); UI.render(); } }); }
+        else if(act==='live-ro'){ Setup.applyLive(this.draft.id,'RO'); CT.ui.toast('Live RO gesetzt','ok'); }
+        else if(act==='live-ru'){ Setup.applyLive(this.draft.id,'RU'); CT.ui.toast('Live RU gesetzt','ok'); }
+      });
+      // запретим прокрутку фона
+      document.documentElement.style.overflow='hidden';
+      this.render(group);
+    },
+    close(){
+      if (!this.el) return;
+      this.el.remove(); this.el=null; this.draft=null;
+      document.documentElement.style.overflow='';
+      // убрать возможный субпанель
+      const sp=document.querySelector('.subpanel'); if(sp) sp.remove();
+    },
+
+    render(group){
+      this.draft = JSON.parse(JSON.stringify(group||{}));
+      const cnt = this.el.querySelector('.cnt');
+      const ttl = this.el.querySelector('.ttl');
+      ttl.textContent = `${this.draft.title||'Programm'} — ${this.draft.nr||''}`;
+
+      // верх: картинка и кнопки
+      const img = document.createElement('img'); img.className='img'; img.src=this.draft.drawing||ph();
+      const row = document.createElement('div'); row.className='rowbtns';
+      const bSet = btn('Zeichnung ändern','is-sm'); bSet.onclick= async ()=>{
+        const files=await CT.uploader.accept({accept:'image/*', to:'dataURL'}); if(files?.[0]){ this.draft.drawing=files[0].dataUrl; img.src=this.draft.drawing; }
+      };
+      const bClr = btn('Entfernen','is-sm'); bClr.onclick=()=>{ this.draft.drawing=null; img.src=ph(); };
+
+      // форма (без модалки)
+      const form = (global.CT && CT.ui && CT.ui.form ? CT.ui.form.create({
+        values:{ title:this.draft.title||'', nr:this.draft.nr||'', zeichnungsNr:this.draft.zeichnungsNr||'', material:this.draft.material||'', notes:this.draft.notes||'' },
+        fields:[ {type:'text',key:'title',label:'Titel'}, {type:'text',key:'nr',label:'Programm-Nr'},
+                 {type:'text',key:'zeichnungsNr',label:'Zeichnungsnummer'}, {type:'text',key:'material',label:'Material'},
+                 {type:'textarea',key:'notes',label:'Notizen',rows:3} ]
+      }) : null);
+
+      // tabs + slots
+      let side='RO';
+      const tabs=document.createElement('div'); tabs.className='tabs';
+      const bRO=btn('RO','tab'); bRO.className='tab active';
+      const bRU=btn('RU','tab');
+      tabs.append(bRO,bRU);
+      bRO.onclick=()=>switchSide('RO');
+      bRU.onclick=()=>switchSide('RU');
+      const grid=document.createElement('div'); grid.className='grid';
+
+      const drawSlots=()=>{
+        grid.innerHTML='';
+        const sideObj=this.draft.sides?.[side] || (this.draft.sides[side]=emptySide(side));
+        sideObj.slots.forEach(slot=>{
+          const art=document.createElement('article'); art.className='slot';
+          const phb=document.createElement('div'); phb.className='ph';
+          const tool = slot.toolId ? Tools.byId(slot.toolId) : null;
+          if(tool?.photo){ const im=document.createElement('img'); im.src=tool.photo; phb.append(im); }
+          else { phb.innerHTML='<svg width="54" height="54" viewBox="0 0 24 24" style="opacity:.35"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2z"/></svg>'; }
+          const meta=document.createElement('div'); meta.className='meta';
+          meta.innerHTML=`<div class="t">Pos ${slot.pos} • ${slot.tnum||'—'}</div><div class="n">${slot.alias || tool?.name || 'kein Werkzeug'}</div>`;
+          const b=btn('Bearbeiten','is-sm');
+          b.onclick=()=>this.openSlotPanel({side, slot});
+          meta.append(b); art.append(phb,meta); grid.append(art);
+        });
+      };
+      const switchSide = (s)=>{ side=s; bRO.classList.toggle('active',s==='RO'); bRU.classList.toggle('active',s==='RU'); drawSlots(); };
+
+      // сборка
+      row.append(bSet,bClr);
+      cnt.innerHTML=''; cnt.append(img,row);
+      if (form) cnt.append(form.el);
+      cnt.append(tabs, grid);
+      switchSide('RO');
+
+      // сохранить обработчик
+      this._save = ()=> {
+        if(form){ const v=form.getValues(); Object.assign(this.draft,{title:v.title,nr:v.nr,zeichnungsNr:v.zeichnungsNr,material:v.material,notes:v.notes}); }
+        Setup.upsert(this.draft);
+        CT.ui.toast('Gespeichert','ok');
+        // обновить заголовок
+        ttl.textContent = `${this.draft.title||'Programm'} — ${this.draft.nr||''}`;
+        UI.render(); // обновить список
+      };
+    },
+
+    openSlotPanel({side, slot}){
+      // единственная внутренняя панель; если есть — заменим содержимое
+      let panel=document.querySelector('.subpanel');
+      if(!panel){ panel=document.createElement('div'); panel.className='subpanel'; document.body.appendChild(panel); }
+      panel.innerHTML='';
+      const t = slot.toolId ? Tools.byId(slot.toolId) : null;
+
+      const img=document.createElement('img'); img.className='img'; img.src=t?.photo || ph();
+      const row1=field('T-Nummer (z.B. T0101)','tn', slot.tnum||'');
+      const row2=field('Alias / Titel','al', slot.alias||'');
+      const btns=document.createElement('div'); btns.className='btns';
+      const bPick=btn('Aus Tools wählen'); const bNew=btn('Neues Werkzeug',''); const bDetach=btn('Entfernen','');
+      const bCancel=btn('Abbrechen',''); const bSave=btn('Speichern','brand');
+
+      bPick.onclick=()=>{
+        // простой выбор
+        const list=Tools.list();
+        if(!list.length){ CT.ui.toast('Keine Tools vorhanden','warn'); return; }
+        // мини-попап через window.prompt не используем; берём самый простой способ:
+        const names=list.map((x,i)=>`${i+1}. ${x.name}`).join('\n');
+        const n=prompt('Werkzeug Nr wählen:\n'+names+'\n\nGib die Nummer ein:');
+        const idx=Number(n)-1; if(list[idx]){ slot.toolId=list[idx].id; img.src=list[idx].photo||ph(); }
+      };
+      bNew.onclick= async ()=>{
+        const name=prompt('Name des Werkzeugs:')||'Tool';
+        let photo=null;
+        try{
+          const files=await CT.uploader.accept({accept:'image/*', to:'dataURL'});
+          if(files?.[0]) photo=files[0].dataUrl;
+        }catch{}
+        const t=Tools.createQuick({name, photo});
+        slot.toolId=t.id; img.src=t.photo||ph();
+      };
+      bDetach.onclick=()=>{ slot.toolId=null; img.src=ph(); };
+
+      bCancel.onclick=()=>{ panel.remove(); };
+      bSave.onclick=()=>{
+        slot.tnum = row1.querySelector('input').value.trim()||null;
+        slot.alias = row2.querySelector('input').value.trim();
+        Setup.upsert(this.draft);
+        CT.ui.toast('Slot gespeichert','ok');
+        panel.remove();
+        // перерисовать текущую сторону
+        this.render(this.draft);
+      };
+
+      btns.append(bPick,bNew,bDetach,bCancel,bSave);
+      panel.append(img,row1,row2,btns);
+    }
+  };
+
+  function btn(label, extraClass=''){ const b=document.createElement('button'); b.className='btn ' + (extraClass||''); b.textContent=label; return b; }
+  function field(label, key, val){ const d=document.createElement('div'); d.className='row'; d.innerHTML=`<label>${label}</label><input data-k="${key}" value="${val||''}">`; return d; }
+
+  // ---------- list UI ----------
   const UI = {
     els:{}, state:{q:'',side:''},
 
@@ -164,168 +335,50 @@
         chipsSides.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
         b.classList.add('active'); this.state.side=b.dataset.side||''; this.render();
       });
-      newBtn && newBtn.addEventListener('click', ()=> this.openEditor( Setup.create({nr:'',title:'Neues Programm'}) ));
+      newBtn && newBtn.addEventListener('click', ()=> Editor.open( Setup.create({nr:'',title:'Neues Programm'}) ));
       this.render();
     },
 
     render(){
       const list = Setup.list({q:this.state.q, side:this.state.side});
-      // Hero
+      // hero
       const lastWrap=this.els.lastWrap; if(lastWrap){ lastWrap.innerHTML='';
         list.slice(0,3).forEach(g=>{
           const row=document.createElement('div'); row.className='kp';
           const img=document.createElement('img'); img.src=g.drawing||ph();
           const txt=document.createElement('div'); txt.className='txt';
-          txt.innerHTML=`<div class="t">${g.title} — ${g.nr}</div><div class="m">${g.material||'—'} • ${g.zeichnungsNr||'—'}</div>`;
-          const b=document.createElement('button'); b.className='btn btn--outline is-sm'; b.textContent='Öffnen'; b.onclick=()=>this.openEditor(g);
+          txt.innerHTML=`<div class="t">${g.title} — ${g.nr}</div><div class="ct-sub">${g.material||'—'} • ${g.zeichnungsNr||'—'}</div>`;
+          const b=document.createElement('button'); b.className='btn is-sm'; b.textContent='Öffnen'; b.onclick=()=>Editor.open(g);
           row.append(img,txt,b); lastWrap.append(row);
         });
       }
-
-      // Список
-      const wrap=this.els.listWrap; if(!wrap) return;
-      wrap.innerHTML='';
+      // list
+      const wrap=this.els.listWrap; if(!wrap) return; wrap.innerHTML='';
       if(!list.length){
-        const box=document.createElement('div'); box.className='empty';
-        box.innerHTML='<div class="muted">Noch keine Programme.</div>';
+        const box=document.createElement('div'); box.className='empty'; box.innerHTML='<div class="ct-sub">Noch keine Programme.</div>';
         const btn=document.createElement('button'); btn.className='btn'; btn.textContent='+ Erste Gruppe anlegen';
-        btn.onclick=()=> this.openEditor( Setup.create({nr:'',title:'Neues Programm'}) );
+        btn.onclick=()=> Editor.open( Setup.create({nr:'',title:'Neues Programm'}) );
         box.append(btn); wrap.append(box); return;
       }
       const live=Setup.live();
       list.forEach(g=>{
         const row=document.createElement('div'); row.className='row';
         row.innerHTML=`<div><div class="title">${g.title} — ${g.nr}</div>
-          <div class="meta">${g.material||'—'} • ${g.zeichnungsNr||'—'}${(live.RO?.id===g.id||live.RU?.id===g.id)?' • <span class="badge-live">Live</span>':''}</div></div>`;
+          <div class="ct-sub">${g.material||'—'} • ${g.zeichnungsNr||'—'}${(live.RO?.id===g.id||live.RU?.id===g.id)?' • <span class="badge-live">Live</span>':''}</div></div>`;
         const right=document.createElement('div');
         const bOpen=document.createElement('button'); bOpen.className='btn'; bOpen.textContent='Öffnen';
-        const bDel=document.createElement('button'); bDel.className='btn btn--outline is-sm'; bDel.textContent='Löschen';
-        bOpen.onclick=()=>this.openEditor(g);
+        const bDel=document.createElement('button'); bDel.className='btn is-sm'; bDel.textContent='Löschen';
+        bOpen.onclick=()=>Editor.open(g);
         bDel.onclick=()=>CT.ui.confirm({title:'Löschen?',msg:`${g.title} — ${g.nr}`}).then(ok=>{ if(ok){ Setup.remove(g.id); this.render(); }});
         right.append(bOpen,bDel); row.append(right); wrap.append(row);
-      });
-    },
-
-    openEditor(groupInit){
-      let draft = JSON.parse(JSON.stringify(groupInit||{}));
-      const box=document.createElement('div');
-
-      // top image + buttons
-      const img=document.createElement('img'); img.src=draft.drawing||ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px'; img.style.marginBottom='10px';
-      const bSet=document.createElement('button'); bSet.className='btn btn--outline is-sm'; bSet.textContent='Zeichnung ändern';
-      const bClr=document.createElement('button'); bClr.className='btn btn--outline is-sm'; bClr.textContent='Entfernen';
-      const imgBtns=document.createElement('div'); imgBtns.style.display='flex'; imgBtns.style.gap='8px'; imgBtns.style.margin='6px 0 12px';
-      bSet.onclick= async ()=>{ const files=await CT.uploader.accept({accept:'image/*', to:'dataURL'}); if(files?.[0]){ draft.drawing=files[0].dataUrl; img.src=draft.drawing; } };
-      bClr.onclick=()=>{ draft.drawing=null; img.src=ph(); };
-      imgBtns.append(bSet,bClr);
-
-      // meta form
-      const form=(global.CT && CT.ui && CT.ui.form ? CT.ui.form.create({
-        values:{ title:draft.title||'', nr:draft.nr||'', zeichnungsNr:draft.zeichnungsNr||'', material:draft.material||'', notes:draft.notes||'' },
-        fields:[
-          {type:'text', key:'title', label:'Titel'},
-          {type:'text', key:'nr', label:'Programm-Nr'},
-          {type:'text', key:'zeichnungsNr', label:'Zeichnungsnummer'},
-          {type:'text', key:'material', label:'Material'},
-          {type:'textarea', key:'notes', label:'Notizen', rows:3}
-        ]
-      }) : null);
-
-      // tabs + slots
-      let side='RO';
-      const tabs=document.createElement('div'); tabs.className='ro-ru';
-      const bRO=document.createElement('button'); bRO.className='tab active'; bRO.textContent='RO';
-      const bRU=document.createElement('button'); bRU.className='tab'; bRU.textContent='RU';
-      tabs.append(bRO,bRU);
-      bRO.onclick=()=>switchSide('RO'); bRU.onclick=()=>switchSide('RU');
-      const slotsWrap=document.createElement('div'); slotsWrap.className='grid-slots';
-
-      const renderSlots=()=>{
-        slotsWrap.innerHTML='';
-        const sideObj=draft.sides?.[side] || (draft.sides[side]=emptySide(side));
-        sideObj.slots.forEach(slot=>{
-          const art=document.createElement('article'); art.className='slot';
-          const phBox=document.createElement('div'); phBox.className='ph';
-          const tool = slot.toolId ? Tools.byId(slot.toolId) : null;
-          if(tool?.photo){ const im=document.createElement('img'); im.src=tool.photo; phBox.append(im); }
-          else { phBox.innerHTML='<svg width="54" height="54" viewBox="0 0 24 24" style="opacity:.35"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2z"/></svg>'; }
-          const meta=document.createElement('div'); meta.className='meta';
-          meta.innerHTML=`<div class="t">Pos ${slot.pos} • ${slot.tnum||'—'}</div><div class="n">${slot.alias || tool?.name || 'kein Werkzeug'}</div>`;
-          const b=document.createElement('button'); b.className='btn btn--outline is-sm'; b.textContent='Bearbeiten';
-          b.onclick=()=>this.openSlotModal({draft, side, slot, onSave:(next)=>{ Object.assign(slot,next); Setup.upsert(draft); renderSlots(); CT.ui.toast('Slot gespeichert','ok'); }});
-          meta.append(b); art.append(phBox,meta); slotsWrap.append(art);
-        });
-      };
-      function switchSide(s){ side=s; bRO.classList.toggle('active',s==='RO'); bRU.classList.toggle('active',s==='RU'); renderSlots(); }
-
-      box.append(img, imgBtns);
-      if (form) box.append(form.el);
-      box.append(tabs, slotsWrap);
-      switchSide('RO');
-
-      const footer=[
-        {label:'In Live anwenden (RO)', onClick:()=>{ Setup.applyLive(draft.id,'RO'); CT.ui.toast('Live RO gesetzt','ok'); }},
-        {label:'In Live anwenden (RU)', onClick:()=>{ Setup.applyLive(draft.id,'RU'); CT.ui.toast('Live RU gesetzt','ok'); }},
-        {label:'Löschen', onClick:()=>{ CT.ui.confirm({title:'Programm löschen?',msg:`${draft.title} — ${draft.nr}`}).then(ok=>{ if(ok){ Setup.remove(draft.id); CT.ui.modal.close(); UI.render(); } }) }},
-        {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
-        {label:'Speichern', kind:'primary', onClick:()=>{ if(form){ const v=form.getValues(); Object.assign(draft,{title:v.title,nr:v.nr,zeichnungsNr:v.zeichnungsNr,material:v.material,notes:v.notes}); } Setup.upsert(draft); CT.ui.modal.close(); UI.render(); CT.ui.toast('Gespeichert','ok'); }}
-      ];
-      CT.ui.modal.open({ title:`${draft.title||'Programm'} — ${draft.nr||''}`, contentEl:box, footer, wide:true });
-    },
-
-    openSlotModal({draft, side, slot, onSave}){
-      const tool = slot.toolId ? Tools.byId(slot.toolId) : null;
-      const form = (global.CT && CT.ui && CT.ui.form ? CT.ui.form.create({
-        values:{ tnum:slot.tnum||'', alias:slot.alias||'' },
-        fields:[ {type:'text', key:'tnum', label:'T-Nummer (z.B. T0101)'}, {type:'text', key:'alias', label:'Alias / Titel (optional)'} ]
-      }) : null);
-
-      const wrap=document.createElement('div');
-      const img=document.createElement('img'); img.src=tool?.photo || ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px'; img.style.marginBottom='10px';
-      wrap.append(img); if(form) wrap.append(form.el);
-
-      const actions=document.createElement('div'); actions.style.display='flex'; actions.style.gap='8px'; actions.style.flexWrap='wrap'; actions.style.marginTop='8px';
-      const bPick=document.createElement('button'); bPick.className='btn'; bPick.textContent='Aus Tools wählen';
-      const bNew=document.createElement('button'); bNew.className='btn btn--outline'; bNew.textContent='Neues Werkzeug';
-      const bDetach=document.createElement('button'); bDetach.className='btn btn--outline is-sm'; bDetach.textContent='Entfernen';
-
-      bPick.onclick=()=>{ Tools.pick((t)=>{ slot.toolId=t.id; img.src=t.photo||ph(); }); };
-      bNew.onclick =()=> {
-        const cf=CT.ui.form.create({
-          values:{ name:'', iso:'', code:'', photo:null, category:'Allgemein', notes:'' },
-          fields:[ {type:'text',key:'name',label:'Name'}, {type:'text',key:'iso',label:'ISO'}, {type:'text',key:'code',label:'Code'}, {type:'text',key:'category',label:'Kategorie'}, {type:'textarea',key:'notes',label:'Notizen',rows:3} ]
-        });
-        const up=document.createElement('button'); up.className='btn btn--outline is-sm'; up.textContent='Foto hochladen';
-        const prev=document.createElement('img'); prev.style.maxWidth='100%'; prev.style.border='1px solid #edf1f7'; prev.style.borderRadius='10px'; prev.style.display='none';
-        up.onclick= async ()=>{ const files=await CT.uploader.accept({accept:'image/*', to:'dataURL'}); if(files?.[0]){ cf.setValues({photo:files[0].dataUrl}); prev.src=files[0].dataUrl; prev.style.display='block'; } };
-        const box=document.createElement('div'); box.append(cf.el, up, prev);
-        CT.ui.modal.open({
-          title:'Neues Werkzeug',
-          contentEl:box,
-          footer:[
-            {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
-            {label:'Speichern', kind:'primary', onClick:()=>{ const v=cf.getValues(); const t=Tools.createQuick({name:v.name, iso:v.iso, code:v.code, category:v.category, photo:v.photo, notes:v.notes}); slot.toolId=t.id; img.src=t.photo||ph(); CT.ui.modal.close(); CT.ui.toast('Werkzeug gespeichert','ok'); }}
-          ],
-          wide:true
-        });
-      };
-      bDetach.onclick=()=>{ slot.toolId=null; img.src=ph(); };
-
-      actions.append(bPick,bNew,bDetach); wrap.append(actions);
-
-      CT.ui.modal.open({
-        title:`Slot ${slot.pos} • ${side}`,
-        contentEl:wrap,
-        footer:[
-          {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
-          {label:'Speichern', kind:'primary', onClick:()=>{ const v=form?form.getValues():{tnum:slot.tnum, alias:slot.alias}; onSave({ pos:slot.pos, tnum:(v.tnum||'').trim()||null, alias:(v.alias||'').trim(), toolId: slot.toolId||null }); CT.ui.modal.close(); }}
-        ],
-        wide:true
       });
     }
   };
 
+  // экспорт
   global.Setup = Setup;
   global.SetupUI = UI;
 
+  // init data на загрузке файла
+  try{ Setup.ensure(); }catch(e){ console.warn(e); }
 })(window);
