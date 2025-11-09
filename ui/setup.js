@@ -1,15 +1,15 @@
-// CitiTool • Setup (RO/RU) — v7.2
-// Single overlay + inline slot editor + custom tool picker sheet (no browser dialogs)
+// CitiTool • Setup (RO/RU) — v7.3
+// Single overlay + inline slot editor + custom tool picker sheet (upload fixed, close UX) + info button on lists
 ;(function (global) {
   "use strict";
-  console.log('[Setup] v7.2 boot');
+  console.log('[Setup] v7.3 boot');
 
   const K_GROUPS='CT_PROG_GROUPS_V1', K_OLD='CT_PROGS_V1', K_LIVE='CT_LIVE_V1';
   const SLOTS = 12;
 
-  // ---------- CSS (one-shot) ----------
+  // ---------- CSS ----------
   (function injectCSS(){
-    const id='ct-setup-v72-css';
+    const id='ct-setup-v73-css';
     if (document.getElementById(id)) return;
     const css = `
 .ct-editor{position:fixed;inset:0;z-index:9999;display:grid;grid-template-rows:auto 1fr auto;
@@ -54,7 +54,12 @@
 .kp .txt .t{font-weight:800}
 .kp .txt .m{color:#6b7a90;font-size:13px}
 
-/* --- Tool Picker Sheet --- */
+/* info icon button */
+.i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:900;display:grid;place-items:center}
+
+/* Sheet + backdrop */
+.ct-backdrop{position:fixed;inset:0;z-index:10040;background:rgba(13,27,42,.25);opacity:0;pointer-events:none;transition:opacity .2s}
+.ct-backdrop.show{opacity:1;pointer-events:auto}
 .ct-sheet{position:fixed;left:0;right:0;bottom:0;z-index:10050;background:#fff;border-top:1px solid #e9eef6;
   border-radius:18px 18px 0 0;box-shadow:0 -18px 40px rgba(13,27,42,.12);transform:translateY(100%);transition:transform .25s ease}
 .ct-sheet.show{transform:translateY(0)}
@@ -77,10 +82,10 @@
   // ---------- utils ----------
   const storage = {
     get(k, def){
-    try{
-      if (global.CT && typeof global.CT.load==='function') return global.CT.load(k, def);
-      const raw=localStorage.getItem(k); if(raw==null||raw==='') return def; return JSON.parse(raw);
-    }catch{ return def; }
+      try{
+        if (global.CT && typeof global.CT.load==='function') return global.CT.load(k, def);
+        const raw=localStorage.getItem(k); if(raw==null||raw==='') return def; return JSON.parse(raw);
+      }catch{ return def; }
     },
     set(k,v){
       try{
@@ -107,9 +112,16 @@
 
   // ---------- Tool Picker Sheet ----------
   const Picker = {
-    el:null, onPick:null,
+    el:null, backdrop:null, onPick:null,
     open({title='Werkzeug wählen', mode='pick', onPick}){
       this.close(); this.onPick=onPick;
+
+      // backdrop
+      const bd=document.createElement('div'); bd.className='ct-backdrop'; document.body.appendChild(bd);
+      this.backdrop=bd; requestAnimationFrame(()=> bd.classList.add('show'));
+      bd.onclick=()=>this.close();
+
+      // sheet
       const el=document.createElement('div'); el.className='ct-sheet';
       el.innerHTML=`
         <div class="hd">
@@ -123,6 +135,7 @@
       `;
       document.body.appendChild(el); this.el=el;
       el.querySelector('[data-act="close"]').onclick=()=>this.close();
+      document.addEventListener('keydown', this._esc = (e)=>{ if(e.key==='Escape') this.close(); });
 
       if(mode==='pick'){ this.renderList(); }
       else if(mode==='new'){ this.renderNew(); }
@@ -160,7 +173,6 @@
       };
       input.addEventListener('input',()=>render(input.value));
       render('');
-      // «Neues Werkzeug»
       const newBtn=this.el.querySelector('[data-act="new"]');
       if(newBtn) newBtn.onclick=()=> this.open({title:'Neues Werkzeug', mode:'new', onPick:this.onPick});
     },
@@ -170,24 +182,47 @@
       f1.innerHTML=`<label>Name</label><input id="p_name" placeholder="z.B. EFT 16x150">`;
       const f2=document.createElement('div'); f2.className='form-row';
       f2.innerHTML=`<label>ISO / Code</label><input id="p_iso" placeholder="ISO / Hersteller">`;
-      const img=document.createElement('img'); img.src=ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px';
+      const img=document.createElement('img'); img.src=ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px'; img.style.background='#f5f8ff';
+
+      // скрытый input file (надёжно на iOS)
+      const file = document.createElement('input');
+      file.type='file'; file.accept='image/*'; file.style.display='none';
+      document.body.appendChild(file);
+      file.onchange = ()=>{
+        const f=file.files && file.files[0]; if(!f) return;
+        const reader=new FileReader(); reader.onload=()=>{ img.src=reader.result; }; reader.readAsDataURL(f);
+      };
+
       const bar=document.createElement('div'); bar.style.display='flex'; bar.style.gap='8px'; bar.style.justifyContent='flex-end';
       const bPhoto=document.createElement('button'); bPhoto.className='btn is-sm'; bPhoto.textContent='Foto';
       const bCreate=document.createElement('button'); bCreate.className='btn brand is-sm'; bCreate.textContent='Anlegen';
 
       bPhoto.onclick= async ()=>{
-        try{ const files=await CT.uploader.accept({accept:'image/*', to:'dataURL'}); if(files?.[0]) img.src=files[0].dataUrl; }catch{}
+        try{
+          // пробуем наш аплоадер
+          if (global.CT && CT.uploader && CT.uploader.accept){
+            const files=await CT.uploader.accept({accept:'image/*', to:'dataURL'}); 
+            if(files?.[0]) { img.src=files[0].dataUrl; return; }
+          }
+        }catch{}
+        // надёжный fallback — нативный input
+        file.click();
       };
       bCreate.onclick=()=>{
         const t=Tools.createQuick({name:body.querySelector('#p_name').value, iso:body.querySelector('#p_iso').value, photo:img.src.startsWith('data:')?img.src:null});
         if(this.onPick) this.onPick(t);
         this.close();
+        setTimeout(()=>file.remove(),0);
       };
 
       bar.append(bPhoto,bCreate);
       body.append(f1,f2,img,bar);
     },
-    close(){ if(!this.el) return; this.el.classList.remove('show'); const el=this.el; this.el=null; setTimeout(()=>el.remove(),180); }
+    close(){ 
+      if(this.el){ this.el.classList.remove('show'); const el=this.el; this.el=null; setTimeout(()=>el.remove(),180); }
+      if(this.backdrop){ this.backdrop.classList.remove('show'); const bd=this.backdrop; this.backdrop=null; setTimeout(()=>bd.remove(),150); }
+      if(this._esc){ document.removeEventListener('keydown', this._esc); this._esc=null; }
+    }
   };
 
   // ---------- core data ----------
@@ -347,7 +382,6 @@
           };
           meta.append(b); art.append(phb,meta);
 
-          // --- INLINE EDITOR ---
           if (openPos===slot.pos){
             art.classList.add('expanded');
             const inl=document.createElement('div'); inl.className='inl';
@@ -361,16 +395,8 @@
             const bPick=btn('Aus Tools wählen'); const bNew=btn('Neues Werkzeug',''); const bDetach=btn('Entfernen','is-sm');
             const bCancel=btn('Abbrechen',''); const bSave=btn('Speichern','brand');
 
-            bPick.onclick=()=> Picker.open({
-              title:'Werkzeug wählen',
-              mode:'pick',
-              onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); }
-            });
-            bNew.onclick=()=> Picker.open({
-              title:'Neues Werkzeug',
-              mode:'new',
-              onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); }
-            });
+            bPick.onclick=()=> Picker.open({ title:'Werkzeug wählen', mode:'pick', onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); }});
+            bNew.onclick =()=> Picker.open({ title:'Neues Werkzeug', mode:'new',  onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); }});
             bDetach.onclick=()=>{ slot.toolId=null; img2.src=ph(); };
             bCancel.onclick=()=>{ openPos=null; drawSlots(); };
             bSave.onclick=()=>{
@@ -410,7 +436,7 @@
   function btn(label, extraClass=''){ const b=document.createElement('button'); b.className='btn ' + (extraClass||''); b.textContent=label; return b; }
   function field(label, key, val){ const d=document.createElement('div'); d.className='row'; d.innerHTML=`<label>${label}</label><input data-k="${key}" value="${val||''}">`; return d; }
 
-  // ---------- list UI ----------
+  // ---------- list UI (только кнопка "i") ----------
   const UI = {
     els:{}, state:{q:'',side:''},
 
@@ -428,18 +454,27 @@
       this.render();
     },
 
+    _infoButton(handler){
+      const i=document.createElement('button'); i.className='i-btn'; i.textContent='i'; i.title='Details';
+      i.onclick=handler; return i;
+    },
+
     render(){
       const list = Setup.list({q:this.state.q, side:this.state.side});
+
+      // Zuletzt hinzugefügt (3 карточки)
       const lastWrap=this.els.lastWrap; if(lastWrap){ lastWrap.innerHTML='';
         list.slice(0,3).forEach(g=>{
           const row=document.createElement('div'); row.className='kp';
           const img=document.createElement('img'); img.src=g.drawing||ph();
           const txt=document.createElement('div'); txt.className='txt';
           txt.innerHTML=`<div class="t">${g.title} — ${g.nr}</div><div class="m">${g.material||'—'} • ${g.zeichnungsNr||'—'}</div>`;
-          const b=document.createElement('button'); b.className='btn is-sm'; b.textContent='Öffnen'; b.onclick=()=>Editor.open(g);
-          row.append(img,txt,b); lastWrap.append(row);
+          const info=this._infoButton(()=>Editor.open(g));
+          row.append(img,txt,info); lastWrap.append(row);
         });
       }
+
+      // Общий список
       const wrap=this.els.listWrap; if(!wrap) return; wrap.innerHTML='';
       if(!list.length){
         const box=document.createElement('div'); box.className='empty'; box.innerHTML='<div class="ct-sub">Noch keine Programme.</div>';
@@ -453,11 +488,8 @@
         row.innerHTML=`<div><div class="title">${g.title} — ${g.nr}</div>
           <div class="ct-sub">${g.material||'—'} • ${g.zeichnungsNr||'—'}${(live.RO?.id===g.id||live.RU?.id===g.id)?' • <span class="badge-live">Live</span>':''}</div></div>`;
         const right=document.createElement('div');
-        const bOpen=document.createElement('button'); bOpen.className='btn'; bOpen.textContent='Öffnen';
-        const bDel=document.createElement('button'); bDel.className='btn is-sm'; bDel.textContent='Löschen';
-        bOpen.onclick=()=>Editor.open(g);
-        bDel.onclick=()=>CT.ui.confirm({title:'Löschen?',msg:`${g.title} — ${g.nr}`}).then(ok=>{ if(ok){ Setup.remove(g.id); this.render(); }});
-        right.append(bOpen,bDel); row.append(right); wrap.append(row);
+        right.append( this._infoButton(()=>Editor.open(g)) );  // только «i»
+        row.append(right); wrap.append(row);
       });
     }
   };
