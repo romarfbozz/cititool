@@ -1,5 +1,4 @@
-// /ui/setup.js — v7.6  (Preview-Sheet + Safe Editor + Dirty guard)
-// НЕТ "найти/заменить": положи этот файл целиком.
+// /ui/setup.js — v7.7 (Picker fix + sane preview size)
 ;(function (global) {
   "use strict";
   const K_GROUPS='CT_PROG_GROUPS_V1', K_OLD='CT_PROGS_V1', K_LIVE='CT_LIVE_V1';
@@ -7,7 +6,7 @@
 
   // ---------- CSS ----------
   (function css(){
-    const id='ct-setup-v76-css'; if(document.getElementById(id)) return;
+    const id='ct-setup-v77-css'; if(document.getElementById(id)) return;
     const s=document.createElement('style'); s.id=id; s.textContent=`
 /* Editor */
 .ct-ed{position:fixed;inset:0;z-index:9999;display:grid;grid-template-rows:auto 1fr auto;
@@ -37,10 +36,11 @@
 .inl{background:#fbfcff;border-top:1px dashed #e7ecf6}
 .inl .wrap{padding:12px;display:grid;gap:8px}
 .inl .row{display:grid;gap:6px}
-.inl .img{width:100%;border-radius:12px;border:1px solid #edf1f7}
+/* важное: адекватный размер превью инструмента в слоте */
+.inl .img{width:100%;max-height:160px;object-fit:contain;background:#f5f8ff;border:1px solid #edf1f7;border-radius:12px}
 .ct-ed .ft{display:flex;gap:8px;justify-content:center;padding:8px;border-top:1px solid #e9eef6;background:#fff;color:#6b7a90;font-size:12px}
 
-/* Common buttons */
+/* Buttons */
 .btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn--ghost{background:transparent}
 .btn.brand{background:#2d6cdf;border-color:#2d6cdf;color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
@@ -49,10 +49,10 @@
 .badge-live{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:#2d6cdf;font-weight:800;padding:0 10px}
 .ct-sub{color:#6b7a90;font-size:13px}
 
-/* Backdrop + sheets */
-.ct-bd{position:fixed;inset:0;z-index:10040;background:rgba(13,27,42,.25);opacity:0;pointer-events:none;transition:opacity .2s}
+/* Backdrop & sheet */
+.ct-bd{position:fixed;inset:0;z-index:11040;background:rgba(13,27,42,.25);opacity:0;pointer-events:none;transition:opacity .2s}
 .ct-bd.show{opacity:1;pointer-events:auto}
-.ct-sheet{position:fixed;left:0;right:0;bottom:0;z-index:10050;background:#fff;border-top:1px solid #e9eef6;border-radius:18px 18px 0 0;
+.ct-sheet{position:fixed;left:0;right:0;bottom:0;z-index:11050;background:#fff;border-top:1px solid #e9eef6;border-radius:18px 18px 0 0;
   box-shadow:0 -18px 40px rgba(13,27,42,.12);transform:translateY(100%);transition:transform .25s}
 .ct-sheet.show{transform:translateY(0)}
 .ct-sheet .hd{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #eef2f8}
@@ -62,9 +62,14 @@
 .ct-prev img{width:100%;border:1px solid #edf1f7;border-radius:12px;background:#f5f8ff}
 .ct-prev .line{color:#6b7a90}
 
-/* handle to drag (for safe swipe) */
+/* drag handle */
 .handle{height:18px;display:grid;place-items:center}
 .handle:before{content:'';width:44px;height:5px;border-radius:3px;background:#dbe5ff}
+
+/* Picker: items */
+.ct-p-search{height:40px;border:1px solid #dbe5ff;border-radius:12px;padding:0 12px;font-weight:700;width:100%}
+.ct-tool{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:14px;padding:8px}
+.ct-tool img{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f5f8ff;border:1px solid #edf1f7}
     `; document.head.appendChild(s);
   })();
 
@@ -78,7 +83,6 @@
   const emptySide=(name)=>({name, slots:Array.from({length:SLOTS},(_,i)=>({pos:i+1,tnum:null,toolId:null,alias:''}))});
   const ph=()=>'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="120"><rect width="100%" height="100%" fill="#f5f8ff"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Inter,system-ui" font-size="14" fill="#8aa0c4">kein Foto</text></svg>`);
 
-  // ---------- mini Tools ----------
   const Tools = {
     list(){ return storage.get('CT_TOOLS_V1',[])||[]; },
     byId(id){ return this.list().find(t=>t.id===id); },
@@ -88,28 +92,35 @@
     }
   };
 
-  // ---------- backdrop & sheet helpers ----------
+  // ---------- Backdrop helpers ----------
   const mkBD=()=>{ const bd=document.createElement('div'); bd.className='ct-bd'; document.body.appendChild(bd); requestAnimationFrame(()=>bd.classList.add('show')); return bd; };
   const rmBD=(bd)=>{ if(!bd) return; bd.classList.remove('show'); setTimeout(()=>bd.remove(),150); };
 
-  // ---------- Picker (reuse from earlier, shortened) ----------
+  // ---------- Picker (fixed) ----------
   const Picker={ el:null, bd:null, esc:null, onPick:null,
     open({title='Werkzeug wählen', mode='pick', onPick}){
+      // закрываем предыдущий, если висит
       this.close(); this.onPick=onPick; this.bd=mkBD();
       const el=document.createElement('div'); el.className='ct-sheet';
       el.innerHTML=`<div class="handle"></div>
         <div class="hd"><div class="tt">${title}</div><div>${mode==='pick'?'<button class="btn is-sm" data-a="new">+ Neues Werkzeug</button>':''}<button class="x" data-a="close">Schließen</button></div></div>
         <div class="body"></div>`;
       document.body.appendChild(el); this.el=el;
+
       const close=()=>this.close();
       el.querySelector('[data-a="close"]').onclick=close; this.bd.onclick=close;
       document.addEventListener('keydown', this.esc=(e)=>{ if(e.key==='Escape') close(); });
-      // safe swipe – только с "handle"
-      let sy=null; el.querySelector('.handle').addEventListener('touchstart',e=>{ sy=e.touches[0].clientY; });
-      el.querySelector('.handle').addEventListener('touchmove',e=>{ if(sy!=null && e.touches[0].clientY - sy > 160) close(); });
 
+      // безопасный свайп – только за handle, с большим порогом
+      let sy=null; const handle=el.querySelector('.handle');
+      handle.addEventListener('touchstart',e=>{ sy=e.touches[0].clientY; });
+      handle.addEventListener('touchmove',e=>{ if(sy!=null && e.touches[0].clientY - sy > 160) close(); });
+
+      // контент
       if(mode==='pick') this.list(); else this.create();
-      requestAnimationFrame(()=>el.classList.add('show'));
+
+      // гарантированное появление (reflow + async)
+      void el.offsetHeight; setTimeout(()=> el.classList.add('show'), 0);
     },
     list(){
       const b=this.el.querySelector('.body'); b.innerHTML='';
@@ -147,6 +158,7 @@
       };
       bCreate.onclick=()=>{ const t=Tools.createQuick({name:nm.q.value, iso:iso.q.value, photo:img.src.startsWith('data:')?img.src:null}); this.onPick&&this.onPick(t); this.close(); fin.remove(); };
       bar.append(bPhoto,bCreate); b.append(nm.el,iso.el,img,bar);
+
       function row(label,id){ const el=document.createElement('div'); el.className='form-row'; el.innerHTML=`<label>${label}</label><input id="${id}">`; return {el, q:el.querySelector('input')}; }
     },
     close(){ if(this.el){ this.el.classList.remove('show'); const el=this.el; this.el=null; setTimeout(()=>el.remove(),180); } rmBD(this.bd); this.bd=null; if(this.esc){document.removeEventListener('keydown',this.esc); this.esc=null;} }
@@ -179,8 +191,9 @@
       const close=()=>this.close();
       el.querySelector('[data-a="close"]').onclick=close; this.bd.onclick=close;
       document.addEventListener('keydown', this.esc=(e)=>{ if(e.key==='Escape') close(); });
-      let sy=null; el.querySelector('.handle').addEventListener('touchstart',e=>{ sy=e.touches[0].clientY; });
-      el.querySelector('.handle').addEventListener('touchmove',e=>{ if(sy!=null && e.touches[0].clientY-sy>160) close(); });
+      let sy=null; const handle=el.querySelector('.handle');
+      handle.addEventListener('touchstart',e=>{ sy=e.touches[0].clientY; });
+      handle.addEventListener('touchmove',e=>{ if(sy!=null && e.touches[0].clientY-sy>160) close(); });
       el.addEventListener('click',e=>{
         const b=e.target.closest('button[data-a]'); if(!b) return;
         const a=b.dataset.a;
@@ -189,12 +202,12 @@
         else if(a==='live-ro'){ Setup.applyLive(g.id,'RO'); CT.ui.toast('Live RO gesetzt','ok'); UI.render(); }
         else if(a==='live-ru'){ Setup.applyLive(g.id,'RU'); CT.ui.toast('Live RU gesetzt','ok'); UI.render(); }
       });
-      requestAnimationFrame(()=>el.classList.add('show'));
+      void el.offsetHeight; setTimeout(()=> el.classList.add('show'), 0);
     },
     close(){ if(this.el){ this.el.classList.remove('show'); const el=this.el; this.el=null; setTimeout(()=>el.remove(),180); } rmBD(this.bd); this.bd=null; if(this.esc){document.removeEventListener('keydown',this.esc); this.esc=null;} }
   };
 
-  // ---------- data (program groups) ----------
+  // ---------- data ----------
   const Setup={
     _hardSeed(){
       const demo=[]; for(let i=0;i<5;i++){ const nr=String(231800+i);
@@ -230,16 +243,14 @@
     applyLive(id,side){ const g=this.get(id); if(!g) return null; const minimal={id:g.id,nr:g.nr,side,title:g.title,slots:g.sides[side].slots,at:now()}; const cur=this.live(); cur[side]=minimal; storage.set(K_LIVE,cur); return minimal; }
   };
 
-  // ---------- Editor (safe) ----------
+  // ---------- Editor (как в v7.6, без свайп-закрытия, с dirty-guard) ----------
   const Editor={ el:null, draft:null, dirty:false, side:'RO', openPos:null,
     open(group){
       if(this.el){ this.render(group); return; }
       const el=document.createElement('div'); el.className='ct-ed';
       el.innerHTML=`
         <div class="bar">
-          <div class="l">
-            <button class="btn is-sm" data-a="close">Schließen</button>
-          </div>
+          <div class="l"><button class="btn is-sm" data-a="close">Schließen</button></div>
           <div class="ttl"></div>
           <div class="r">
             <button class="btn is-sm" data-a="live-ro">In Live (RO)</button>
@@ -251,6 +262,7 @@
         <div class="cnt"></div>
         <div class="ft">Ein Editor pro Seite • Несохранённые изменения защищены</div>`;
       document.body.appendChild(el); this.el=el;
+
       const askClose=async()=>{ if(!this.dirty) return true; const ok=await (global.CT?.ui?.confirm? CT.ui.confirm({title:'Schließen ohne Speichern?', msg:'Änderungen gehen verloren.'}) : Promise.resolve(confirm('Schließen ohne Speichern?'))); return !!ok; };
       const doClose=async()=>{ if(await askClose()){ this._detach(); this.el.remove(); this.el=null; this.draft=null; document.documentElement.style.overflow=''; } };
       el.addEventListener('click', async e=>{
@@ -262,7 +274,6 @@
         else if(a==='live-ro'){ Setup.applyLive(this.draft.id,'RO'); CT.ui?.toast?.('Live RO gesetzt','ok'); }
         else if(a==='live-ru'){ Setup.applyLive(this.draft.id,'RU'); CT.ui?.toast?.('Live RU gesetzt','ok'); }
       });
-      // только по handle нет — в редакторе ОТКЛЮЧЕНО свап-закрытие полностью
       const onKey=(e)=>{ if(e.key==='Escape') doClose(); };
       document.addEventListener('keydown', onKey); el._kill=()=>document.removeEventListener('keydown', onKey);
       document.documentElement.style.overflow='hidden';
@@ -275,7 +286,6 @@
       const cnt=this.el.querySelector('.cnt'); const ttl=this.el.querySelector('.ttl');
       ttl.textContent=`${this.draft.title||'Programm'} — ${this.draft.nr||''}`;
 
-      // image + buttons
       const img=document.createElement('img'); img.className='img'; img.src=this.draft.drawing||ph();
       const row=document.createElement('div'); row.className='grp';
       const bSet=btn('Zeichnung ändern','is-sm'), bClr=btn('Entfernen','is-sm');
@@ -283,7 +293,6 @@
       bClr.onclick=()=>{ this.draft.drawing=null; img.src=ph(); this.markDirty(); };
       row.append(bSet,bClr);
 
-      // form (без зависимостей)
       const f=document.createElement('div'); f.className='grp';
       f.innerHTML=`
         <label>Titel</label><input id="f_title" value="${esc(this.draft.title||'')}">
@@ -293,11 +302,11 @@
         <label>Notizen</label><textarea id="f_note">${esc(this.draft.notes||'')}</textarea>`;
       f.querySelectorAll('input,textarea').forEach(el=> el.addEventListener('input', ()=>this.markDirty()));
 
-      // tabs + grid
       const tabs=document.createElement('div'); tabs.className='tabs';
       const bRO=tab('RO',true), bRU=tab('RU',false); tabs.append(bRO,bRU);
       bRO.onclick=()=>{ this.side='RO'; bRO.classList.add('active'); bRU.classList.remove('active'); this.openPos=null; draw(); };
       bRU.onclick=()=>{ this.side='RU'; bRU.classList.add('active'); bRO.classList.remove('active'); this.openPos=null; draw(); };
+
       const grid=document.createElement('div'); grid.className='grid';
 
       const draw=()=>{
@@ -308,7 +317,7 @@
           const phb=document.createElement('div'); phb.className='ph';
           const tool=slot.toolId?Tools.byId(slot.toolId):null;
           if(tool?.photo){ const im=document.createElement('img'); im.src=tool.photo; phb.append(im); }
-          else phb.innerHTML='<svg width="54" height="54" viewBox="0 0 24 24" style="opacity:.35"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14l4-4h12a 2 2 0 0 0 2-2z"/></svg>';
+          else phb.innerHTML='<svg width="54" height="54" viewBox="0 0 24 24" style="opacity:.35"><path d="M21 19V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14l4-4h12a2 2 0 0 0 2-2z"/></svg>';
           const meta=document.createElement('div'); meta.className='meta';
           meta.innerHTML=`<div class="t">Pos ${slot.pos} • ${slot.tnum||'—'}</div><div class="n">${slot.alias || tool?.name || 'kein Werkzeug'}</div>`;
           const b=btn(this.openPos===slot.pos?'Schließen':'Bearbeiten','is-sm');
@@ -339,15 +348,10 @@
 
       this._save=()=>{
         const v={ title:val('#f_title'), nr:val('#f_nr'), zeichnungsNr:val('#f_znr'), material:val('#f_mat'), notes:val('#f_note') };
-        Object.assign(this.draft,v);
-        Setup.upsert(this.draft);
-        this.dirty=false;
-        global.CT?.ui?.toast?.('Gespeichert','ok');
-        this.el.querySelector('.ttl').textContent=`${this.draft.title||'Programm'} — ${this.draft.nr||''}`;
-        UI.render();
+        Object.assign(this.draft,v); Setup.upsert(this.draft); this.dirty=false;
+        global.CT?.ui?.toast?.('Gespeichert','ok'); this.el.querySelector('.ttl').textContent=`${this.draft.title||'Programm'} — ${this.draft.nr||''}`; UI.render();
       };
 
-      // helpers
       function val(sel){ return (cnt.querySelector(sel)?.value||'').trim(); }
       function tab(t,act){ const b=document.createElement('button'); b.className='tab'; if(act) b.classList.add('active'); b.textContent=t; return b; }
       function rowField(label,value){ const el=document.createElement('div'); el.className='row'; el.innerHTML=`<label>${label}</label><input value="${esc(value||'')}">`; return {el, q:el.querySelector('input')}; }
