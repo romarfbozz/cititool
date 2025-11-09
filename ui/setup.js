@@ -1,19 +1,32 @@
-// CitiTool • Setup (ProgramGroup mit RO/RU)
+// CitiTool • Setup (ProgramGroup mit RO/RU) — stable init + migration
 ;(function (global) {
   "use strict";
 
   const K_GROUPS = 'CT_PROG_GROUPS_V1';
   const K_LIVE   = 'CT_LIVE_V1';
+  const K_OLD    = 'CT_PROGS_V1'; // старый формат (по одной стороне)
   const SLOTS_COUNT = 12;
 
+  // -------- safe storage --------
   const storage = {
-    get: (k, def=undefined) => (CT.load ? CT.load(k, def) : (JSON.parse(localStorage.getItem(k)||'null') ?? def)),
-    set: (k, v) => (CT.save ? CT.save(k, v) : localStorage.setItem(k, JSON.stringify(v)))
+    get(k, def=undefined){
+      try{
+        if (CT.load) return CT.load(k, def);
+        const raw = localStorage.getItem(k);
+        if (raw==null || raw==='undefined' || raw==='null' || raw==='') return def;
+        return JSON.parse(raw);
+      }catch(e){ return def; }
+    },
+    set(k, v){
+      if (CT.save) CT.save(k, v);
+      else localStorage.setItem(k, JSON.stringify(v));
+    }
   };
   const now = () => Date.now();
   const uid = () => Math.random().toString(36).slice(2, 10);
   const byCreatedDesc = (a,b)=> (b.createdAt||0)-(a.createdAt||0);
 
+  // -------- helpers --------
   const Tools = {
     list(){ return storage.get('CT_TOOLS_V1', []) || []; },
     byId(id){ return this.list().find(t=>t.id===id); },
@@ -22,31 +35,77 @@
       const arr=this.list(); storage.set('CT_TOOLS_V1', [t, ...arr]); return t;
     }
   };
+  const emptySide = (name)=>({ name, slots:Array.from({length:SLOTS_COUNT},(_,i)=>({pos:i+1, tnum:null, toolId:null, alias:''})) });
 
-  function emptySide(name){ return { name, slots: Array.from({length:SLOTS_COUNT}, (_,i)=>({pos:i+1, tnum:null, toolId:null, alias:''})) }; }
-
+  // -------- core --------
   const Setup = {
-    ensureSeeds(){
-      const have = storage.get(K_GROUPS, null);
-      if (!Array.isArray(have) || have.length===0){
-        const demo=[];
-        for(let i=0;i<5;i++){
-          const nr = String(231800+i);
-          const g = {
-            id:uid(), nr, title:`Programm ${nr}`,
-            zeichnungsNr:`Z${nr}`, material: i%2? '1.4112':'C45',
-            drawing:null, notes:'',
-            sides:{ RO:emptySide('RO'), RU:emptySide('RU') },
-            createdAt: now() - (5-i)*10000, updatedAt: now() - (5-i)*10000
-          };
-          // пара заполненных слотов
-          [1,3,5].forEach((p)=>{
-            g.sides.RO.slots[p-1].tnum = `T${String(p).padStart(2,'0')}${String(p).padStart(2,'0')}`;
-            g.sides.RU.slots[p-1].tnum = `T${String(p+1).padStart(2,'0')}${String(p+1).padStart(2,'0')}`;
+    migrateFromOld(){
+      const old = storage.get(K_OLD, null);
+      if (!Array.isArray(old) || old.length===0) return false;
+
+      const groups = new Map();
+      old.forEach(p=>{
+        const key = (p.nr||p.title||'').toString();
+        if (!key) return;
+        if (!groups.has(key)){
+          groups.set(key, {
+            id: uid(),
+            nr: p.nr || key,
+            title: p.title || `Programm ${key}`,
+            zeichnungsNr: p.meta?.oLine || '',
+            material: '',
+            drawing: p.drawing || null,
+            notes: '',
+            sides:{ RO: emptySide('RO'), RU: emptySide('RU') },
+            createdAt: p.createdAt || now(),
+            updatedAt: p.updatedAt || now()
           });
-          demo.push(g);
         }
-        storage.set(K_GROUPS, demo.sort(byCreatedDesc));
+        const g = groups.get(key);
+        const side = (p.side==='RO' || p.side==='RU') ? p.side : 'RO';
+        const slots = Array.isArray(p.slots) ? p.slots : [];
+        slots.forEach(s=>{
+          const i = Math.min(Math.max((s.pos||1)-1,0), SLOTS_COUNT-1);
+          g.sides[side].slots[i] = {
+            pos: i+1,
+            tnum: s.tnum || null,
+            toolId: s.toolId || null,
+            alias: s.alias || ''
+          };
+        });
+      });
+
+      const arr = [...groups.values()].sort(byCreatedDesc);
+      storage.set(K_GROUPS, arr);
+      return true;
+    },
+
+    ensureSeeds(){
+      let groups = storage.get(K_GROUPS, null);
+      if (!Array.isArray(groups) || groups.length===0){
+        // 1) попробовать мигрировать
+        const migrated = this.migrateFromOld();
+        groups = storage.get(K_GROUPS, null);
+        // 2) если всё ещё пусто — сиды
+        if (!migrated && (!Array.isArray(groups) || groups.length===0)){
+          const demo=[];
+          for(let i=0;i<5;i++){
+            const nr = String(231800 + i);
+            const g = {
+              id: uid(), nr, title: `Programm ${nr}`,
+              zeichnungsNr: `Z${nr}`, material: i%2? '1.4112' : 'C45',
+              drawing: null, notes: '',
+              sides: { RO: emptySide('RO'), RU: emptySide('RU') },
+              createdAt: now() - (5-i)*10000, updatedAt: now() - (5-i)*10000
+            };
+            [1,3,5].forEach(p=>{
+              g.sides.RO.slots[p-1].tnum = `T${String(p).padStart(2,'0')}${String(p).padStart(2,'0')}`;
+              g.sides.RU.slots[p-1].tnum = `T${String(p+1).padStart(2,'0')}${String(p+1).padStart(2,'0')}`;
+            });
+            demo.push(g);
+          }
+          storage.set(K_GROUPS, demo.sort(byCreatedDesc));
+        }
       }
       if(!storage.get(K_LIVE, null)) storage.set(K_LIVE, {RO:null, RU:null});
     },
@@ -63,7 +122,6 @@
     },
 
     get(id){ return (storage.get(K_GROUPS, [])||[]).find(g=>g.id===id); },
-    saveAll(arr){ storage.set(K_GROUPS, arr); },
     upsert(group){
       const arr = storage.get(K_GROUPS, [])||[];
       const i = arr.findIndex(g=>g.id===group.id);
@@ -88,6 +146,7 @@
     }
   };
 
+  // -------- UI --------
   const SetupUI = {
     state:{ q:'', side:'', list:[] },
     els:{},
@@ -95,8 +154,8 @@
     mount({qInput, listWrap, lastWrap, chipsSides, newBtn}){
       this.els={ qInput, listWrap, lastWrap, chipsSides, newBtn };
 
-      // гарантированная инициализация
-      try{ Setup.ensureSeeds(); }catch(e){ console?.error?.(e); }
+      // гарантированная инициализация (сид/миграция)
+      Setup.ensureSeeds();
 
       qInput.addEventListener('input', CT.debounce(()=>{ this.state.q=qInput.value; this.render(); },200));
       chipsSides.addEventListener('click',(e)=>{
@@ -105,6 +164,7 @@
         b.classList.add('active'); this.state.side=b.dataset.side||''; this.render();
       });
       newBtn.addEventListener('click', ()=> this.openEditor( Setup.create({nr:'',title:'Neues Programm'}) ));
+
       this.render();
     },
 
@@ -113,7 +173,9 @@
     },
 
     render(){
-      const list = Setup.list({q:this.state.q, side:this.state.side});
+      // авто-исправление: если вдруг пусто — ещё раз ensure
+      let list = Setup.list({q:this.state.q, side:this.state.side});
+      if (!list.length){ Setup.ensureSeeds(); list = Setup.list({q:this.state.q, side:this.state.side}); }
       this.state.list = list;
 
       // Hero
@@ -167,7 +229,6 @@
       let draft = JSON.parse(JSON.stringify(groupInit||{}));
       const box=document.createElement('div');
 
-      // Фото
       const img=document.createElement('img'); img.src=draft.drawing||this.ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px'; img.style.marginBottom='10px';
       const bSet=document.createElement('button'); bSet.className='btn btn--outline is-sm'; bSet.textContent='Zeichnung ändern';
       const bClr=document.createElement('button'); bClr.className='btn btn--outline is-sm'; bClr.textContent='Entfernen';
@@ -176,7 +237,6 @@
       bClr.onclick=()=>{ draft.drawing=null; img.src=this.ph(); };
       imgBtns.append(bSet,bClr);
 
-      // Форма общих полей
       const form=CT.ui.form.create({
         values:{ title:draft.title||'', nr:draft.nr||'', zeichnungsNr:draft.zeichnungsNr||'', material:draft.material||'', notes:draft.notes||'' },
         fields:[
@@ -188,7 +248,6 @@
         ]
       });
 
-      // Tabs RO/RU
       let side='RO';
       const tabs=document.createElement('div'); tabs.className='ro-ru';
       const bRO=document.createElement('button'); bRO.className='tab active'; bRO.textContent='RO';
@@ -215,7 +274,6 @@
       };
       function switchSide(s){ side=s; bRO.classList.toggle('active',s==='RO'); bRU.classList.toggle('active',s==='RU'); renderSlots(); }
 
-      // Сборка
       box.append(img, imgBtns, form.el, tabs, slotsWrap);
       switchSide('RO');
 
@@ -231,10 +289,8 @@
 
     openSlotModal({draft, side, slot, onSave}){
       const tool = slot.toolId ? Tools.byId(slot.toolId) : null;
-      const form = CT.ui.form.create({
-        values:{ tnum:slot.tnum||'', alias:slot.alias||'' },
-        fields:[ {type:'text', key:'tnum', label:'T-Nummer (z.B. T0101)'}, {type:'text', key:'alias', label:'Alias / Titel (optional)'} ]
-      });
+      const form = CT.ui.form.create({ values:{ tnum:slot.tnum||'', alias:slot.alias||'' },
+        fields:[ {type:'text', key:'tnum', label:'T-Nummer (z.B. T0101)'}, {type:'text', key:'alias', label:'Alias / Titel (optional)'} ] });
 
       const wrap=document.createElement('div');
       const img=document.createElement('img'); img.src=tool?.photo || this.ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px'; img.style.marginBottom='10px';
@@ -280,6 +336,9 @@
       });
     }
   };
+
+  // --- гарантированная инициализация на загрузке модуля ---
+  try { Setup.ensureSeeds(); } catch(e) {}
 
   global.Setup = Setup;
   global.SetupUI = SetupUI;
