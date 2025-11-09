@@ -10,24 +10,22 @@ body{
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ---------- Decorative blueprint background ---------- */
-.hero-bg{
-  position:fixed; inset:-20% -10% auto -10%; height:640px; z-index:-1;
+/* BG */
+.hero-bg{position:fixed; inset:-20% -10% auto -10%; height:640px; z-index:-1;
   background:
     radial-gradient(1200px 400px at 60% -10%, rgba(45,108,223,.12), transparent 70%),
     radial-gradient(900px 400px at 10% 30%, rgba(255,75,75,.06), transparent 70%),
     linear-gradient(180deg,#fff 0%, #f3f6fb 60%, #eef2f9 100%);
   mask-image: linear-gradient(#000 75%, transparent);
 }
-.hero-grid{
-  position:absolute; inset:0;
+.hero-grid{position:absolute; inset:0;
   background:
     repeating-linear-gradient(0deg, rgba(13,27,42,.06) 0 1px, transparent 1px 40px),
     repeating-linear-gradient(90deg, rgba(13,27,42,.05) 0 1px, transparent 1px 40px);
   filter: blur(.2px) saturate(.9); opacity:.55;
 }
 
-/* ---------- AppBar ---------- */
+/* AppBar */
 .appbar{position:sticky; top:0; z-index:30; backdrop-filter:saturate(1.1) blur(8px);
   background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.70)); border-bottom:1px solid var(--hair)}
 .appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px; display:flex;align-items:center;gap:12px;justify-content:space-between}
@@ -39,7 +37,7 @@ body{
 .ct-word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
 .actions{display:flex;align-items:center;gap:8px}
 
-/* search expanding */
+/* search */
 .search{position:relative; display:flex; align-items:center; overflow:hidden;
   width:44px; height:40px; border-radius:12px; transition:width .35s ease, background .2s;
   background:#fff; border:1px solid var(--hair); box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
@@ -48,7 +46,7 @@ body{
 .search input{border:0; outline:0; width:100%; height:100%; padding:0 12px 0 38px; background:transparent;
   font:600 14px/1.2 Inter,system-ui; color:var(--ink)}
 
-/* ---------- Buttons (унифицировано) ---------- */
+/* Buttons */
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
   height:36px; padding:0 13px; border-radius:12px; font-weight:800; letter-spacing:.1px;
@@ -60,7 +58,7 @@ body{
 .btn--chip{height:28px; padding:0 10px; border-radius:10px; font-weight:800}
 .is-sm{height:30px; padding:0 10px; border-radius:10px; font-weight:700}
 
-/* ---------- Layout sections ---------- */
+/* Layout sections */
 .hero{max-width:1040px;margin:0 auto;padding:26px 16px 8px}
 .hero-card{background:var(--glass); border:1px solid var(--hair); border-radius:24px; box-shadow:var(--shadow); padding:22px; backdrop-filter: blur(8px)}
 .hero-title{display:flex; align-items:flex-start; justify-content:space-between; gap:10px}
@@ -75,11 +73,11 @@ body{
 .row .title{font-weight:800}
 .row .meta{color:var(--muted); font-weight:600}
 
-/* ---------- Progress bar ---------- */
+/* Progress bar */
 .bar{width:160px; height:8px; border-radius:6px; background:#edf1f7; overflow:hidden; position:relative}
 .bar__fill{height:100%; width:0; background:linear-gradient(90deg,#7bb0ff,#2d6cdf); transition:width .22s ease}
 
-/* ---------- Dock ---------- */
+/* Dock */
 .dock{position:fixed; left:0; right:0; bottom:0; z-index:40;
   padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   backdrop-filter: blur(12px) saturate(1.2);
@@ -90,8 +88,9 @@ body{
 .dock a.active{background:#eef3ff; box-shadow:inset 0 0 0 1px #d6e5ff}
 .icon{width:22px;height:22px; fill:#2e3e55}
 
-/* ---------- Tags / checklist ---------- */
+/* Tags / checklist */
 .tag{display:inline-grid;place-items:center;height:22px;padding:0 8px;border-radius:8px;background:#eef3ff;color:#2d6cdf;font-weight:800;font-size:12px}
+.tag--sm{height:auto; padding:2px 8px; border-radius:8px; font-weight:700; font-size:12px} /* универсальные маленькие теги для модалок */
 .kbd{font:11px/1.2 ui-monospace, Menlo, Consolas, "Courier New", monospace; color:#5f6d85}
 .cl{display:grid; gap:8px}
 .cl-item{display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid #edf1f7; border-radius:12px; background:#fff}
@@ -99,7 +98,7 @@ body{
 .cl-item input[type="text"]{flex:1; border:0; outline:0; background:transparent; font-weight:600}
 .cl-handle{cursor:grab; user-select:none; color:#90a0bb}
 
-/* ---------- Modal ---------- */
+/* Modal */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(13,27,42,.45);
   backdrop-filter: blur(6px) saturate(1.2); z-index: 99;
@@ -117,7 +116,7 @@ body{
 .modal-body {padding:18px 22px;overflow-y:auto;flex:1}
 .modal-foot {padding:14px 22px 20px;display:flex;justify-content:flex-end;gap:10px;border-top:1px solid #eef1f7}
 
-/* ---------- Form (универсальная) ---------- */
+/* Form */
 .form-field{display:grid;gap:6px;margin-bottom:14px}
 .form-field label{font-weight:700;font-size:14px;color:#223}
 .form-field input[type=text],
@@ -133,5 +132,5 @@ body{
 }
 .form-field small.error{color:var(--accent);font-weight:600}
 
-/* ---------- Responsive ---------- */
+/* Responsive */
 @media (max-width:560px){ .hero-title h1{font-size:28px} }
