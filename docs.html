@@ -31,28 +31,20 @@
 <!-- Hero -->
 <div class="hero">
   <div class="hero-card">
-    <div class="hero-title"><h1>Docs</h1></div>
-    <p class="hero-sub">Заметки, файлы, мини-превью. Поиск, категории, теги. Новое сверху.</p>
+    <div class="hero-title">
+      <h1>Docs</h1>
+      <button class="btn btn--outline is-sm" id="btnCats">Kategorien…</button>
+    </div>
+    <p class="hero-sub">Заметки, файлы, мини-превью. Поиск по title/text/category/tags. Новое сверху.</p>
   </div>
 </div>
 
 <main class="main">
 
-  <!-- Панель управления -->
+  <!-- Letzter Artikel -->
   <section class="section">
-    <h2>Aktionen</h2>
-    <div class="list">
-      <div class="row" id="controlsRow">
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <select id="catFilter" style="min-width:160px"></select>
-          <button class="btn btn--outline is-sm" id="btnCats">Kategorien…</button>
-          <button class="btn btn--outline is-sm" id="btnImport">Import</button>
-          <button class="btn btn--outline is-sm" id="btnExport">Export</button>
-          <button class="btn btn--outline is-sm" id="btnClearFilters">Filter löschen</button>
-        </div>
-        <div class="muted" id="counter"></div>
-      </div>
-    </div>
+    <h2>Letzter Artikel</h2>
+    <div class="list" id="latestWrap"></div>
   </section>
 
   <!-- Список документов -->
@@ -83,95 +75,74 @@ CT.neo.setActiveDock('docs');
 
 Docs.ensureSeeds();
 
-/* ------------ State ------------ */
-const state = { q:'', cat:'', tag:'' };
+/* ------- State ------- */
+const state = { q:'' };
 CT.on('search', q=>{ state.q=q||''; render(); });
 
-/* ------------ UI refs ------------ */
+/* ------- Refs ------- */
 const listEl = document.getElementById('docList');
-const catSel = document.getElementById('catFilter');
-const counter= document.getElementById('counter');
+const latestWrap = document.getElementById('latestWrap');
 
-/* ------------ Helpers ------------ */
-function fillCats(){
-  const cats = Docs.loadCats();
-  catSel.innerHTML = '';
-  const optAll = document.createElement('option'); optAll.value=''; optAll.textContent='Alle Kategorien';
-  catSel.append(optAll);
-  cats.forEach(c=>{
-    const o=document.createElement('option'); o.value=c; o.textContent=c;
-    if(state.cat===c) o.selected=true;
-    catSel.append(o);
-  });
-}
-function setBadgeCount(n){ counter.textContent = `${n} Einträge`; }
+/* ------- Helpers ------- */
+function openViewer(d){
+  const box = document.createElement('div');
 
-function render(){
-  fillCats();
-  const arr = Docs.list(state);
-  setBadgeCount(arr.length);
-  listEl.innerHTML = '';
-  if (arr.length===0){
-    const empty=document.createElement('div'); empty.className='row';
-    empty.innerHTML = `<div class="muted">Keine Dokumente</div>`;
-    listEl.append(empty);
-    return;
+  // Картинка/заглушка
+  const top = document.createElement('div');
+  if (d.imgData){
+    const img = document.createElement('img');
+    img.src = d.imgData; img.alt = 'Bild'; img.style.width='100%'; img.style.borderRadius='12px';
+    top.append(img);
+  } else {
+    const ph = document.createElement('div');
+    ph.style.height='160px'; ph.style.border='1px solid #edf1f7'; ph.style.borderRadius='12px';
+    ph.style.display='grid'; ph.style.placeItems='center'; ph.style.color='#6b7a90'; ph.style.fontWeight='800';
+    ph.textContent = 'kein Foto';
+    top.append(ph);
   }
-  arr.forEach(d=>{
-    const row = document.createElement('div'); row.className='row';
 
-    // Левый блок
-    const left = document.createElement('div');
-    const grid = document.createElement('div');
-    grid.style.display='grid'; grid.style.gridTemplateColumns='56px auto'; grid.style.gap='10px';
+  // Текстовые блоки
+  const h = document.createElement('h3'); h.textContent = d.title;
+  h.style.margin='12px 0 6px';
+  const meta = document.createElement('div'); meta.className='meta';
+  meta.textContent = `${d.category} • ${new Date(Number(d.updatedAt||d.createdAt)).toLocaleString()}`;
 
-    const thumb = document.createElement('div');
-    thumb.style.width='56px'; thumb.style.height='56px'; thumb.style.border='1px solid #edf1f7'; thumb.style.borderRadius='10px';
-    thumb.style.display='grid'; thumb.style.placeItems='center'; thumb.style.fontWeight='800'; thumb.style.color='#6b7a90';
-    if (d.imgData){ const img=document.createElement('img'); img.src=d.imgData; img.alt='thumb'; img.width=56; img.height=56; img.style.borderRadius='10px'; thumb.innerHTML=''; thumb.append(img); }
-    else { thumb.textContent='CT'; }
+  const body = document.createElement('div');
+  const p = document.createElement('p'); p.textContent = d.text || '';
+  body.append(p);
 
-    const textWrap = document.createElement('div');
-    const title = document.createElement('div'); title.className='title'; title.textContent = d.title;
-    const meta1 = document.createElement('div'); meta1.className='meta';
-    meta1.textContent = `${d.category} • ${new Date(Number(d.updatedAt||d.createdAt)).toLocaleString()}`;
-    textWrap.append(title, meta1);
-    if (d.text){
-      const meta2 = document.createElement('div'); meta2.className='meta';
-      meta2.textContent = Docs.truncate(d.text, 120);
-      textWrap.append(meta2);
-    }
-    grid.append(thumb, textWrap);
-    left.append(grid);
+  if (d.file){
+    const fi = document.createElement('div'); fi.className='meta';
+    fi.textContent = `Datei: ${d.file.name} (${d.file.type||'—'})`;
+    body.append(fi);
+  }
 
-    // Правый блок
-    const right = document.createElement('div');
-    right.style.display='flex'; right.style.flexDirection='column'; right.style.alignItems='flex-end'; right.style.gap='6px';
+  // Теги — только тут
+  const tagsWrap = document.createElement('div');
+  tagsWrap.style.display='flex'; tagsWrap.style.flexWrap='wrap'; tagsWrap.style.gap='6px'; tagsWrap.style.marginTop='8px';
+  (d.tags||[]).forEach(t=>{
+    const tag = document.createElement('span'); tag.className='tag tag--sm'; tag.textContent = t;
+    tagsWrap.append(tag);
+  });
 
-    const tagsWrap = document.createElement('div');
-    tagsWrap.style.display='flex'; tagsWrap.style.flexWrap='wrap'; tagsWrap.style.gap='6px';
-    (d.tags||[]).forEach(t=>{
-      const tag = document.createElement('span'); tag.className='tag'; tag.textContent = t;
-      tag.title='Nach Tag filtern';
-      tag.onclick=()=>{ state.tag = t; render(); };
-      tagsWrap.append(tag);
-    });
+  box.append(top, h, meta, body, tagsWrap);
 
-    const btns = document.createElement('div');
-    btns.style.display='flex'; btns.style.gap='6px'; btns.style.alignItems='center';
-    const bOpen = document.createElement('button'); bOpen.className='btn btn--outline is-sm'; bOpen.textContent='Öffnen';
-    const bDel  = document.createElement('button'); bDel.className='btn btn--outline is-sm'; bDel.textContent='Löschen';
-    bOpen.onclick = ()=> openEditor(d);
-    bDel.onclick  = ()=> askDelete(d);
-    btns.append(bOpen,bDel);
-
-    right.append(tagsWrap, btns);
-    row.append(left, right);
-    listEl.append(row);
+  CT.ui.modal.open({
+    title:'Dokument',
+    contentEl: box,
+    footer: [
+      {label:'Löschen', kind:'danger', onClick: ()=>{
+        CT.ui.confirm({title:'Löschen?', msg:`«${d.title}» wirklich entfernen?`}).then(ok=>{
+          if(ok){ Docs.remove(d.id); CT.ui.modal.close(); render(); }
+        });
+      }},
+      {label:'Bearbeiten', onClick: ()=>{ CT.ui.modal.close(); openEditor(d); }},
+      {label:'Schließen', onClick: ()=> CT.ui.modal.close()}
+    ],
+    wide:true
   });
 }
 
-/* ------------ Editor ------------ */
 function openEditor(doc){
   const cats = Docs.loadCats();
   const form = CT.ui.form.create({
@@ -185,6 +156,7 @@ function openEditor(doc){
     ]
   });
 
+  // + Neue Kategorie
   const tools = document.createElement('div');
   tools.style.display='flex'; tools.style.justifyContent='space-between'; tools.style.marginBottom='8px';
   const btnNewCat = document.createElement('button'); btnNewCat.className='btn btn--outline is-sm'; btnNewCat.textContent='+ Neue Kategorie';
@@ -234,17 +206,107 @@ function openEditor(doc){
         else { Docs.create(patch); }
         CT.ui.modal.close(); render();
       }}
-    ]
+    ],
+    wide:true
   });
 }
 
-/* ------------ Delete ------------ */
-function askDelete(doc){
-  CT.ui.confirm({title:'Löschen?', msg:`«${doc.title}» wirklich entfernen?`})
-    .then(ok=>{ if(ok){ Docs.remove(doc.id); render(); }});
+function askDelete(d){
+  CT.ui.confirm({title:'Löschen?', msg:`«${d.title}» wirklich entfernen?`})
+    .then(ok=>{ if(ok){ Docs.remove(d.id); render(); }});
 }
 
-/* ------------ Category manager ------------ */
+function renderLatest(){
+  latestWrap.innerHTML='';
+  const all = Docs.list({});
+  if (all.length===0){
+    const row=document.createElement('div'); row.className='row';
+    const left=document.createElement('div'); left.innerHTML='<div class="title">Noch nichts hinzugefügt</div><div class="meta">Erstelle dein erstes Dokument</div>';
+    const right=document.createElement('div');
+    const btn=document.createElement('button'); btn.className='btn btn--outline is-sm'; btn.textContent='Neues Dokument';
+    btn.onclick=()=>openEditor();
+    right.append(btn); row.append(left,right); latestWrap.append(row);
+    return;
+  }
+  const d = all[0];
+  const row=document.createElement('div'); row.className='row';
+
+  // превью+текст
+  const left=document.createElement('div');
+  const grid=document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='56px auto'; grid.style.gap='10px';
+
+  const thumb=document.createElement('div');
+  thumb.style.width='56px'; thumb.style.height='56px'; thumb.style.border='1px solid #edf1f7'; thumb.style.borderRadius='10px';
+  thumb.style.display='grid'; thumb.style.placeItems='center'; thumb.style.color='#6b7a90'; thumb.style.fontWeight='800';
+  if (d.imgData){ const img=document.createElement('img'); img.src=d.imgData; img.alt='thumb'; img.width=56; img.height=56; img.style.borderRadius='10px'; thumb.innerHTML=''; thumb.append(img); }
+  else { thumb.textContent='CT'; }
+
+  const tw=document.createElement('div');
+  const title=document.createElement('div'); title.className='title'; title.textContent=d.title;
+  const meta=document.createElement('div'); meta.className='meta'; meta.textContent=`${d.category} • ${new Date(Number(d.updatedAt||d.createdAt)).toLocaleString()}`;
+  const txt=document.createElement('div'); txt.className='meta'; txt.textContent=Docs.truncate(d.text,120);
+  tw.append(title,meta,txt);
+
+  grid.append(thumb,tw); left.append(grid);
+
+  const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
+  const bInfo=document.createElement('button'); bInfo.className='btn btn--outline is-sm'; bInfo.textContent='i';
+  const bEdit=document.createElement('button'); bEdit.className='btn btn--outline is-sm'; bEdit.textContent='Bearbeiten';
+  bInfo.onclick=()=>openViewer(d);
+  bEdit.onclick=()=>openEditor(d);
+  right.append(bInfo,bEdit);
+
+  row.append(left,right);
+  latestWrap.append(row);
+}
+
+function renderList(){
+  listEl.innerHTML='';
+  const arr = Docs.list({q:state.q});
+  if (arr.length===0){
+    const empty=document.createElement('div'); empty.className='row';
+    empty.innerHTML = `<div class="muted">Keine Dokumente</div>`;
+    listEl.append(empty);
+    return;
+  }
+  arr.forEach(d=>{
+    const row=document.createElement('div'); row.className='row';
+
+    const left = document.createElement('div');
+    const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='56px auto'; grid.style.gap='10px';
+
+    const thumb=document.createElement('div');
+    thumb.style.width='56px'; thumb.style.height='56px'; thumb.style.border='1px solid #edf1f7'; thumb.style.borderRadius='10px';
+    thumb.style.display='grid'; thumb.style.placeItems='center'; thumb.style.color='#6b7a90'; thumb.style.fontWeight='800';
+    if (d.imgData){ const img=document.createElement('img'); img.src=d.imgData; img.alt='thumb'; img.width=56; img.height=56; img.style.borderRadius='10px'; thumb.innerHTML=''; thumb.append(img); }
+    else { thumb.textContent='CT'; }
+
+    const tw=document.createElement('div');
+    const title=document.createElement('div'); title.className='title'; title.textContent=d.title;
+    const meta=document.createElement('div'); meta.className='meta'; meta.textContent=`${d.category} • ${new Date(Number(d.updatedAt||d.createdAt)).toLocaleString()}`;
+    const txt=document.createElement('div'); txt.className='meta'; txt.textContent=Docs.truncate(d.text,120);
+    tw.append(title,meta,txt);
+
+    grid.append(thumb,tw); left.append(grid);
+
+    const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
+    const bInfo=document.createElement('button'); bInfo.className='btn btn--outline is-sm'; bInfo.textContent='i';
+    const bDel =document.createElement('button'); bDel.className='btn btn--outline is-sm'; bDel.textContent='Löschen';
+    bInfo.onclick=()=>openViewer(d);
+    bDel.onclick =()=>askDelete(d);
+    right.append(bInfo,bDel);
+
+    row.append(left,right);
+    listEl.append(row);
+  });
+}
+
+function render(){
+  renderLatest();
+  renderList();
+}
+
+/* --- Category manager (hero button) --- */
 document.getElementById('btnCats').onclick = ()=>{
   const cats = Docs.loadCats();
   const box = document.createElement('div');
@@ -322,57 +384,13 @@ document.getElementById('btnCats').onclick = ()=>{
   });
 };
 
-/* ------------ Import/Export ------------ */
-document.getElementById('btnExport').onclick=()=>{
-  const data = Docs.export();
-  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'citi_docs_backup.json';
-  a.click(); URL.revokeObjectURL(a.href);
-};
-document.getElementById('btnImport').onclick=()=>{
-  const form = CT.ui.form.create({
-    values:{mode:'merge'},
-    fields:[
-      {type:'select',key:'mode',label:'Modus',options:['merge','replace']},
-      {type:'file',key:'file',label:'JSON',accept:'.json'}
-    ]
-  });
-  CT.ui.modal.open({
-    title:'Import',
-    contentEl:form.el,
-    footer:[
-      {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
-      {label:'Importieren',kind:'primary',onClick:()=>{
-        const el = form.el.querySelector('input[type=file]');
-        if(!el || !el.files || !el.files[0]){ form.setErrors({file:'Datei wählen'}); return; }
-        const f = el.files[0];
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          try{
-            const list = JSON.parse(reader.result);
-            const mode = form.getValues().mode || 'merge';
-            const res = Docs.import(list, mode);
-            CT.ui.modal.close();
-            alert(`Import: added ${res.added}, updated ${res.updated}`);
-            render();
-          }catch(e){ form.setErrors({file:'Ungültige JSON'}); }
-        };
-        reader.readAsText(f, 'utf-8');
-      }}
-    ]
-  });
-};
-
-/* ------------ Filters ------------ */
-catSel.onchange = ()=>{ state.cat = catSel.value || ''; state.tag=''; render(); };
-document.getElementById('btnClearFilters').onclick=()=>{ state.q=''; state.cat=''; state.tag=''; document.getElementById('q').value=''; render(); };
-
-/* ------------ New doc ------------ */
+/* --- New doc --- */
 document.getElementById('btnNew').onclick = ()=> openEditor();
 
-/* ------------ Initial ------------ */
+/* --- Search --- */
+CT.on('search', q=>{ state.q=q||''; renderList(); });
+
+/* --- Init --- */
 render();
 </script>
 </body>
