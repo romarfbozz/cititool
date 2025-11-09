@@ -13,13 +13,9 @@
   const uniq = arr => [...new Set(arr)];
 
   function normalizeDoc(d){
-    // tags может быть массивом или строкой
     const tags = Array.isArray(d.tags)
       ? d.tags.map(trim).filter(Boolean)
-      : (typeof d.tags === 'string'
-          ? trim(d.tags).split(',').map(trim).filter(Boolean)
-          : []);
-    // поддержка legacy: desc -> text
+      : (typeof d.tags === 'string' ? trim(d.tags).split(',').map(trim).filter(Boolean) : []);
     const text = d.text ?? d.desc ?? '';
     return {
       id: d.id || uid(),
@@ -41,12 +37,10 @@
     let changed = false;
     const next = (cur||[]).map(d=>{
       const n = normalizeDoc(d);
-      // если что-то изменилось — пометим
       if (JSON.stringify(n) !== JSON.stringify(d)) changed = true;
       return n;
     });
     if (changed) CT.save(K_DOCS, next);
-    // категории
     let cats = CT.load(K_CATS, null);
     if (!cats || !Array.isArray(cats) || cats.length===0){
       cats = uniq(next.map(x=> x.category));
@@ -58,7 +52,6 @@
   }
 
   const Docs = {
-    // ===== Storage / seeds / migration =====
     ensureSeeds(){
       migrateIfNeeded();
       if (!CT.load(K_CATS, null)) CT.save(K_CATS, ['Allgemein','Setup','Material']);
@@ -84,7 +77,6 @@
       CT.save(K_CATS, out.length? out : ['Allgemein']);
     },
 
-    // ===== Queries =====
     list(filter={}){
       const docs = this.load();
       const q = (filter.q||'').toLowerCase();
@@ -97,13 +89,12 @@
       }).sort((a,b)=> (b.createdAt||0) - (a.createdAt||0));
     },
 
-    // ===== Mutations =====
     create(input={}){
       const cur = normalizeDoc(input);
       cur.createdAt = now();
       cur.updatedAt = now();
       const docs = this.load();
-      this.save([cur, ...docs]); // новое сверху
+      this.save([cur, ...docs]);
       const cats = this.loadCats();
       if (!cats.includes(cur.category)) this.saveCats([...cats, cur.category]);
       return cur;
@@ -125,7 +116,6 @@
       this.save(this.load().filter(d=>d.id!==id));
     },
 
-    // ===== Import/Export =====
     import(list, mode='merge'){
       if (!Array.isArray(list)) throw new Error('Bad import format');
       if (mode==='replace'){
@@ -152,7 +142,6 @@
 
     export(){ return this.load(); },
 
-    // ===== Categories =====
     cats: {
       add(name){
         name = trim(name); if(!name) return;
@@ -178,7 +167,6 @@
       }
     },
 
-    // ===== Utils =====
     truncate(text='', max=120){
       const s = (text||'').toString();
       if (s.length<=max) return s;
@@ -212,5 +200,5 @@
     }
   };
 
-  global.Docs = Docs; // доступно как window.Docs
+  global.Docs = Docs;
 })(window);
