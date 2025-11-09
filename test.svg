@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -60 240 140" width="600" height="350">
+  <!-- Стиль: только линии -->
+  <defs>
+    <style>
+      .axis{stroke:#9bb0c9;stroke-width:1;stroke-dasharray:4 4}
+      .tool{stroke:#0d1b2a;stroke-width:2;fill:none}
+      .dim {stroke:#2d6cdf;stroke-width:1;fill:none}
+      .note{font:12px system-ui;fill:#2d6cdf}
+    </style>
+  </defs>
+
+  <!-- Оси токарной системы: Z (вправо), X (вверх) -->
+  <line class="axis" x1="-10" y1="0" x2="210" y2="0"/>
+  <line class="axis" x1="0" y1="60" x2="0" y2="-60"/>
+  <text x="205" y="-6" class="note">Z</text>
+  <text x="6" y="-54" class="note">X</text>
+
+  <!-- ДЕРЖАВКА (простая прямоугольная форма) -->
+  <polyline class="tool" points="0,20 140,20 140,-20 0,-20 0,20"/>
+
+  <!-- РЕЖУЩАЯ ЧАСТЬ: кромка с углом κr = 93° к оси подачи (Z) -->
+  <!-- Вершина инструмента в носике державки (x=140, y=0) -->
+  <!-- Кромка почти перпендикулярна Z, слегка "перевалена" на 3° -->
+  <!-- Длина кромки условно 26 -->
+  <g transform="translate(140,0)">
+    <!-- направляющая кромки: угол 93° от оси Z -->
+    <!-- угол в SVG задаём как поворот линии вокруг (0,0) -->
+    <g transform="rotate(-93)">
+      <line class="tool" x1="0" y1="0" x2="26" y2="0"/>
+    </g>
+
+    <!-- Внутренний/задний фас/хвостик (условно) -->
+    <line class="tool" x1="0" y1="0" x2="-10" y2="-8"/>
+    <line class="tool" x1="-10" y1="-8" x2="-10" y2="8"/>
+    <line class="tool" x1="-10" y1="8" x2="0"  y2="0"/>
+
+    <!-- Дужка-указание угла 93° -->
+    <path class="dim" d="
+      M 0 0
+      A 22 22 0 0 1 21.9 -1.15
+    "/>
+    <text class="note" x="18" y="-10">93°</text>
+  </g>
+
+  <!-- Подписи -->
+  <text x="6" y="34" class="note">Bohrstahl / Innenbearbeitung (схема)</text>
+  <text x="6" y="50" class="note">Кромка под κr = 93° к оси Z</text>
+</svg>
