@@ -8,10 +8,8 @@
 </head>
 <body>
 
-<!-- Фон сетки (как везде) -->
 <div class="hero-bg"><div class="hero-grid"></div></div>
 
-<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
     <div class="logo-line">
@@ -30,7 +28,6 @@
 
 <main class="main">
 
-  <!-- Letzter Artikel (+ кнопка категорий тут) -->
   <section class="section">
     <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 4px 12px">
       <h2 style="margin:0">Letzter Artikel</h2>
@@ -39,7 +36,6 @@
     <div class="list" id="latestWrap"></div>
   </section>
 
-  <!-- Список документов -->
   <section class="section">
     <h2>Dokumente</h2>
     <div class="list" id="docList"></div>
@@ -47,7 +43,6 @@
 
 </main>
 
-<!-- Dock -->
 <nav class="dock">
   <div class="wrap">
     <a href="./index.html" data-id="dash"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
@@ -67,19 +62,16 @@ CT.neo.setActiveDock('docs');
 
 Docs.ensureSeeds();
 
-/* ------- State ------- */
 const state = { q:'' };
 CT.on('search', q=>{ state.q=q||''; renderList(); });
 
-/* ------- Refs ------- */
 const listEl = document.getElementById('docList');
 const latestWrap = document.getElementById('latestWrap');
 
-/* ------- Viewer (i) ------- */
+/* -------- Viewer (i) -------- */
 function openViewer(d){
   const box = document.createElement('div');
 
-  // Картинка/заглушка
   const top = document.createElement('div');
   if (d.imgData){
     const img = document.createElement('img');
@@ -132,7 +124,7 @@ function openViewer(d){
   });
 }
 
-/* ------- Editor ------- */
+/* -------- Editor (добавлено удаление фото) -------- */
 function openEditor(doc){
   const cats = Docs.loadCats();
   if (doc && doc.category && !cats.includes(doc.category)) cats.push(doc.category);
@@ -140,6 +132,8 @@ function openEditor(doc){
   const initial = doc
     ? { title:doc.title, category:doc.category||cats[0]||'Allgemein', tags:(doc.tags||[]).join(', '), text:doc.text||'' }
     : { title:'', category:cats[0]||'Allgemein', tags:'', text:'' };
+
+  let removePhoto = false; // <- флаг «удалить фото»
 
   const form = CT.ui.form.create({
     values: initial,
@@ -152,8 +146,33 @@ function openEditor(doc){
     ]
   });
 
+  // превью текущего фото + кнопка «удалить»
+  const preview = document.createElement('div');
+  preview.style.display='flex'; preview.style.alignItems='center'; preview.style.gap='10px';
+  preview.style.margin='0 0 10px 0';
+
+  if (doc && doc.imgData){
+    const img = document.createElement('img');
+    img.src = doc.imgData; img.alt = 'thumb'; img.width = 64; img.height = 64; img.style.borderRadius='10px';
+    const del = document.createElement('button');
+    del.className = 'btn btn--outline is-sm';
+    del.textContent = 'Foto entfernen';
+    del.onclick = ()=> {
+      removePhoto = true;
+      preview.innerHTML = '<div class="meta">Foto wird entfernt</div>';
+    };
+    preview.append(img, del);
+  } else {
+    // ничего не показываем — удалять нечего
+  }
+
+  // если пользователь выбирает новый файл-изображение — отменяем "removePhoto"
+  const fileInput = form.el.querySelector('input[type=file]');
+  fileInput.addEventListener('change', ()=>{ removePhoto = false; });
+
+  // + Neue Kategorie
   const tools = document.createElement('div');
-  tools.style.display='flex'; tools.style.justifyContent='space-between'; tools.style.marginBottom='8px';
+  tools.style.display='flex'; tools.style.justifyContent='space-between'; tools.style.margin='0 0 8px';
   const btnNewCat = document.createElement('button'); btnNewCat.className='btn btn--outline is-sm'; btnNewCat.textContent='+ Neue Kategorie';
   btnNewCat.onclick = ()=>{
     const catForm = CT.ui.form.create({ values:{name:''}, fields:[{type:'text', key:'name', label:'Name'}] });
@@ -172,6 +191,7 @@ function openEditor(doc){
   tools.append(document.createTextNode(''), btnNewCat);
 
   const holder = document.createElement('div');
+  if (preview.childNodes.length) holder.append(preview);
   holder.append(tools, form.el);
 
   CT.ui.modal.open({
@@ -182,20 +202,24 @@ function openEditor(doc){
       {label:'Speichern', kind:'primary', onClick: async ()=>{
         const v = form.getValues();
         if (!v.title || !v.title.trim()){ form.setErrors({title:'Pflichtfeld'}); return; }
+
         const patch = {
           title: v.title.trim(),
           category: (v.category||'Allgemein').trim(),
           tags: v.tags ? v.tags.split(',').map(s=>s.trim()).filter(Boolean) : [],
           text: v.text||'',
         };
-        const fileInput = form.el.querySelector('input[type=file]');
-        if (fileInput && fileInput.files && fileInput.files[0]){
-          const f = fileInput.files[0];
+
+        const fileEl = form.el.querySelector('input[type=file]');
+        if (fileEl && fileEl.files && fileEl.files[0]){
+          const f = fileEl.files[0];
           const isImg = /^image\//.test(f.type);
           let imgData = null;
           if (isImg) imgData = await Docs.resizeImageToDataURL(f, 512);
           patch.file = { name:f.name, type:f.type };
-          patch.imgData = imgData;
+          patch.imgData = imgData; // заменить/добавить превью
+        } else if (removePhoto) {
+          patch.imgData = null; // удалить текущее фото
         }
         if (doc){ Docs.update(doc.id, patch); }
         else { Docs.create(patch); }
@@ -206,13 +230,7 @@ function openEditor(doc){
   });
 }
 
-/* ------- Delete helper ------- */
-function askDelete(d){
-  CT.ui.confirm({title:'Löschen?', msg:`«${d.title}» wirklich entfernen?`})
-    .then(ok=>{ if(ok){ Docs.remove(d.id); render(); }});
-}
-
-/* ------- Latest ------- */
+/* -------- List / Latest etc. (без изменений) -------- */
 function renderLatest(){
   latestWrap.innerHTML='';
   const all = Docs.list({});
@@ -253,7 +271,6 @@ function renderLatest(){
   latestWrap.append(row);
 }
 
-/* ------- List ------- */
 function renderList(){
   listEl.innerHTML='';
   const arr = Docs.list({q:state.q});
@@ -298,7 +315,7 @@ function render(){
   renderList();
 }
 
-/* --- Менеджер категорий (кнопка в заголовке Letzter Artikel) --- */
+/* --- Категории --- */
 document.getElementById('btnCats').onclick = ()=>{
   const cats = Docs.loadCats();
   const box = document.createElement('div');
@@ -376,13 +393,10 @@ document.getElementById('btnCats').onclick = ()=>{
   });
 };
 
-/* --- New doc --- */
 document.getElementById('btnNew').onclick = ()=> openEditor();
 
-/* --- Search --- */
 CT.on('search', q=>{ state.q=q||''; renderList(); });
 
-/* --- Init --- */
 render();
 </script>
 </body>
