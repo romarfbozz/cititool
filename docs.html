@@ -8,10 +8,8 @@
 </head>
 <body>
 
-<!-- BG -->
 <div class="hero-bg"><div class="hero-grid"></div></div>
 
-<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
     <div class="logo-line">
@@ -21,21 +19,20 @@
     <div class="actions">
       <button class="btn" id="btnNew">Neues Dokument</button>
       <div class="search" id="searchBox">
-        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
         <input type="search" placeholder="Suchen…" id="q" autocomplete="off">
       </div>
     </div>
   </div>
 </header>
 
-<!-- Hero -->
 <div class="hero">
   <div class="hero-card">
     <div class="hero-title">
       <h1>Docs</h1>
       <button class="btn btn--outline is-sm" id="btnCats">Kategorien…</button>
     </div>
-    <p class="hero-sub">Заметки, файлы, мини-превью. Поиск по title/text/category/tags. Новое сверху.</p>
+    <p class="hero-sub">Заметки и файлы. Поиск по title/text/category/tags. Новое сверху.</p>
   </div>
 </div>
 
@@ -55,7 +52,6 @@
 
 </main>
 
-<!-- Dock -->
 <nav class="dock">
   <div class="wrap">
     <a href="./index.html" data-id="dash"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
@@ -75,19 +71,16 @@ CT.neo.setActiveDock('docs');
 
 Docs.ensureSeeds();
 
-/* ------- State ------- */
 const state = { q:'' };
-CT.on('search', q=>{ state.q=q||''; render(); });
+CT.on('search', q=>{ state.q=q||''; renderList(); });
 
-/* ------- Refs ------- */
 const listEl = document.getElementById('docList');
 const latestWrap = document.getElementById('latestWrap');
 
-/* ------- Helpers ------- */
+/* -------- Viewer (i) -------- */
 function openViewer(d){
   const box = document.createElement('div');
 
-  // Картинка/заглушка
   const top = document.createElement('div');
   if (d.imgData){
     const img = document.createElement('img');
@@ -101,9 +94,7 @@ function openViewer(d){
     top.append(ph);
   }
 
-  // Текстовые блоки
-  const h = document.createElement('h3'); h.textContent = d.title;
-  h.style.margin='12px 0 6px';
+  const h = document.createElement('h3'); h.textContent = d.title; h.style.margin='12px 0 6px';
   const meta = document.createElement('div'); meta.className='meta';
   meta.textContent = `${d.category} • ${new Date(Number(d.updatedAt||d.createdAt)).toLocaleString()}`;
 
@@ -117,7 +108,6 @@ function openViewer(d){
     body.append(fi);
   }
 
-  // Теги — только тут
   const tagsWrap = document.createElement('div');
   tagsWrap.style.display='flex'; tagsWrap.style.flexWrap='wrap'; tagsWrap.style.gap='6px'; tagsWrap.style.marginTop='8px';
   (d.tags||[]).forEach(t=>{
@@ -143,10 +133,21 @@ function openViewer(d){
   });
 }
 
+/* -------- Editor (фикс: теги строкой) -------- */
 function openEditor(doc){
   const cats = Docs.loadCats();
+  const ensureCats = ()=> {
+    // если у редактируемого документа категория нестандартная — добавим в список, чтобы select не падал
+    if (doc && doc.category && !cats.includes(doc.category)) cats.push(doc.category);
+  };
+  ensureCats();
+
+  const initial = doc
+    ? { title:doc.title, category:doc.category||cats[0]||'Allgemein', tags:(doc.tags||[]).join(', '), text:doc.text||'' }
+    : { title:'', category:cats[0]||'Allgemein', tags:'', text:'' };
+
   const form = CT.ui.form.create({
-    values: doc || { title:'', category: cats[0]||'Allgemein', tags:[], text:'', imgData:null, file:null },
+    values: initial,
     fields: [
       {type:'text',   key:'title',    label:'Titel', placeholder:'...'},
       {type:'select', key:'category', label:'Kategorie', options: cats},
@@ -156,7 +157,6 @@ function openEditor(doc){
     ]
   });
 
-  // + Neue Kategorie
   const tools = document.createElement('div');
   tools.style.display='flex'; tools.style.justifyContent='space-between'; tools.style.marginBottom='8px';
   const btnNewCat = document.createElement('button'); btnNewCat.className='btn btn--outline is-sm'; btnNewCat.textContent='+ Neue Kategorie';
@@ -188,8 +188,8 @@ function openEditor(doc){
         const v = form.getValues();
         if (!v.title || !v.title.trim()){ form.setErrors({title:'Pflichtfeld'}); return; }
         const patch = {
-          title: v.title,
-          category: v.category || 'Allgemein',
+          title: v.title.trim(),
+          category: (v.category||'Allgemein').trim(),
           tags: v.tags ? v.tags.split(',').map(s=>s.trim()).filter(Boolean) : [],
           text: v.text||'',
         };
@@ -211,11 +211,7 @@ function openEditor(doc){
   });
 }
 
-function askDelete(d){
-  CT.ui.confirm({title:'Löschen?', msg:`«${d.title}» wirklich entfernen?`})
-    .then(ok=>{ if(ok){ Docs.remove(d.id); render(); }});
-}
-
+/* -------- List / Latest -------- */
 function renderLatest(){
   latestWrap.innerHTML='';
   const all = Docs.list({});
@@ -231,10 +227,8 @@ function renderLatest(){
   const d = all[0];
   const row=document.createElement('div'); row.className='row';
 
-  // превью+текст
   const left=document.createElement('div');
   const grid=document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='56px auto'; grid.style.gap='10px';
-
   const thumb=document.createElement('div');
   thumb.style.width='56px'; thumb.style.height='56px'; thumb.style.border='1px solid #edf1f7'; thumb.style.borderRadius='10px';
   thumb.style.display='grid'; thumb.style.placeItems='center'; thumb.style.color='#6b7a90'; thumb.style.fontWeight='800';
@@ -251,10 +245,8 @@ function renderLatest(){
 
   const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
   const bInfo=document.createElement('button'); bInfo.className='btn btn--outline is-sm'; bInfo.textContent='i';
-  const bEdit=document.createElement('button'); bEdit.className='btn btn--outline is-sm'; bEdit.textContent='Bearbeiten';
   bInfo.onclick=()=>openViewer(d);
-  bEdit.onclick=()=>openEditor(d);
-  right.append(bInfo,bEdit);
+  right.append(bInfo);
 
   row.append(left,right);
   latestWrap.append(row);
@@ -291,10 +283,8 @@ function renderList(){
 
     const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
     const bInfo=document.createElement('button'); bInfo.className='btn btn--outline is-sm'; bInfo.textContent='i';
-    const bDel =document.createElement('button'); bDel.className='btn btn--outline is-sm'; bDel.textContent='Löschen';
     bInfo.onclick=()=>openViewer(d);
-    bDel.onclick =()=>askDelete(d);
-    right.append(bInfo,bDel);
+    right.append(bInfo);
 
     row.append(left,right);
     listEl.append(row);
@@ -384,13 +374,8 @@ document.getElementById('btnCats').onclick = ()=>{
   });
 };
 
-/* --- New doc --- */
 document.getElementById('btnNew').onclick = ()=> openEditor();
 
-/* --- Search --- */
-CT.on('search', q=>{ state.q=q||''; renderList(); });
-
-/* --- Init --- */
 render();
 </script>
 </body>
