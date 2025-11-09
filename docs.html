@@ -8,8 +8,10 @@
 </head>
 <body>
 
+<!-- Фон сетки (как везде) -->
 <div class="hero-bg"><div class="hero-grid"></div></div>
 
+<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
     <div class="logo-line">
@@ -19,28 +21,21 @@
     <div class="actions">
       <button class="btn" id="btnNew">Neues Dokument</button>
       <div class="search" id="searchBox">
-        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
         <input type="search" placeholder="Suchen…" id="q" autocomplete="off">
       </div>
     </div>
   </div>
 </header>
 
-<div class="hero">
-  <div class="hero-card">
-    <div class="hero-title">
-      <h1>Docs</h1>
-      <button class="btn btn--outline is-sm" id="btnCats">Kategorien…</button>
-    </div>
-    <p class="hero-sub">Заметки и файлы. Поиск по title/text/category/tags. Новое сверху.</p>
-  </div>
-</div>
-
 <main class="main">
 
-  <!-- Letzter Artikel -->
+  <!-- Letzter Artikel (+ кнопка категорий тут) -->
   <section class="section">
-    <h2>Letzter Artikel</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 4px 12px">
+      <h2 style="margin:0">Letzter Artikel</h2>
+      <button class="btn btn--outline is-sm" id="btnCats">Kategorien…</button>
+    </div>
     <div class="list" id="latestWrap"></div>
   </section>
 
@@ -52,6 +47,7 @@
 
 </main>
 
+<!-- Dock -->
 <nav class="dock">
   <div class="wrap">
     <a href="./index.html" data-id="dash"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
@@ -71,16 +67,19 @@ CT.neo.setActiveDock('docs');
 
 Docs.ensureSeeds();
 
+/* ------- State ------- */
 const state = { q:'' };
 CT.on('search', q=>{ state.q=q||''; renderList(); });
 
+/* ------- Refs ------- */
 const listEl = document.getElementById('docList');
 const latestWrap = document.getElementById('latestWrap');
 
-/* -------- Viewer (i) -------- */
+/* ------- Viewer (i) ------- */
 function openViewer(d){
   const box = document.createElement('div');
 
+  // Картинка/заглушка
   const top = document.createElement('div');
   if (d.imgData){
     const img = document.createElement('img');
@@ -133,14 +132,10 @@ function openViewer(d){
   });
 }
 
-/* -------- Editor (фикс: теги строкой) -------- */
+/* ------- Editor ------- */
 function openEditor(doc){
   const cats = Docs.loadCats();
-  const ensureCats = ()=> {
-    // если у редактируемого документа категория нестандартная — добавим в список, чтобы select не падал
-    if (doc && doc.category && !cats.includes(doc.category)) cats.push(doc.category);
-  };
-  ensureCats();
+  if (doc && doc.category && !cats.includes(doc.category)) cats.push(doc.category);
 
   const initial = doc
     ? { title:doc.title, category:doc.category||cats[0]||'Allgemein', tags:(doc.tags||[]).join(', '), text:doc.text||'' }
@@ -211,7 +206,13 @@ function openEditor(doc){
   });
 }
 
-/* -------- List / Latest -------- */
+/* ------- Delete helper ------- */
+function askDelete(d){
+  CT.ui.confirm({title:'Löschen?', msg:`«${d.title}» wirklich entfernen?`})
+    .then(ok=>{ if(ok){ Docs.remove(d.id); render(); }});
+}
+
+/* ------- Latest ------- */
 function renderLatest(){
   latestWrap.innerHTML='';
   const all = Docs.list({});
@@ -252,6 +253,7 @@ function renderLatest(){
   latestWrap.append(row);
 }
 
+/* ------- List ------- */
 function renderList(){
   listEl.innerHTML='';
   const arr = Docs.list({q:state.q});
@@ -296,7 +298,7 @@ function render(){
   renderList();
 }
 
-/* --- Category manager (hero button) --- */
+/* --- Менеджер категорий (кнопка в заголовке Letzter Artikel) --- */
 document.getElementById('btnCats').onclick = ()=>{
   const cats = Docs.loadCats();
   const box = document.createElement('div');
@@ -374,8 +376,13 @@ document.getElementById('btnCats').onclick = ()=>{
   });
 };
 
+/* --- New doc --- */
 document.getElementById('btnNew').onclick = ()=> openEditor();
 
+/* --- Search --- */
+CT.on('search', q=>{ state.q=q||''; renderList(); });
+
+/* --- Init --- */
 render();
 </script>
 </body>
