@@ -1,13 +1,12 @@
-// CitiTool • Setup (ProgramGroup mit RO/RU) — stable init + migration
+// CitiTool • Setup (ProgramGroup mit RO/RU) — stable init + migration + diag
 ;(function (global) {
   "use strict";
 
   const K_GROUPS = 'CT_PROG_GROUPS_V1';
   const K_LIVE   = 'CT_LIVE_V1';
-  const K_OLD    = 'CT_PROGS_V1'; // старый формат (по одной стороне)
+  const K_OLD    = 'CT_PROGS_V1';
   const SLOTS_COUNT = 12;
 
-  // -------- safe storage --------
   const storage = {
     get(k, def=undefined){
       try{
@@ -26,7 +25,6 @@
   const uid = () => Math.random().toString(36).slice(2, 10);
   const byCreatedDesc = (a,b)=> (b.createdAt||0)-(a.createdAt||0);
 
-  // -------- helpers --------
   const Tools = {
     list(){ return storage.get('CT_TOOLS_V1', []) || []; },
     byId(id){ return this.list().find(t=>t.id===id); },
@@ -37,45 +35,30 @@
   };
   const emptySide = (name)=>({ name, slots:Array.from({length:SLOTS_COUNT},(_,i)=>({pos:i+1, tnum:null, toolId:null, alias:''})) });
 
-  // -------- core --------
   const Setup = {
     migrateFromOld(){
       const old = storage.get(K_OLD, null);
       if (!Array.isArray(old) || old.length===0) return false;
-
       const groups = new Map();
       old.forEach(p=>{
-        const key = (p.nr||p.title||'').toString();
-        if (!key) return;
+        const key = (p.nr||p.title||'').toString(); if(!key) return;
         if (!groups.has(key)){
           groups.set(key, {
-            id: uid(),
-            nr: p.nr || key,
-            title: p.title || `Programm ${key}`,
-            zeichnungsNr: p.meta?.oLine || '',
-            material: '',
-            drawing: p.drawing || null,
-            notes: '',
+            id: uid(), nr: p.nr || key, title: p.title || `Programm ${key}`,
+            zeichnungsNr: p.meta?.oLine || '', material: '',
+            drawing: p.drawing || null, notes: '',
             sides:{ RO: emptySide('RO'), RU: emptySide('RU') },
-            createdAt: p.createdAt || now(),
-            updatedAt: p.updatedAt || now()
+            createdAt: p.createdAt || now(), updatedAt: p.updatedAt || now()
           });
         }
-        const g = groups.get(key);
-        const side = (p.side==='RO' || p.side==='RU') ? p.side : 'RO';
-        const slots = Array.isArray(p.slots) ? p.slots : [];
-        slots.forEach(s=>{
-          const i = Math.min(Math.max((s.pos||1)-1,0), SLOTS_COUNT-1);
-          g.sides[side].slots[i] = {
-            pos: i+1,
-            tnum: s.tnum || null,
-            toolId: s.toolId || null,
-            alias: s.alias || ''
-          };
+        const g=groups.get(key);
+        const side=(p.side==='RO'||p.side==='RU')?p.side:'RO';
+        (Array.isArray(p.slots)?p.slots:[]).forEach(s=>{
+          const i=Math.min(Math.max((s.pos||1)-1,0), SLOTS_COUNT-1);
+          g.sides[side].slots[i]={pos:i+1, tnum:s.tnum||null, toolId:s.toolId||null, alias:s.alias||''};
         });
       });
-
-      const arr = [...groups.values()].sort(byCreatedDesc);
+      const arr=[...groups.values()].sort(byCreatedDesc);
       storage.set(K_GROUPS, arr);
       return true;
     },
@@ -83,24 +66,17 @@
     ensureSeeds(){
       let groups = storage.get(K_GROUPS, null);
       if (!Array.isArray(groups) || groups.length===0){
-        // 1) попробовать мигрировать
         const migrated = this.migrateFromOld();
         groups = storage.get(K_GROUPS, null);
-        // 2) если всё ещё пусто — сиды
         if (!migrated && (!Array.isArray(groups) || groups.length===0)){
           const demo=[];
           for(let i=0;i<5;i++){
-            const nr = String(231800 + i);
-            const g = {
-              id: uid(), nr, title: `Programm ${nr}`,
-              zeichnungsNr: `Z${nr}`, material: i%2? '1.4112' : 'C45',
-              drawing: null, notes: '',
-              sides: { RO: emptySide('RO'), RU: emptySide('RU') },
-              createdAt: now() - (5-i)*10000, updatedAt: now() - (5-i)*10000
-            };
+            const nr=String(231800+i);
+            const g={ id:uid(), nr, title:`Programm ${nr}`, zeichnungsNr:`Z${nr}`, material:i%2?'1.4112':'C45',
+              drawing:null, notes:'', sides:{RO:emptySide('RO'), RU:emptySide('RU')}, createdAt: now()-(5-i)*10000, updatedAt: now()-(5-i)*10000 };
             [1,3,5].forEach(p=>{
-              g.sides.RO.slots[p-1].tnum = `T${String(p).padStart(2,'0')}${String(p).padStart(2,'0')}`;
-              g.sides.RU.slots[p-1].tnum = `T${String(p+1).padStart(2,'0')}${String(p+1).padStart(2,'0')}`;
+              g.sides.RO.slots[p-1].tnum=`T${String(p).padStart(2,'0')}${String(p).padStart(2,'0')}`;
+              g.sides.RU.slots[p-1].tnum=`T${String(p+1).padStart(2,'0')}${String(p+1).padStart(2,'0')}`;
             });
             demo.push(g);
           }
@@ -110,9 +86,9 @@
       if(!storage.get(K_LIVE, null)) storage.set(K_LIVE, {RO:null, RU:null});
     },
 
-    list({q='', side='' }={}){
+    list({q='', side=''}={}){
       const all = storage.get(K_GROUPS, []) || [];
-      const qq = (q||'').trim().toLowerCase();
+      const qq=(q||'').trim().toLowerCase();
       return all.filter(g=>{
         if (side && !g.sides?.[side]) return false;
         if (!qq) return true;
@@ -123,20 +99,17 @@
 
     get(id){ return (storage.get(K_GROUPS, [])||[]).find(g=>g.id===id); },
     upsert(group){
-      const arr = storage.get(K_GROUPS, [])||[];
-      const i = arr.findIndex(g=>g.id===group.id);
-      group.updatedAt = now();
-      if (i>=0) arr[i]=group; else { group.createdAt=now(); arr.unshift(group); }
+      const arr=storage.get(K_GROUPS, [])||[];
+      const i=arr.findIndex(g=>g.id===group.id);
+      group.updatedAt=now();
+      if(i>=0) arr[i]=group; else { group.createdAt=now(); arr.unshift(group); }
       storage.set(K_GROUPS, arr); return group;
     },
     remove(id){ storage.set(K_GROUPS, (storage.get(K_GROUPS, [])||[]).filter(g=>g.id!==id)); },
     create({nr,title, zeichnungsNr, material, drawing=null, notes=''}) {
-      return this.upsert({
-        id:uid(), nr:(nr||'').trim()||String(Math.floor(Math.random()*1e6)),
-        title:(title||'Untitled').trim(), zeichnungsNr:(zeichnungsNr||'').trim(),
-        material:(material||'').trim(), drawing, notes,
-        sides:{RO:emptySide('RO'), RU:emptySide('RU')}, createdAt:now(), updatedAt:now()
-      });
+      return this.upsert({ id:uid(), nr:(nr||'').trim()||String(Math.floor(Math.random()*1e6)),
+        title:(title||'Untitled').trim(), zeichnungsNr:(zeichnungsNr||'').trim(), material:(material||'').trim(),
+        drawing, notes, sides:{RO:emptySide('RO'), RU:emptySide('RU')}, createdAt:now(), updatedAt:now() });
     },
     live(){ return storage.get(K_LIVE, {RO:null,RU:null}); },
     applyLive(id, side){
@@ -146,16 +119,13 @@
     }
   };
 
-  // -------- UI --------
   const SetupUI = {
     state:{ q:'', side:'', list:[] },
     els:{},
 
     mount({qInput, listWrap, lastWrap, chipsSides, newBtn}){
       this.els={ qInput, listWrap, lastWrap, chipsSides, newBtn };
-
-      // гарантированная инициализация (сид/миграция)
-      Setup.ensureSeeds();
+      Setup.ensureSeeds(); // гарантируем данные
 
       qInput.addEventListener('input', CT.debounce(()=>{ this.state.q=qInput.value; this.render(); },200));
       chipsSides.addEventListener('click',(e)=>{
@@ -164,7 +134,6 @@
         b.classList.add('active'); this.state.side=b.dataset.side||''; this.render();
       });
       newBtn.addEventListener('click', ()=> this.openEditor( Setup.create({nr:'',title:'Neues Programm'}) ));
-
       this.render();
     },
 
@@ -173,10 +142,11 @@
     },
 
     render(){
-      // авто-исправление: если вдруг пусто — ещё раз ensure
       let list = Setup.list({q:this.state.q, side:this.state.side});
-      if (!list.length){ Setup.ensureSeeds(); list = Setup.list({q:this.state.q, side:this.state.side}); }
-      this.state.list = list;
+      // Диагностика внизу списка
+      const diag = document.getElementById('diag');
+      diag.style.display='block';
+      diag.textContent = `Groups: ${list.length} • Raw: ${(storage.get(K_GROUPS,[])||[]).length} • Old: ${(storage.get('CT_PROGS_V1',[])||[]).length}`;
 
       // Hero
       this.els.lastWrap.innerHTML='';
@@ -210,7 +180,7 @@
         const bDel=document.createElement('button'); bDel.className='btn btn--outline is-sm'; bDel.textContent='Löschen';
         bOpen.onclick=()=>this.openEditor(g);
         bInfo.onclick=()=>this.openInfo(g);
-        bDel.onclick =()=>CT.ui.confirm({title:'Löschen?',msg:`${g.title} — ${g.nr}`}).then(ok=>{ if(ok){ Setup.remove(g.id); this.render(); }});
+        bDel.onclick =()=>CT.ui.confirm({title:'Лёшить?',msg:`${g.title} — ${g.nr}`}).then(ok=>{ if(ok){ Setup.remove(g.id); this.render(); }});
         right.append(bOpen,bInfo,bDel); row.append(right); this.els.listWrap.append(row);
       });
     },
@@ -226,7 +196,7 @@
     },
 
     openEditor(groupInit){
-      let draft = JSON.parse(JSON.stringify(groupInit||{}));
+      let draft=JSON.parse(JSON.stringify(groupInit||{}));
       const box=document.createElement('div');
 
       const img=document.createElement('img'); img.src=draft.drawing||this.ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px'; img.style.marginBottom='10px';
@@ -337,7 +307,7 @@
     }
   };
 
-  // --- гарантированная инициализация на загрузке модуля ---
+  // Инициализация
   try { Setup.ensureSeeds(); } catch(e) {}
 
   global.Setup = Setup;
