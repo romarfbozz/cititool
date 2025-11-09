@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>CitiTool • Setup</title>
-<link rel="stylesheet" href="./ui/neo.css">
+<link rel="stylesheet" href="./ui/neo.css?v=20251109">
 <style>
 .grid-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .slot{border:1px solid #edf1f7;border-radius:16px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
@@ -24,6 +24,7 @@
 .kp .txt .t{font-weight:800}
 .kp .txt .m{color:#6b7a90;font-size:13px}
 .empty{padding:12px;border:1px dashed #dbe5ff;border-radius:14px;background:#fff}
+.diag{margin-top:10px;padding:10px;border-radius:12px;border:1px solid #ffe6a8;background:#fff8e1;color:#7a5a00;font:12px/1.4 system-ui}
 @media (max-width:560px){ .grid-slots{grid-template-columns:repeat(2,1fr)} }
 </style>
 </head>
@@ -64,6 +65,7 @@
       </div>
     </div>
     <div class="list" id="listWrap"></div>
+    <div id="diag" class="diag" style="display:none"></div>
   </section>
 
 </main>
@@ -78,20 +80,31 @@
   </div>
 </nav>
 
-<script src="./ui/neo.js"></script>
-<script src="./ui/docs.js"></script>
-<script src="./ui/setup.js"></script>
-<script>
-CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
-CT.neo.shrinkOnScroll();
-CT.neo.setActiveDock('setup');
+<script src="./ui/neo.js?v=20251109" defer></script>
+<script src="./ui/docs.js?v=20251109" defer></script>
+<script src="./ui/setup.js?v=20251109" defer></script>
+<script defer>
+document.addEventListener('DOMContentLoaded', ()=>{
+  CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
+  CT.neo.shrinkOnScroll();
+  CT.neo.setActiveDock('setup');
 
-SetupUI.mount({
-  qInput: document.getElementById('q'),
-  listWrap: document.getElementById('listWrap'),
-  lastWrap: document.getElementById('lastWrap'),
-  chipsSides: document.getElementById('chipsSides'),
-  newBtn: document.getElementById('btnNewProg')
+  // жёсткий запуск + диагностика
+  try { if (window.Setup?.ensureSeeds) Setup.ensureSeeds(); } catch(e){ console.error(e); }
+
+  if (window.SetupUI?.mount) {
+    SetupUI.mount({
+      qInput: document.getElementById('q'),
+      listWrap: document.getElementById('listWrap'),
+      lastWrap: document.getElementById('lastWrap'),
+      chipsSides: document.getElementById('chipsSides'),
+      newBtn: document.getElementById('btnNewProg')
+    });
+  } else {
+    const d=document.getElementById('diag');
+    d.style.display='block';
+    d.textContent='SetupUI не загрузился. Скрипт кэшируется. Обновил URL с версией — перезагрузка страницы подтянет новый JS.';
+  }
 });
 </script>
 </body>
