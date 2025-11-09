@@ -1,252 +1,100 @@
 <!doctype html>
 <html lang="de">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>CitiTool • Setup</title>
-  <link rel="stylesheet" href="./ui/core.css">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>CitiTool • Setup</title>
+<link rel="stylesheet" href="./ui/neo.css">
+<style>
+/* локальные акценты */
+.grid-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.slot{border:1px solid #edf1f7;border-radius:16px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
+.slot .ph{height:84px;background:#f5f8ff;display:grid;place-items:center;border-bottom:1px solid #edf1f7}
+.slot .ph img{max-width:100%;max-height:84px;object-fit:cover}
+.slot .meta{padding:10px}
+.slot .meta .t{font-weight:800}
+.slot .meta .n{color:#6b7a90;font-size:13px}
+.ro-ru{display:flex;gap:8px;margin:4px 0 12px}
+.ro-ru .tab{padding:8px 12px;border:1px solid #dbe5ff;background:#fff;border-radius:12px;font-weight:800;cursor:pointer}
+.ro-ru .tab.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
+.badge-live{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:#2d6cdf;font-weight:800;padding:0 10px}
+.hero-mini{display:grid;gap:10px}
+.kp{display:flex;align-items:center;gap:10px}
+.kp img{width:56px;height:56px;border-radius:12px;object-fit:cover;border:1px solid #edf1f7;background:#fff}
+.kp .txt{display:grid}
+.kp .txt .t{font-weight:800}
+.kp .txt .m{color:#6b7a90;font-size:13px}
+@media (max-width:560px){ .grid-slots{grid-template-columns:repeat(2,1fr)} }
+</style>
 </head>
-<body data-active="setup">
+<body>
 
-<!-- AppBar (Neo) -->
+<div class="hero-bg"><div class="hero-grid"></div></div>
+
 <header class="appbar">
   <div class="wrap">
-    <a class="ct-logo" href="./index.html">
-      <span class="mark" aria-hidden="true">CT</span>
-      <span class="tit"><b>CitiTool</b><small>Setup</small></span>
-    </a>
+    <div class="logo-line">
+      <div class="ct-badge">CT</div>
+      <div class="ct-word"><b>CITI‧TOOL</b></div>
+    </div>
     <div class="actions">
-      <button class="btn brand sm" id="btnNewProg">Neues Programm</button>
-      <button class="icon-btn" data-ct="search-toggle" aria-label="Suchen">
-        <svg><use href="./ui/icons.svg#search"/></svg>
-      </button>
+      <button class="btn brand" id="btnNewProg">Neues Programm</button>
+      <div class="search" id="searchBox">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+        <input type="search" placeholder="Suchen…" id="q" autocomplete="off">
+      </div>
     </div>
   </div>
 </header>
-<div class="searchbar collapsed">
-  <input class="field" id="q" type="search" placeholder="Suche im Setup…">
-</div>
 
-<main class="container">
-  <!-- Карточка программы -->
-  <section class="section" id="progCard">
-    <div class="row between" style="align-items:flex-start; gap:1rem">
-      <div style="flex:1 1 auto; min-width:0">
-        <h2 id="pTitle" style="margin:0 0 6px">Programm wählen…</h2>
-        <div class="muted" id="pMeta">Nr — • Seite —</div>
-      </div>
-      <div class="imgwrap" style="width:140px; min-width:140px; aspect-ratio:1/1; border:1px dashed #e0eafc; border-radius:16px; overflow:hidden">
-        <img id="pImg" alt="kein Foto" style="display:none">
-        <div id="pNo" class="badge" style="height:100%; width:100%; border-radius:16px; background:#f5f8ff; display:grid; place-items:center">kein Foto</div>
-      </div>
-    </div>
+<main class="main">
 
-    <div class="row" style="margin-top:12px; gap:.5rem; flex-wrap:wrap">
-      <button class="btn sm" id="btnRO">RO (G54)</button>
-      <button class="btn sm" id="btnRU">RU (G55)</button>
-      <button class="btn brand" id="btnApply">In Live anwenden</button>
-      <button class="btn ghost" id="btnEditProg">Bearbeiten</button>
-    </div>
-  </section>
-
-  <!-- Слоты -->
+  <!-- Hero: последние три -->
   <section class="section">
-    <h2>Setup (Live)</h2>
-    <div id="slots" class="stack"></div>
+    <h2>Zuletzt hinzugefügt</h2>
+    <div class="hero-mini" id="lastWrap"></div>
   </section>
+
+  <!-- Список программ -->
+  <section class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 4px 12px">
+      <h2 style="margin:0">Programme</h2>
+      <div class="chips" id="chipsSides">
+        <button class="btn btn--outline is-sm" data-side="">Alle</button>
+        <button class="btn btn--outline is-sm" data-side="RO">RO</button>
+        <button class="btn btn--outline is-sm" data-side="RU">RU</button>
+      </div>
+    </div>
+    <div class="list" id="listWrap"></div>
+  </section>
+
 </main>
 
-<nav class="dock" id="dock"></nav>
+<nav class="dock">
+  <div class="wrap">
+    <a href="./index.html"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
+    <a href="./setup.html" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2H2V14z"/></svg><small>Setup</small></a>
+    <a href="./tools.html"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
+    <a href="./setup.html"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
+    <a href="./docs.html"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+  </div>
+</nav>
 
-<script src="./ui/core.js"></script>
-<script src="./ui/dock.js"></script>
+<script src="./ui/neo.js"></script>
+<script src="./ui/docs.js"></script>
+<script src="./ui/setup.js"></script>
 <script>
-CT.ready(()=>{
-  CT.ensureSeeds?.();
-  // безопасные ключи
-  const K = (window.CT_KEYS||{});
-  const KEY_PROGS = K.PROGS || 'CT_PROGS';
-  const KEY_TOOLS = K.TOOLS || 'CT_TOOLS';
+CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
+CT.neo.shrinkOnScroll();
+CT.neo.setActiveDock('setup');
 
-  // состояние страницы
-  let side = 'RO';                // RO / RU
-  let cur = CT.storage.read(KEY_PROGS, [])[0] || null;   // активная программа
-
-  // элементы
-  const elTitle = document.getElementById('pTitle');
-  const elMeta  = document.getElementById('pMeta');
-  const elImg   = document.getElementById('pImg');
-  const elNo    = document.getElementById('pNo');
-  const slotsEl = document.getElementById('slots');
-
-  // helpers
-  function progMeta(p){ return `Nr ${p.nr||'—'} • Seite ${side} (${side==='RO'?'G54':'G55'})`; }
-  function readProgs(){ return CT.storage.read(KEY_PROGS, []); }
-  function writeProgs(arr){ CT.storage.write(KEY_PROGS, arr); }
-  function readTools(){ return CT.storage.read(KEY_TOOLS, []); }
-
-  // рендер карточки
-  function renderHeader(){
-    if(!cur){
-      elTitle.textContent = 'Programm wählen…';
-      elMeta.textContent  = 'Nr — • Seite —';
-      elImg.style.display='none'; elNo.style.display='grid';
-      return;
-    }
-    elTitle.textContent = `${cur.title||'Unbenannt'} — ${cur.nr||'—'}`;
-    elMeta.textContent  = progMeta(cur);
-    if(cur.img){
-      elImg.src = cur.img; elImg.style.display='block'; elNo.style.display='none';
-    }else{
-      elImg.style.display='none'; elNo.style.display='grid';
-    }
-  }
-
-  // рендер слотов
-  function renderSlots(){
-    slotsEl.innerHTML='';
-    const maxSlots = cur?.slots?.length || 0;
-    if(!cur){ slotsEl.innerHTML = '<div class="muted">Keine Slots. Lege ein Programm an.</div>'; return; }
-    cur.slots.forEach((s,idx)=>{
-      const card = document.createElement('div');
-      card.className='card';
-      card.innerHTML = `
-        <div class="row between" style="align-items:center">
-          <div class="row" style="gap:.6rem; align-items:center">
-            <span class="badge">${s.code||('T'+String(idx+1).padStart(2,'0')+String(idx+1).padStart(2,'0'))}</span>
-            <div>
-              <div style="font-weight:800">${CT.escape(s.title||('Slot #'+(idx+1)))}</div>
-              <div class="muted">${s.iso||''}</div>
-            </div>
-          </div>
-          <div class="row" style="gap:.5rem">
-            <button class="btn sm" data-i="${idx}" data-act="switch">Wechseln</button>
-            <button class="btn sm warn" data-i="${idx}" data-act="remove">Entfernen</button>
-          </div>
-        </div>`;
-      slotsEl.appendChild(card);
-    });
-    // Пустые слоты?
-    if(maxSlots<5){
-      for(let i=maxSlots;i<5;i++){
-        const empty = document.createElement('div');
-        empty.className='card row between';
-        empty.innerHTML = `<div><b>#${i+1} • Frei</b><div class="muted">—</div></div>
-                           <button class="btn sm" data-i="${i}" data-act="add">Hinzufügen</button>`;
-        slotsEl.appendChild(empty);
-      }
-    }
-  }
-
-  // выбор инструмента
-  function pickTool(callback){
-    const tools = readTools();
-    if(!tools.length){ CT.toast('Keine Werkzeuge','warn'); return; }
-    let html = `<div class="stack">`;
-    tools.forEach((t,i)=>{
-      html += `<label class="row" style="gap:.5rem; align-items:center">
-                 <input type="radio" name="t" value="${i}">
-                 <span class="badge">${CT.escape(t.code||'T')}</span> <b>${CT.escape(t.title||'Werkzeug')}</b>
-               </label>`;
-    });
-    html += `</div>`;
-    CT.openModal({title:'Werkzeug wählen', html, okText:'Übernehmen', onOk:()=>{
-      const idx = +document.querySelector('input[name="t"]:checked')?.value;
-      if(isNaN(idx)) return;
-      callback(tools[idx]);
-    }});
-  }
-
-  // обработчики слотов
-  slotsEl.addEventListener('click', e=>{
-    const b = e.target.closest('button[data-act]');
-    if(!b||!cur) return;
-    const i = +b.dataset.i;
-    const act = b.dataset.act;
-    if(act==='switch'){
-      pickTool(tool=>{
-        cur.slots[i] = { title:tool.title, iso:tool.iso||'', code:tool.code };
-        const arr = readProgs(); const k = arr.findIndex(p=>p.id===cur.id); if(k>-1){arr[k]=cur; writeProgs(arr);}
-        renderSlots();
-      });
-    }else if(act==='remove'){
-      cur.slots[i] = { title:`#${i+1} • Frei`, iso:'', code:'' };
-      const arr = readProgs(); const k = arr.findIndex(p=>p.id===cur.id); if(k>-1){arr[k]=cur; writeProgs(arr);}
-      renderSlots();
-    }else if(act==='add'){
-      pickTool(tool=>{
-        if(!cur.slots[i]) cur.slots[i]={};
-        cur.slots[i] = { title:tool.title, iso:tool.iso||'', code:tool.code };
-        const arr = readProgs(); const k = arr.findIndex(p=>p.id===cur.id); if(k>-1){arr[k]=cur; writeProgs(arr);}
-        renderSlots();
-      });
-    }
-  });
-
-  // кнопки карточки
-  document.getElementById('btnRO').onclick=()=>{ side='RO'; renderHeader(); };
-  document.getElementById('btnRU').onclick=()=>{ side='RU'; renderHeader(); };
-  document.getElementById('btnApply').onclick=()=> CT.toast('Live angewendet','ok');
-
-  // редактирование программы (включая загрузку Zeichnung)
-  document.getElementById('btnEditProg').onclick=()=>{
-    if(!cur){ CT.toast('Kein Programm','warn'); return; }
-    CT.openModal({
-      title:'Programm bearbeiten',
-      html:`<label class="fld">Titel<input id="e_t" value="${CT.escape(cur.title||'')}" /></label>
-            <label class="fld">Nummer<input id="e_n" value="${CT.escape(cur.nr||'')}" /></label>
-            <label class="fld">Zeichnung/Foto<input id="e_img" type="file" accept="image/*"></label>`,
-      okText:'Speichern',
-      onOk:()=>{
-        const arr = readProgs(); const k = arr.findIndex(p=>p.id===cur.id);
-        if(k>-1){
-          arr[k].title = document.getElementById('e_t').value||arr[k].title;
-          arr[k].nr    = document.getElementById('e_n').value||arr[k].nr;
-          const f = document.getElementById('e_img').files?.[0];
-          if(f){
-            const reader = new FileReader();
-            reader.onload = ()=>{ arr[k].img = String(reader.result); writeProgs(arr); cur=arr[k]; renderHeader(); };
-            reader.readAsDataURL(f);
-            return; // сохранить после onload
-          }
-          writeProgs(arr); cur=arr[k]; renderHeader();
-        }
-      }
-    });
-  };
-
-  // создать новое
-  document.getElementById('btnNewProg').onclick=()=>{
-    CT.openModal({
-      title:'Neues Programm',
-      html:`<label class="fld">Titel<input id="n_t" placeholder="Name"></label>
-            <label class="fld">Nummer<input id="n_nr" placeholder="1001234" inputmode="numeric"></label>`,
-      okText:'Anlegen',
-      onOk:()=>{
-        const arr = readProgs();
-        const p = { id:CT.uid(), title:(document.getElementById('n_t').value||'Programm'),
-                    nr:(document.getElementById('n_nr').value||''), img:'', slots:[
-                      {title:'CNMG120408-PM', iso:'ISO-P', code:'T0101'},
-                      {title:'#2 • Frei', iso:'', code:''},
-                      {title:'#3 • Frei', iso:'', code:''},
-                      {title:'#4 • Frei', iso:'', code:''},
-                      {title:'#5 • Frei', iso:'', code:''}
-                    ]};
-        arr.unshift(p); writeProgs(arr); cur=p; renderHeader(); renderSlots(); CT.toast('Angelegt','ok');
-      }
-    });
-  };
-
-  // инициализация
-  renderHeader(); renderSlots();
-
-  // Поиск — фильтрует по названию слотов
-  CT.bindGlobalSearch(q=>{
-    q=q.trim().toLowerCase();
-    document.querySelectorAll('#slots .card').forEach(c=>{
-      c.style.display = !q || c.textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
-  });
+Setup.ensureSeeds();
+SetupUI.mount({
+  qInput: document.getElementById('q'),
+  listWrap: document.getElementById('listWrap'),
+  lastWrap: document.getElementById('lastWrap'),
+  chipsSides: document.getElementById('chipsSides'),
+  newBtn: document.getElementById('btnNewProg')
 });
 </script>
 </body>
