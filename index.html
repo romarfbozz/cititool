@@ -5,30 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>CitiTool • Dashboard</title>
 <style>
-:root{ --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --accent:#ffb020; --hair:#e9eef6;
-  --shadow:0 10px 30px rgba(13,27,42,.08); --dockH:78px; }
-*{box-sizing:border-box} html,body{height:100%}
+:root{
+  --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --accent:#ffb020;
+  --hair:#e9eef6; --shadow:0 10px 30px rgba(13,27,42,.08); --dockH:78px;
+  --r1:18px; --r2:22px;
+}
+
+/* ---------- Base ---------- */
+*{box-sizing:border-box}
+html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,Inter,Roboto,system-ui}
-
-/* AppBar */
-.appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
-  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.7));border-bottom:1px solid var(--hair)}
-.appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
-.logo-line{display:flex;align-items:center;gap:10px}
-.badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
-  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);color:#fff;font-weight:900;box-shadow:inset 0 0 0 1px #dce7ff}
-.word{font:900 22px/1 "Inter",system-ui;letter-spacing:-.4px}
-.word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
-.search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;
-  transition:width .35s;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
-.search.active{width:min(56vw,260px)}
-.search svg{position:absolute;left:12px;width:18px;height:18px;fill:#8aa0c4}
-.search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter;color:var(--ink)}
-
-/* Layout */
-.main{max-width:1040px;margin:0 auto;padding:12px 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
-.section{background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow);padding:14px}
-.section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter}
 .muted{color:var(--muted)}
 .btn{height:38px;padding:0 14px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
@@ -36,26 +22,50 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .pill{font:700 11px/1 Inter;color:#2d6cdf;background:#eef3ff;border:1px solid #d6e5ff;padding:6px 8px;border-radius:999px}
 .pill.warn{color:#8a5a00;background:#fff6e0;border-color:#ffe1a6}
 
-/* Hero Today */
-.hero{position:relative;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow);padding:14px 12px;background:rgba(255,255,255,.9);overflow:hidden}
-.hero h1{margin:0 0 6px;font:900 20px/1.1 Inter;letter-spacing:-.2px}
-.hero .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.hero .chips{display:flex;gap:8px;flex-wrap:wrap}
-.hero .chip{display:flex;align-items:center;gap:8px;border:1px solid #e1e9ff;background:#f6f9ff;border-radius:999px;padding:8px 10px}
-.hero .chip b{font:900 14px/1 Inter}
-.hero .bg{position:absolute;inset:0;pointer-events:none;opacity:.6;
-  background:
-    radial-gradient(1100px 300px at 60% -10%, rgba(45,108,223,.12), transparent 70%),
-    radial-gradient(900px 280px at 5% 30%, rgba(255,160,50,.08), transparent 70%),
-    linear-gradient(180deg,#fff 0%, #f3f6fb 60%, #eef2f9 100%);
-  mask-image: linear-gradient(#000 75%, transparent);
-}
-.hero .grid{position:absolute;inset:0;background:
-  repeating-linear-gradient(0deg, rgba(13,27,42,.06) 0 1px, transparent 1px 40px),
-  repeating-linear-gradient(90deg, rgba(13,27,42,.05) 0 1px, transparent 1px 40px);
-  filter: blur(.2px) saturate(.9);}
+/* ---------- Unified Brand (как в других модулях) ---------- */
+.brand{display:flex;align-items:center;gap:10px}
+.brand .badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);color:#fff;
+  font:900 14px/1 Inter,system-ui;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
+.brand .word{font:900 22px/1 "Inter",system-ui;letter-spacing:-.4px}
+.brand .word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* Checkliste */
+/* ---------- AppBar (как в остальном) ---------- */
+.appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.70));border-bottom:1px solid var(--hair)}
+.appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;
+  transition:width .35s;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
+.search.active{width:min(56vw,260px)}
+.search svg{position:absolute;left:12px;width:18px;height:18px;fill:#8aa0c4}
+.search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter;color:var(--ink)}
+
+/* ---------- Brand Banner под AppBar ---------- */
+.brand-hero{position:relative;max-width:1040px;margin:12px auto 8px;padding:0 16px}
+.brand-hero picture,.brand-hero img{display:block;width:100%;height:140px;border-radius:22px;object-fit:cover;
+  filter:saturate(1.02) contrast(1.02);box-shadow:var(--shadow)}
+.brand-hero__shade{position:absolute;inset:0 16px;height:140px;border-radius:22px;pointer-events:none;opacity:.85;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,.00) 0%, rgba(0,0,0,.08) 70%),
+    radial-gradient(120% 100% at 80% 0%, rgba(0,0,0,.10), transparent 60%)}
+@media (min-width:768px){ .brand-hero picture,.brand-hero img,.brand-hero__shade{height:180px} }
+/* fade-in */
+.brand-hero img{opacity:0;transform:translateY(4px);transition:opacity .18s ease,transform .18s ease}
+.brand-hero img:is(:not([src=""])){opacity:1;transform:none}
+/* fallback надпись */
+.brand-hero picture:has(img[decoding="async"]:not([complete]))::after{
+  content:"CitiTool";position:absolute;inset:0 16px;height:140px;border-radius:22px;display:grid;place-items:center;
+  font:900 28px/1 Inter,system-ui;color:#1e2b40;background:
+  radial-gradient(900px 400px at 10% 30%, rgba(45,108,223,.10), transparent 70%),
+  linear-gradient(180deg,#fff 0%, #f3f6fb 60%, #eef2f9 100%)}
+@media (min-width:768px){ .brand-hero picture:has(img[decoding="async"]:not([complete]))::after{height:180px;font-size:34px} }
+
+/* ---------- Layout ---------- */
+.main{max-width:1040px;margin:0 auto;padding:0 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
+.section{background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow);padding:14px}
+.section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter}
+
+/* ---------- Checkliste ---------- */
 .chk-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .list{display:grid;gap:8px}
 .task{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
@@ -63,7 +73,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .drag{width:22px;text-align:center;color:#8aa0c4;font-weight:900}
 .task.done .title{text-decoration:line-through;color:#8aa0c4}
 
-/* Produktion */
+/* ---------- Produktion ---------- */
 .orders{display:grid;gap:10px}
 .order{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #edf1f7;border-radius:16px}
 .order .t{font:900 18px/1.2 Inter}
@@ -72,13 +82,24 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .badge{display:inline-grid;place-items:center;min-width:46px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
 .i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
 
-/* Feeds */
+/* ---------- Unified Modal / Sheet (как в других модулях) ---------- */
+.backdrop{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:900}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e9eef6;
+  border-top-left-radius:20px;border-top-right-radius:20px;box-shadow:0 -16px 40px rgba(13,27,42,.15);
+  padding:14px 16px 18px;z-index:910;max-height:78vh;overflow:auto}
+.sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.sheet header h3{margin:0;font:800 18px/1.2 Inter}
+.sheet header .close{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
+.sheet .rowf{display:grid;gap:6px;margin:8px 0}
+.sheet .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
+
+/* ---------- Feeds ---------- */
 .feed{display:grid;gap:8px}
 .rowfeed{display:flex;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
 .time{font:700 12px/1 Inter;color:#586a85;width:72px}
 .text{font-weight:600}
 
-/* KPI column (Übersicht) */
+/* ---------- KPI column (Übersicht) ---------- */
 .kpicol{display:grid;gap:8px}
 .krow{display:grid;grid-template-columns:140px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px}
 .kname{font-weight:700}
@@ -86,21 +107,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .kbar>i{display:block;height:100%;background:#2d6cdf}
 .kval{font:900 16px/1 Inter}
 
-/* Backup & Restore */
+/* ---------- Backup & Restore ---------- */
 .br-wrap{display:grid;gap:10px}
 .br-head{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
 .br-actions{display:flex;gap:8px;flex-wrap:wrap}
 .small{font-size:12px;color:#64748b}
 
-/* Modal sheet (Produktion editor) */
-.sheet-back{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:60}
-.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e9eef6;box-shadow:0 -16px 40px rgba(13,27,42,.15);
-  border-top-left-radius:20px;border-top-right-radius:20px;padding:14px 16px 18px;z-index:61;max-height:78vh;overflow:auto}
-.sheet h3{margin:0 0 8px;font:800 18px/1.2 Inter}
-.rowf{display:grid;gap:6px;margin:8px 0}
-.btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
-
-/* Dock */
+/* ---------- Dock ---------- */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
 .dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
@@ -112,12 +125,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 </head>
 <body>
 
+<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
-    <div class="logo-line">
-      <div class="badge">CT</div>
-      <div class="word"><b>CITI‧TOOL</b></div>
-    </div>
+    <div class="brand"><div class="badge">CT</div><div class="word"><b>CITI‧TOOL</b></div></div>
     <div class="search" id="searchBox">
       <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
       <input type="search" placeholder="Suchen…" id="q"/>
@@ -125,21 +136,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
   </div>
 </header>
 
+<!-- Brand Banner (под AppBar) -->
+<section class="brand-hero">
+  <picture>
+    <img src="/ui/assets/cititool-hero.jpg" alt="CitiTool — Turning & CNC" loading="lazy" decoding="async">
+  </picture>
+  <div class="brand-hero__shade" aria-hidden="true"></div>
+</section>
+
 <main class="main">
-
-  <!-- Hero Today -->
-  <section class="hero">
-    <div class="bg"></div><div class="grid"></div>
-    <div class="row">
-      <div>
-        <h1 id="heroTitle">Heute</h1>
-        <div class="muted" id="heroLine">—</div>
-      </div>
-      <div class="chips" id="heroChips"></div>
-    </div>
-    <div class="muted small" id="heroWarn" style="margin-top:6px;display:none;">⚠ Backup überfällig — bitte sichern.</div>
-  </section>
-
   <!-- Setup-Checkliste -->
   <section class="section">
     <h2>Setup-Checkliste</h2>
@@ -152,7 +157,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
     <div id="chkList" class="list"></div>
   </section>
 
-  <!-- Produktion -->
+  <!-- Produktion (кратко; детали в sheet по i) -->
   <section class="section">
     <h2>Produktion</h2>
     <div class="orders" id="orders"></div>
@@ -170,13 +175,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
     <div class="feed" id="recent"></div>
   </section>
 
-  <!-- Übersicht (низ страницы) -->
+  <!-- Übersicht (внизу) -->
   <section class="section">
     <h2>Übersicht</h2>
     <div class="kpicol" id="kpis"></div>
   </section>
 
-  <!-- Backup & Restore (низ страницы) -->
+  <!-- Backup & Restore (внизу) -->
   <section class="section">
     <div class="br-head">
       <h2 style="margin:0">Backup & Restore</h2>
@@ -189,10 +194,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
         <input type="file" id="fileRestore" accept="application/json" style="display:none"/>
         <button class="btn" id="doRestore">Wiederherstellen…</button>
       </div>
-      <div class="small">Sichert alle lokalen <b>CT_*</b>-Daten в один JSON и позволяет восстановить их позже.</div>
+      <div class="small">Sichert alle lokalen <b>CT_*</b>-Daten в один JSON и позволяет восстановить их später.</div>
     </div>
   </section>
-
 </main>
 
 <!-- Dock -->
@@ -217,7 +221,7 @@ const K={ PROG:'CT_PROGS_V1', TOOLS:'CT_TOOLS_V1', DOCS:'CT_DOCS_V1', PROD:'CT_P
           BK_INFO:'CT_BACKUP_INFO_V1' };
 const ALL_KEYS=[K.PROG,K.TOOLS,K.DOCS,K.PROD,K.CHECK,K.DOC_CATS,K.TOOL_CATS,K.LIVE,K.AS_MAT,K.AS_HIST,K.AS_FAS,K.AS_PASS];
 
-/* Seeds (минимум, если пусто) */
+/* Seeds (минимально) */
 (function seeds(){
   if(!Array.isArray(S.get(K.PROD))) S.set(K.PROD,[]);
   if(S.get(K.PROD).length===0){
@@ -235,34 +239,13 @@ const ALL_KEYS=[K.PROG,K.TOOLS,K.DOCS,K.PROD,K.CHECK,K.DOC_CATS,K.TOOL_CATS,K.LI
   if(!S.get(K.BK_INFO)) S.set(K.BK_INFO,{lastBackupAt:0});
 })();
 
-/* Search UI */
+/* Search */
 const searchBox=document.getElementById('searchBox'); const q=document.getElementById('q');
 searchBox.addEventListener('click',()=>{searchBox.classList.add('active'); q.focus();});
 q.addEventListener('blur',()=>{if(!q.value) searchBox.classList.remove('active');});
 
-/* Helpers */
-const pct=o=>{const t=Math.max(1,Number(o.total||0));const d=Math.max(0,Number(o.done||0));return Math.min(100,Math.round(d*100/t));};
-const today = d => (new Date(d).toDateString()===new Date().toDateString());
-
-/* Hero Today */
-function drawHero(){
-  const progs=S.get(K.PROG,[]), tools=S.get(K.TOOLS,[]), docs=S.get(K.DOCS,[]), prod=S.get(K.PROD,[]);
-  const mean = prod.length? Math.round(prod.reduce((s,o)=>s+pct(o),0)/prod.length) : 0;
-  const act  = [tools,docs,prod].flat().filter(x=>today(x.updatedAt||0)).length;
-  const total= progs.length+tools.length+docs.length+prod.length;
-
-  document.getElementById('heroTitle').textContent =
-    new Date().toLocaleDateString(undefined,{weekday:'short', day:'2-digit', month:'short'});
-  document.getElementById('heroLine').textContent = 'Lokal. Schnell. Übersichtlich.';
-
-  const chips=document.getElementById('heroChips'); chips.innerHTML='';
-  const mk=(label,val)=>{const c=document.createElement('div'); c.className='chip'; c.innerHTML=`<span class="muted">${label}</span><b>${val}</b>`; return c;}
-  chips.append(mk('Aktivität heute',act), mk('Ø Fortschritt', mean+'%'), mk('Datensätze', total));
-
-  // backup overdue hint in hero
-  const info=S.get(K.BK_INFO,{lastBackupAt:0}); const overdue = (now()-(info.lastBackupAt||0)) > 7*864e5;
-  const warn=document.getElementById('heroWarn'); warn.style.display = overdue ? '' : 'none';
-}
+/* Utils */
+const pct=o=>{const t=Math.max(1,Number(o.total||0));const d=Math.max(0,Number(o.done||0));return Math.min(100,Math.round(d*100/t));}
 
 /* Checkliste */
 const elList=document.getElementById('chkList');
@@ -304,28 +287,33 @@ document.getElementById('delDone').onclick=()=>{ saveCheck(loadCheck().filter(x=
 const wrapOrders=document.getElementById('orders');
 function loadOrders(){return (S.get(K.PROD,[])||[]).sort((a,b)=>b.createdAt-a.createdAt);}
 function saveOrders(a){S.set(K.PROD,a);}
-function pctOrder(o){const t=Math.max(1,Number(o.total||0));const d=Math.max(0,Number(o.done||0));return Math.min(100,Math.round(d*100/t));}
 function renderOrders(){
   wrapOrders.innerHTML='';
   loadOrders().forEach(o=>{
     const card=document.createElement('div'); card.className='order';
     const left=document.createElement('div');
     left.innerHTML=`<div class="t">${o.name}</div>
-      <div class="pbar"><i style="width:${pctOrder(o)}%"></i></div>
+      <div class="pbar"><i style="width:${pct(o)}%"></i></div>
       <div class="muted" style="margin-top:8px">${o.due||'—'}</div>`;
     const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
-    const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pctOrder(o)+'%';
+    const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pct(o)+'%';
     const info=document.createElement('button'); info.className='i-btn'; info.innerHTML='ℹ️'; info.title='Details';
-    info.onclick=()=>openEditor(o);
+    info.onclick=()=>openOrderSheet(o);
     right.append(badge,info);
     card.append(left,right);
     wrapOrders.append(card);
   });
 }
-function openEditor(order){
-  const back=document.createElement('div'); back.className='sheet-back';
+
+/* Unified Sheet (как в остальных модулях) */
+function openOrderSheet(order){
+  const back=document.createElement('div'); back.className='backdrop';
   const sheet=document.createElement('div'); sheet.className='sheet';
   sheet.innerHTML=`
+    <header>
+      <div class="brand"><div class="badge">CT</div><div class="word" style="font-size:18px"><b>CITI‧TOOL</b></div></div>
+      <button class="close" title="Schließen">✕</button>
+    </header>
     <h3>${order.name}</h3>
     <div class="rowf"><label>Done</label><input id="fD" type="number" class="inp" value="${order.done||0}"></div>
     <div class="rowf"><label>Total</label><input id="fT" type="number" class="inp" value="${order.total||0}"></div>
@@ -338,14 +326,15 @@ function openEditor(order){
       <button class="btn" id="del">Löschen</button>
       <button class="btn brand" id="save">Speichern</button>
     </div>`;
-  const lockScroll=()=>{document.body.style.overflow='hidden';}; const unlockScroll=()=>{document.body.style.overflow='';};
-  lockScroll();
-  back.addEventListener('click',()=>{document.body.removeChild(back);document.body.removeChild(sheet);unlockScroll();});
-  sheet.addEventListener('click',e=>e.stopPropagation());
+  const lock=()=>{document.body.style.overflow='hidden'}; const unlock=()=>{document.body.style.overflow=''}
+  lock();
+  back.addEventListener('click',()=>{sheet.remove(); back.remove(); unlock();});
+  sheet.querySelector('.close').onclick=()=>{back.click()};
   document.body.append(back,sheet);
+
   sheet.querySelector('#m10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Math.max(0,Number(d.value||0)-10);};
   sheet.querySelector('#p10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Number(d.value||0)+10;};
-  sheet.querySelector('#del').onclick=()=>{ if(confirm('Auftrag löschen?')){ saveOrders(loadOrders().filter(x=>x.id!==order.id)); drawHero(); drawKpis(); renderOrders(); back.click(); } };
+  sheet.querySelector('#del').onclick=()=>{ if(confirm('Auftrag löschen?')){ saveOrders(loadOrders().filter(x=>x.id!==order.id)); renderAll(); back.click(); } };
   sheet.querySelector('#save').onclick=()=>{
     order.done=Number(sheet.querySelector('#fD').value||0);
     order.total=Number(sheet.querySelector('#fT').value||0);
@@ -353,7 +342,7 @@ function openEditor(order){
     order.notes=sheet.querySelector('#fN').value||'';
     order.updatedAt=now();
     const arr=loadOrders(); const i=arr.findIndex(x=>x.id===order.id); if(i>=0) arr[i]=order; saveOrders(arr);
-    drawHero(); drawKpis(); renderOrders(); back.click();
+    renderAll(); back.click();
   };
 }
 
@@ -365,9 +354,9 @@ function renderFeed(){
   const docs =mk(S.get(K.DOCS ,[]), x=>`Dokument „${x.title||'—'}“ geändert`);
   const prod =mk(S.get(K.PROD ,[]), x=>`Auftrag ${x.name||'—'} aktualisiert`);
   const all=[...tools,...docs,...prod].sort((a,b)=>b.t-a.t).slice(0,3);
-  const fmtTime=(t)=>{ const d=new Date(t); const today=new Date(); 
-    if(d.toDateString()===today.toDateString()) return d.toTimeString().slice(0,5);
-    const yest=new Date(today); yest.setDate(today.getDate()-1);
+  const fmtTime=(t)=>{ const d=new Date(t); const T=new Date();
+    if(d.toDateString()===T.toDateString()) return d.toTimeString().slice(0,5);
+    const yest=new Date(T); yest.setDate(T.getDate()-1);
     if(d.toDateString()===yest.toDateString()) return 'Gestern';
     return d.toLocaleDateString(); };
   feed.innerHTML='';
@@ -398,7 +387,7 @@ function renderRecent(){
   });
 }
 
-/* KPI column */
+/* Übersicht */
 function drawKpis(){
   const progs=S.get(K.PROG,[]), tools=S.get(K.TOOLS,[]), docs=S.get(K.DOCS,[]), prod=S.get(K.PROD,[]);
   const doneCnt=prod.filter(o=>o.done>=o.total && o.total>0).length;
@@ -431,38 +420,27 @@ function renderBackupStatus(){
   const ts=info.lastBackupAt||0;
   const el=document.getElementById('bkStatus');
   if(!ts){ el.textContent='Noch kein Backup erstellt.'; }
-  else{
-    const d=new Date(ts);
-    el.textContent='Letztes Backup: '+ d.toLocaleString();
-  }
+  else{ el.textContent='Letztes Backup: ' + new Date(ts).toLocaleString(); }
   const overdue = (now()-ts) > 7*864e5;
   document.getElementById('bkIndicator').style.display = overdue ? '' : 'none';
-  // и в Hero
-  const warnHero = document.getElementById('heroWarn');
-  if(warnHero) warnHero.style.display = overdue ? '' : 'none';
 }
 document.getElementById('doBackup').onclick=()=>{
-  const out={};
-  ALL_KEYS.forEach(k=>{ const v=localStorage.getItem(k); if(v!==null) out[k]=JSON.parse(v); });
+  const out={}; ALL_KEYS.forEach(k=>{ const v=localStorage.getItem(k); if(v!==null) out[k]=JSON.parse(v); });
   const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='citi_backup.json'; a.click();
   URL.revokeObjectURL(a.href);
-  S.set(K.BK_INFO,{lastBackupAt:now()});
-  renderBackupStatus();
+  S.set(K.BK_INFO,{lastBackupAt:now()}); renderBackupStatus();
 };
-document.getElementById('doRestore').onclick=()=>{ document.getElementById('fileRestore').click(); };
+document.getElementById('doRestore').onclick=()=>document.getElementById('fileRestore').click();
 document.getElementById('fileRestore').addEventListener('change',async (e)=>{
   const f=e.target.files[0]; if(!f) return;
   try{
-    const text=await f.text(); const data=JSON.parse(text);
-    if(typeof data!=='object' || Array.isArray(data)) { alert('Falsches Format'); return; }
+    const data=JSON.parse(await f.text());
+    if(typeof data!=='object' || Array.isArray(data)){ alert('Falsches Format'); return; }
     if(!confirm('Alle Daten überschreiben?')) return;
-    Object.keys(data).forEach(k=>{
-      if(ALL_KEYS.includes(k)) localStorage.setItem(k, JSON.stringify(data[k]));
-    });
-    alert('Daten wiederhergestellt');
-    renderAll();
-  }catch(err){ alert('Fehler beim Wiederherstellen'); }
+    Object.keys(data).forEach(k=>{ if(ALL_KEYS.includes(k)) localStorage.setItem(k, JSON.stringify(data[k])); });
+    alert('Daten wiederhergestellt'); renderAll();
+  }catch{ alert('Fehler beim Wiederherstellen'); }
 });
 
 /* Dock padding */
@@ -472,8 +450,8 @@ function applyDockH(){
 }
 applyDockH(); new ResizeObserver(applyDockH).observe(document.getElementById('dock'));
 
-/* Render */
-function renderAll(){ drawHero(); renderCheck(); renderOrders(); renderFeed(); renderRecent(); drawKpis(); renderBackupStatus(); }
+/* Render all */
+function renderAll(){ renderCheck(); renderOrders(); renderFeed(); renderRecent(); drawKpis(); renderBackupStatus(); }
 renderAll();
 </script>
 </body>
