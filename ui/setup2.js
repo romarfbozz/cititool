@@ -116,37 +116,14 @@
       copyFromOtherSide(id, from, to){ const g=Setup2.get(id); if(!g) return; g.sides[to].slots = g.sides[from].slots.map(s=>({pos:s.pos, tnum:s.tnum||null, alias:s.alias||'', toolId:s.toolId||null})); Setup2.upsert(g); },
       clearAll(id, side){ const g=Setup2.get(id); if(!g) return; g.sides[side].slots.forEach(s=>{ s.tnum=null; s.alias=''; s.toolId=null; }); Setup2.upsert(g); },
       autonumber(id, side, pattern='T{pp}{pp}'){ const g=Setup2.get(id); if(!g) return; g.sides[side].slots.forEach(s=>{ const pp=String(s.pos).padStart(2,'0'); s.tnum = pattern.replaceAll('{pp}',pp); }); Setup2.upsert(g); },
-    },
-    migrateFromV1(){
-      const K_OLD='CT_PROGS_V1';
-      const old = storage.get(K_OLD,[]);
-      if(!Array.isArray(old) || !old.length) return {migrated:0};
-      const map = new Map();
-      old.forEach(p=>{
-        const key = (p.nr||p.title||'').toString(); if(!key) return;
-        if(!map.has(key)) map.set(key, normalizeGroup({
-          id: uid(), nr: p.nr||key, title: p.title||`Programm ${key}`,
-          zeichnungsNr: p.meta?.oLine||'', material: '',
-          drawing: p.drawing||null, notes:'',
-          sides:{RO:emptySide('RO'),RU:emptySide('RU')},
-          meta:{createdAt: p.createdAt||now(), updatedAt: p.updatedAt||now(), migratedFromV1:true}
-        }));
-        const g = map.get(key), side = (p.side==='RU')?'RU':'RO';
-        (p.slots||[]).forEach(s=>{
-          const i=Math.min(Math.max((s.pos||1)-1,0),SLOTS-1);
-          g.sides[side].slots[i] = {pos:i+1, tnum:s.tnum||null, alias:s.alias||'', toolId:s.toolId||null};
-        });
-      });
-      const merged = [...map.values()];
-      const cur = storage.get(K_PROG_V2,[])||[];
-      storage.set(K_PROG_V2, [...merged, ...cur]);
-      return {migrated: merged.length};
     }
   };
 
   /* ---------- UI ---------- */
   const Setup2UI = {
-    els:{}, state:{q:'', activeId:null, side:'RO', openSlot:null},
+    els:{}, 
+    state:{q:'', listQ:'', listCollapsed:false, activeId:null, side:'RO', openSlot:null, gridCollapsed:false},
+
     mount(opts){
       Setup2.ensureSeeds();
       this.els = opts;
@@ -162,20 +139,33 @@
       new ResizeObserver(calcSpacer).observe(opts.bottom.actions);
       if (opts.dockEl) new ResizeObserver(calcSpacer).observe(opts.dockEl);
 
-      // list & search
+      // sidebar: search + toggle
       const deb = (fn,ms)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms||220);} };
+      if(opts.listSearch){
+        opts.listSearch.addEventListener('input', deb(()=>{
+          this.state.listQ = opts.listSearch.value;
+          this.renderList();
+        }));
+      }
+      opts.listSearchClear?.addEventListener('click', ()=>{
+        this.state.listQ=''; opts.listSearch.value=''; this.renderList();
+      });
+      opts.listToggleBtn?.addEventListener('click', ()=>{
+        this.state.listCollapsed = !this.state.listCollapsed;
+        this.renderList();
+        opts.listToggleBtn.textContent = this.state.listCollapsed ? 'Einblenden' : 'Ausblenden';
+      });
+
+      // global search in AppBar (оставляем — фильтрует тоже)
       opts.searchInput?.addEventListener('input', deb(()=>{
         this.state.q = opts.searchInput.value;
         this.renderList();
       }));
+
+      // create
       opts.newBtn?.addEventListener('click', ()=>{
         const g = Setup2.create({title:'Neues Programm'});
         this.state.activeId = g.id; this.state.openSlot = null; this.renderAll();
-      });
-      opts.migrateBtn?.addEventListener('click', ()=>{
-        const {migrated} = Setup2.migrateFromV1();
-        this.toast(migrated?`Migriert: ${migrated}`:'Keine V1 Daten');
-        this.renderList();
       });
 
       // tabs
@@ -184,11 +174,16 @@
       t.RU.onclick = ()=>{ this.state.side='RU'; this.state.openSlot=null; this.applyTabs(); this.renderGrid(); };
       t.SBS.onclick= ()=>{ this.state.side='SBS'; this.state.openSlot=null; this.applyTabs(); this.renderGrid(); };
 
-      // bar actions
+      // actions bar
       opts.bar.clearAll.onclick = ()=>{ const id=this.state.activeId; const side=this.sideOne(); if(!id||!side) return; Setup2.slot.clearAll(id, side); this.markDraft(); this.renderGrid(); };
       opts.bar.autoNum.onclick  = ()=>{ const id=this.state.activeId; const side=this.sideOne(); if(!id||!side) return; Setup2.slot.autonumber(id, side); this.markDraft(); this.renderGrid(); };
       opts.bar.clone.onclick    = ()=>{ const id=this.state.activeId; if(!id) return;
         const from = this.sideOne(); const to = from==='RO'?'RU':'RO'; Setup2.slot.copyFromOtherSide(id, from, to); this.markDraft(); this.renderGrid(); };
+      opts.bar.toggleGrid.onclick = ()=>{
+        this.state.gridCollapsed = !this.state.gridCollapsed;
+        opts.bar.toggleGrid.textContent = this.state.gridCollapsed?'Slots einblenden':'Slots ausblenden';
+        this.renderGrid();
+      };
 
       // drawing pick
       opts.drawingPickBtn.onclick = ()=> opts.drawingInput.click();
@@ -228,8 +223,14 @@
     renderAll(){ this.renderList(); this.renderHero(); this.applyTabs(); this.renderGrid(); this.renderLiveBadges(); },
     renderList(){
       const wrap = this.els.listWrap; if(!wrap) return; wrap.innerHTML='';
-      const list = Setup2.list({q:this.state.q});
-      if(!list.length){ const e=document.createElement('div'); e.className='muted'; e.textContent='Noch keine Programme.'; wrap.append(e); return; }
+      if(this.state.listCollapsed){
+        const e=document.createElement('div'); e.className='muted'; e.style.padding='6px 4px';
+        const total = Setup2.list({q:this.state.q}).length;
+        e.textContent = `Versteckt • ${total} Programme`;
+        wrap.append(e); return;
+      }
+      const list = Setup2.list({q:(this.state.q||'') + ' ' + (this.state.listQ||'')});
+      if(!list.length){ const e=document.createElement('div'); e.className='muted'; e.textContent='Keine Treffer.'; wrap.append(e); return; }
       const live = Setup2.live.get();
       list.forEach(g=>{
         const row=document.createElement('div'); row.className='row';
@@ -270,6 +271,11 @@
     },
     renderGrid(){
       const grid=this.els.grid; grid.innerHTML='';
+      if(this.state.gridCollapsed){
+        const b=document.createElement('div'); b.className='muted';
+        b.style.margin='10px 4px'; b.textContent='Slots versteckt';
+        grid.append(b); return;
+      }
       const g = Setup2.get(this.state.activeId); if(!g){ grid.innerHTML='<div class="muted">Kein Programm gewählt</div>'; return; }
 
       const sides = this.state.side==='SBS' ? ['RO','RU'] : [this.state.side];
@@ -295,7 +301,6 @@
       meta.innerHTML=`<div class="t">Pos ${slot.pos} • ${slot.tnum||'—'}</div><div class="n">${slot.alias || tool?.name || 'kein Werkzeug'}</div>`;
       const btn=document.createElement('button'); btn.className='btn is-sm'; btn.textContent = (this.state.openSlot===`${side}:${slot.pos}`)?'Schließen':'Bearbeiten';
       btn.onclick = ()=>{
-        // только один открытый редактор
         this.state.openSlot = (this.state.openSlot===`${side}:${slot.pos}`)? null : `${side}:${slot.pos}`;
         const parent = art.parentElement;
         const fresh = this.renderSlotCard(Setup2.get(this.state.activeId), side, slot);
