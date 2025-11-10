@@ -3,15 +3,99 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<title>CitiTool • Neo</title>
-<link rel="stylesheet" href="./ui/neo.css">
+<title>CitiTool • Dashboard</title>
+<style>
+:root{
+  --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --accent:#ff4b4b;
+  --glass:#ffffffcc; --hair:#e9eef6; --shadow:0 10px 30px rgba(13,27,42,.08);
+  --r2:20px; --dockH:72px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
+
+/* AppBar */
+.appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
+  background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.70));border-bottom:1px solid var(--hair)}
+.appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.logo-line{display:flex;align-items:center;gap:10px}
+.ct-badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff, #2d6cdf, #7bb0ff);color:#fff;font-weight:900;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
+.ct-word{font:900 22px/1 "Inter",system-ui;letter-spacing:-.4px}
+.ct-word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
+.actions{display:flex;align-items:center;gap:8px}
+
+.search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;transition:width .35s ease, background .2s;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
+.search.active{width:min(56vw, 260px)}
+.search svg{position:absolute; left:12px; width:18px; height:18px; fill:#8aa0c4}
+.search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter,system-ui;color:var(--ink)}
+
+.btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
+.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
+.btn.ghost{background:#fff;border-color:#dbe5ff}
+.btn.small{height:32px;border-radius:12px}
+.btn:active{transform:translateY(1px)}
+.menu{position:relative}
+.menu .panel{position:absolute;right:0;top:110%;background:#fff;border:1px solid var(--hair);border-radius:14px;box-shadow:var(--shadow);padding:8px;display:none}
+.menu.open .panel{display:block}
+.menu .panel button{display:block;width:100%;text-align:left;margin:4px 0}
+
+/* Layout */
+.main{max-width:1040px;margin:0 auto;padding:12px 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
+.section{background:#fff;border:1px solid var(--hair);border-radius:var(--r2);box-shadow:var(--shadow);padding:14px}
+.section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter,system-ui}
+.muted{color:var(--muted)}
+
+/* Schnellaktionen */
+.rows{display:grid;gap:10px}
+.row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px;border:1px solid #edf1f7;border-radius:16px}
+.row .l{display:flex;gap:12px;align-items:center}
+.row .ico{width:36px;height:36px;border-radius:12px;background:#eef3ff;display:grid;place-items:center}
+.row .title{font-weight:800}
+.row .sub{color:var(--muted);font-size:13px}
+
+/* Checklist */
+.checklist{display:grid;gap:8px}
+.check{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid #edf1f7;border-radius:12px;background:#fff}
+.check input[type="text"]{border:0;outline:0;background:transparent;font-weight:700}
+.grab{cursor:grab;color:#9aa8c4}
+
+/* Produktion */
+.order{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #edf1f7;border-radius:14px}
+.pbar{height:10px;border-radius:8px;background:#edf1f7;overflow:hidden}
+.pbar>i{display:block;height:100%;background:#2d6cdf}
+.badge{display:inline-grid;place-items:center;min-width:46px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
+.pbtns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Zuletzt */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.card{border:1px solid #edf1f7;border-radius:14px;overflow:hidden;background:#fff}
+.card .ph{height:90px;background:#f5f8ff;display:grid;place-items:center;border-bottom:1px solid #edf1f7}
+.card .ph img{width:100%;height:100%;object-fit:cover}
+.card .meta{padding:10px}
+.card .name{font-weight:800}
+.tags{color:#64748b;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Dock */
+.dock{position:fixed; left:0; right:0; bottom:0; z-index:40;
+  padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  backdrop-filter: blur(12px) saturate(1.2);
+  background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));
+  border-top:1px solid var(--hair);}
+.dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.dock a{display:grid;justify-items:center;gap:4px;padding:10px;border-radius:14px;text-decoration:none;color:inherit}
+.dock a small{font-weight:600;font-size:12px;color:#344966}
+.dock a.active{background:#eef3ff; box-shadow:inset 0 0 0 1px #d6e5ff}
+.icon{width:22px;height:22px; fill:#2e3e55}
+
+@media (max-width:760px){
+  .grid{grid-template-columns:1fr}
+}
+</style>
 </head>
 <body>
 
-<!-- fixed blueprint bg -->
-<div class="hero-bg"><div class="hero-grid"></div></div>
-
-<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
     <div class="logo-line">
@@ -19,43 +103,57 @@
       <div class="ct-word"><b>CITI‧TOOL</b></div>
     </div>
     <div class="actions">
-      <!-- На дэшборде НЕТ “Neu …” -->
+      <div class="menu" id="newMenu">
+        <button class="btn brand" id="btnNeu">+ Neu</button>
+        <div class="panel">
+          <button data-go="./programme.html">Programm</button>
+          <button data-go="./docs.html">Dokument</button>
+          <button data-go="./tools.html">Werkzeug</button>
+        </div>
+      </div>
       <div class="search" id="searchBox">
         <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
-        <input type="search" placeholder="Suchen…" id="q" autocomplete="off">
+        <input type="search" placeholder="Suchen…" id="q">
       </div>
     </div>
   </div>
 </header>
 
-<!-- Hero -->
-<div class="hero">
-  <div class="hero-card">
-    <div class="hero-title"><h1>Setup • Tools • Docs</h1></div>
-    <p class="hero-sub">Светлый минимализм в стиле Behance: крупный логотип, анимированный поиск, стеклянные карточки, мягкая динамика.</p>
-    <!-- Последние добавления -->
-    <div id="latest" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"></div>
-  </div>
-</div>
+<main class="main" id="main">
 
-<!-- Content -->
-<main class="main">
-
-  <!-- Schnellaktionen (кнопки как у Löschen: outline is-sm) -->
+  <!-- Schnellaktionen -->
   <section class="section">
     <h2>Schnellaktionen</h2>
-    <div class="list">
+    <div class="rows">
       <div class="row">
-        <div><div class="title">Neues Setup</div><div class="meta">Live-Setup anlegen</div></div>
-        <a class="btn btn--outline is-sm" href="./setup.html">Öffnen</a>
+        <div class="l">
+          <div class="ico">🧩</div>
+          <div>
+            <div class="title">Neues Setup</div>
+            <div class="sub">Live-Setup anlegen</div>
+          </div>
+        </div>
+        <div class="pbtns"><a class="btn ghost small" href="./programme.html">Öffnen</a></div>
       </div>
       <div class="row">
-        <div><div class="title">Neues Werkzeug</div><div class="meta">In den Schrank hinzufügen</div></div>
-        <a class="btn btn--outline is-sm" href="./tools.html">Öffnen</a>
+        <div class="l">
+          <div class="ico">🛠️</div>
+          <div>
+            <div class="title">Neues Werkzeug</div>
+            <div class="sub">In den Schrank hinzufügen</div>
+          </div>
+        </div>
+        <div class="pbtns"><a class="btn ghost small" href="./tools.html">Öffnen</a></div>
       </div>
       <div class="row">
-        <div><div class="title">Material-Assist</div><div class="meta">Schnittdaten schnell berechnen</div></div>
-        <a class="btn btn--outline is-sm" href="./assist.html">Öffnen</a>
+        <div class="l">
+          <div class="ico">📄</div>
+          <div>
+            <div class="title">Neues Dokument</div>
+            <div class="sub">Notiz/Datei anlegen</div>
+          </div>
+        </div>
+        <div class="pbtns"><a class="btn ghost small" href="./docs.html">Öffnen</a></div>
       </div>
     </div>
   </section>
@@ -63,172 +161,223 @@
   <!-- Setup-Checkliste -->
   <section class="section">
     <h2>Setup-Checkliste</h2>
-    <div id="checklist"></div>
-    <div class="kbd" style="margin-top:6px">Tipp: перетаскивай строку за ☰</div>
+    <div class="pbtns" style="margin:0 0 8px 2px">
+      <button class="btn small" id="btnAddCheck">+ Neu</button>
+      <button class="btn small ghost" id="btnDelDone">Erledigte entfernen</button>
+    </div>
+    <div class="checklist" id="checklist"></div>
+    <div class="muted" style="margin-top:8px">Tipp: перетаскивай строку за ≡</div>
   </section>
 
   <!-- Produktion -->
   <section class="section">
     <h2>Produktion</h2>
-    <div class="list" id="prodList"></div>
-    <div style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap">
-      <button class="btn" id="addOrder">+ Neuer Auftrag</button>
-      <button class="btn" id="clearDone">Erledigte entfernen</button>
+    <div class="pbtns" style="margin:0 0 8px 2px">
+      <button class="btn small" id="btnNewOrder">+ Neuer Auftrag</button>
     </div>
+    <div id="orders"></div>
+  </section>
+
+  <!-- Zuletzt hinzugefügt -->
+  <section class="section">
+    <h2>Zuletzt hinzugefügt</h2>
+    <div class="grid" id="recent"></div>
   </section>
 
 </main>
 
-<!-- Dock -->
-<nav class="dock">
+<!-- Dock с Assistent -->
+<nav class="dock" id="dock">
   <div class="wrap">
-    <a href="./index.html" data-id="dash" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
-    <a href="./setup.html" data-id="setup"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
-    <a href="./tools.html" data-id="tools"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
-    <a href="./setup.html" data-id="programs"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
-    <a href="./docs.html" data-id="docs"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+    <a href="./index.html" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
+    <a href="./setup2.html"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2H11v-2z"/></svg><small>Setup</small></a>
+    <a href="./tools.html"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2z"/></svg><small>Tools</small></a>
+    <a href="./programme.html"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
+    <a href="./docs.html"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+    <a href="./assist.html"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><small>Assist</small></a>
   </div>
 </nav>
 
-<script src="./ui/neo.js"></script>
 <script>
-/* base */
-CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
-CT.neo.shrinkOnScroll();
-CT.neo.setActiveDock('dash');
+/* util storage */
+const S = {
+  get(k, def){ try{ const v=localStorage.getItem(k); return v==null?def:JSON.parse(v) }catch(e){ return def } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)) }catch(e){} }
+};
+const uid = ()=>Math.random().toString(36).slice(2,10);
+const now = ()=>Date.now();
+const K_CHECK='CT_CHECK_V1', K_PROD='CT_PROD_V1', K_TOOLS='CT_TOOLS_V1', K_DOCS='CT_DOCS_V1';
 
-/* ==== SEED DEMО (5 штук в каждом домене, если пусто) ==== */
-(function seedDemo(){
-  const now = CT.now();
-  if(!CT.load('CT_TOOLS_V1', null)){
-    CT.save('CT_TOOLS_V1', Array.from({length:5}, (_,i)=>({
-      id:CT.id(), name:`Demo Tool ${i+1}`, iso:`CNMG1204${i}08`, code:`T${100+i}`, category:'Allgemein',
-      createdAt:now, updatedAt:now
-    })));
+/* ensure seeds: 5 tools/docs + 5 orders + 5 checklist */
+(function seeds(){
+  if(!Array.isArray(S.get(K_TOOLS))) S.set(K_TOOLS,[]);
+  if(!S.get(K_TOOLS).length){
+    const arr=[];
+    for(let i=1;i<=5;i++) arr.push({id:uid(),name:'Tool '+i,iso:'CNMG1204',code:'T'+i,category:'Demo',photo:null,notes:'',createdAt:now()-i*1000,updatedAt:now()-i*1000});
+    S.set(K_TOOLS,arr);
   }
-  if(!CT.load('CT_DOCS_V1', null)){
-    CT.save('CT_DOCS_V1', Array.from({length:5}, (_,i)=>({
-      id:CT.id(), title:`Demo Doku ${i+1}`, desc:`Beschreibung ${i+1}`, category:'Allgemein', tags:['demo','docs'],
-      createdAt:now, updatedAt:now
-    })));
+  if(!Array.isArray(S.get(K_DOCS))) S.set(K_DOCS,[]);
+  if(!S.get(K_DOCS).length){
+    const arr=[];
+    for(let i=1;i<=5;i++) arr.push({id:uid(),title:'Notiz '+i,category:'Allgemein',tags:['demo'],text:'Kurztext',imgData:null,file:null,createdAt:now()-i*2000,updatedAt:now()-i*2000});
+    S.set(K_DOCS,arr);
   }
-  if(!CT.load('CT_PROGS_V1', null)){
-    CT.save('CT_PROGS_V1', Array.from({length:5}, (_,i)=>({
-      id:CT.id(), title:`Prog ${i+1}`, nr:`O10${i+1}`, side: i%2? 'RU':'RO',
-      slots: Array.from({length:12},(_,s)=>({pos:s+1, tnum: (i+1)+''+String(s+1).padStart(2,'0')})),
-      status:'draft', createdAt:now, updatedAt:now
-    })));
+  if(!Array.isArray(S.get(K_PROD))) {
+    const arr=[];
+    for(let i=1;i<=5;i++) arr.push({id:uid(),name:'Los '+(230+i),done:20*i,total:100+i*20,due:new Date(Date.now()+i*864e5).toISOString().slice(0,10),notes:'',createdAt:now()-i*3000,updatedAt:now()-i*3000});
+    S.set(K_PROD,arr);
   }
-  if(!CT.load('CT_CHECK_V1', null)){
-    CT.save('CT_CHECK_V1', Array.from({length:5}, (_,i)=>({
-      id:CT.id(), text:['Nullpunkt prüfen','Werkzeuglänge messen','Spannbacken kontrollieren','KSS prüfen','Programm simulieren'][i],
-      done:false, sort:i+1, createdAt:now, updatedAt:now
-    })));
-  }
-  if(!CT.load('CT_PROD_V1', null)){
-    CT.save('CT_PROD_V1', Array.from({length:5}, (_,i)=>({
-      id:CT.id(), name:`Los ${123+i}`, done:[20,58,0,75,10][i], total:[100,200,150,100,50][i],
-      due:['Heute','Woche','Morgen','Heute','Woche'][i], createdAt:now, updatedAt:now
-    })));
+  if(!Array.isArray(S.get(K_CHECK))) {
+    const arr=[];
+    const txt=['Schrauben prüfen','Anschläge','Kühlung','Werkzeugmessung','Nullpunkt'];
+    txt.forEach((t,i)=>arr.push({id:uid(),text:t,done:false,sort:i,createdAt:now()-i*4000,updatedAt:now()-i*4000}));
+    S.set(K_CHECK,arr);
   }
 })();
 
-/* Последние добавления (6 элементов) */
-(function latest(){
-  const L = document.getElementById('latest');
-  const tools = (CT.load('CT_TOOLS_V1',[])||[]).map(x=>({...x,_t:'Tool'}));
-  const docs  = (CT.load('CT_DOCS_V1',[])||[]).map(x=>({...x,_t:'Doc'}));
-  const progs = (CT.load('CT_PROGS_V1',[])||[]).map(x=>({...x,_t:'Prog'}));
-  const all = [...tools, ...docs, ...progs].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')).slice(0,6);
-  L.innerHTML = all.length? '' : '<span class="muted">Noch nichts hinzugefügt</span>';
-  all.forEach(x=>{
-    const a = document.createElement('a'); a.className='tag';
-    a.href = x._t==='Tool'?'./tools.html' : x._t==='Doc'?'./docs.html' : './setup.html';
-    a.textContent = (x._t+': '+(x.title||x.name||'—')).slice(0,30);
-    L.append(a);
-  });
-})();
+/* AppBar: search + menu */
+const box=document.getElementById('searchBox'); const q=document.getElementById('q');
+box.addEventListener('click',()=>{box.classList.add('active'); q.focus();});
+q.addEventListener('blur',()=>{ if(!q.value) box.classList.remove('active'); });
+
+const m=document.getElementById('newMenu');
+document.getElementById('btnNeu').onclick=()=> m.classList.toggle('open');
+m.querySelectorAll('.panel button').forEach(b=> b.onclick=()=> location.href=b.dataset.go);
+document.addEventListener('click',e=>{ if(!m.contains(e.target)) m.classList.remove('open'); });
 
 /* Checklist */
-(function checklist(){
-  let items = CT.load('CT_CHECK_V1', []) || [];
-  CT.neo.checklist(document.getElementById('checklist'), items, { onChange:(arr)=> CT.save('CT_CHECK_V1', arr) });
-})();
-
-/* Produktion — модальные формы + прогрессбар */
-(function prod(){
-  const key='CT_PROD_V1';
-  const listEl=document.getElementById('prodList');
-  let rows=CT.load(key,[])||[];
-
-  function save(){ CT.save(key,rows); render(); }
-
-  function openEditor(r){
-    const form=CT.ui.form.create({
-      values:r||{name:'',total:0,due:'Heute'},
-      fields:[
-        {type:'text',key:'name',label:'Name',placeholder:'Los …'},
-        {type:'number',key:'total',label:'Total',min:0,step:1},
-        {type:'select',key:'due',label:'Fällig',options:['Heute','Woche','Morgen','Terminlos']}
-      ]
+const clWrap = document.getElementById('checklist');
+function loadChecks(){ return (S.get(K_CHECK,[])||[]).sort((a,b)=>a.sort-b.sort); }
+function saveChecks(arr){ S.set(K_CHECK,arr.map((x,i)=>({...x,sort:i,updatedAt:now()}))); }
+function renderChecks(){
+  const arr = loadChecks(); clWrap.innerHTML='';
+  arr.forEach((c,i)=>{
+    const el=document.createElement('div'); el.className='check'; el.draggable=true;
+    el.innerHTML=`<span class="grab">≡</span>
+      <label><input type="checkbox" ${c.done?'checked':''}/> </label>
+      <input type="text" value="${(c.text||'').replace(/"/g,'&quot;')}">`;
+    const cb=el.querySelector('input[type="checkbox"]');
+    const tx=el.querySelector('input[type="text"]');
+    cb.onchange=()=>{ c.done=cb.checked; saveChecks(arr); };
+    tx.onblur=()=>{ c.text=tx.value.trim(); saveChecks(arr); };
+    // drag
+    el.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', i); });
+    el.addEventListener('dragover',e=>e.preventDefault());
+    el.addEventListener('drop',e=>{
+      e.preventDefault();
+      const from=+e.dataTransfer.getData('text/plain'); const to=i;
+      if(from===to) return;
+      const item=arr.splice(from,1)[0]; arr.splice(to,0,item); saveChecks(arr); renderChecks();
     });
-    CT.ui.modal.open({
-      title:r?'Auftrag bearbeiten':'Neuer Auftrag',
-      contentEl:form.el,
-      footer:[
-        {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
-        {label:'Speichern',kind:'primary',onClick:()=>{
-          const v=form.getValues();
-          if(!v.name){ form.setErrors({name:'Pflichtfeld'}); return; }
-          if(r){ Object.assign(r,v,{updatedAt:CT.now()}); }
-          else { rows.unshift({...v,id:CT.id(),done:0,createdAt:CT.now(),updatedAt:CT.now()}); }
-          save(); CT.ui.modal.close();
-        }}
-      ]
-    });
-  }
+    clWrap.append(el);
+  });
+}
+document.getElementById('btnAddCheck').onclick=()=>{
+  const arr=loadChecks(); arr.push({id:uid(),text:'',done:false,sort:arr.length,createdAt:now(),updatedAt:now()}); saveChecks(arr); renderChecks();
+};
+document.getElementById('btnDelDone').onclick=()=>{
+  const arr=loadChecks().filter(x=>!x.done); saveChecks(arr); renderChecks();
+};
+renderChecks();
 
-  function askDel(r){
-    CT.ui.confirm({title:'Löschen?',msg:`${r.name} wirklich entfernen?`})
-      .then(ok=>{ if(ok){ rows = rows.filter(x=>x.id!==r.id); save(); } });
-  }
+/* Produktion */
+const ordWrap=document.getElementById('orders');
+function loadOrders(){ return (S.get(K_PROD,[])||[]).sort((a,b)=>b.createdAt-a.createdAt); }
+function saveOrders(arr){ S.set(K_PROD,arr); }
+function pct(o){ const t=Math.max(1,Number(o.total||0)); const d=Math.max(0,Number(o.done||0)); const p=Math.min(100, Math.round(d*100/t)); return p; }
+function card(o){
+  const el=document.createElement('div'); el.className='order';
+  const left=document.createElement('div');
+  left.innerHTML=`
+    <div style="font-weight:900">${o.name} • ${o.done} / ${o.total}</div>
+    <div class="pbar"><i style="width:${pct(o)}%"></i></div>
+    <div class="muted" style="margin-top:6px">${o.due||'—'}</div>`;
+  const right=document.createElement('div'); right.className='pbtns';
+  const bM=document.createElement('button'); bM.className='btn small ghost'; bM.textContent='-10';
+  const bP=document.createElement('button'); bP.className='btn small ghost'; bP.textContent='+10';
+  const bE=document.createElement('button'); bE.className='btn small'; bE.textContent='Edit';
+  const bD=document.createElement('button'); bD.className='btn small'; bD.textContent='Del';
+  const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pct(o)+'%';
+  bM.onclick=()=>{ o.done=Math.max(0,(o.done||0)-10); saveOrders(update(o)); renderOrders(); };
+  bP.onclick=()=>{ o.done=(o.done||0)+10; saveOrders(update(o)); renderOrders(); };
+  bD.onclick=()=>{ if(confirm('Löschen?')){ const arr=loadOrders().filter(x=>x.id!==o.id); saveOrders(arr); renderOrders(); } };
+  bE.onclick=()=> openEditor(o);
+  right.append(bM,badge,bP,bE,bD);
+  el.append(left,right);
+  return el;
+}
+function update(o){ const arr=loadOrders(); const i=arr.findIndex(x=>x.id===o.id); if(i>=0) arr[i]=o; return arr; }
+function renderOrders(){ ordWrap.innerHTML=''; loadOrders().forEach(o=> ordWrap.append(card(o))); }
+document.getElementById('btnNewOrder').onclick=()=>{
+  const arr=loadOrders(); const o={id:uid(),name:'Los '+(100+arr.length),done:0,total:100,due:new Date().toISOString().slice(0,10),notes:'',createdAt:now(),updatedAt:now()};
+  arr.unshift(o); saveOrders(arr); renderOrders(); openEditor(o);
+};
+function openEditor(order){
+  // компактная модалка-щит
+  const wrap=document.createElement('div'); wrap.style.padding='8px'; wrap.innerHTML=`
+    <div style="font-weight:900;margin-bottom:8px">Auftrag bearbeiten</div>
+    <label>Name</label><input id="fN" class="inp"><br/><br/>
+    <label>Done</label><input id="fD" type="number" class="inp"><br/><br/>
+    <label>Total</label><input id="fT" type="number" class="inp"><br/><br/>
+    <label>Fällig bis</label><input id="fDue" type="date" class="inp"><br/><br/>
+    <label>Notizen</label><textarea id="fNotes" class="inp"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
+      <button class="btn small" id="bCancel">Abbrechen</button>
+      <button class="btn brand small" id="bSave">Speichern</button>
+    </div>`;
+  Array.from(wrap.querySelectorAll('.inp')).forEach(el=>{el.style.width='100%';el.style.border='1px solid #dbe5ff';el.style.borderRadius='12px';el.style.padding='10px'});
+  wrap.querySelector('#fN').value=order.name||'';
+  wrap.querySelector('#fD').value=order.done||0;
+  wrap.querySelector('#fT').value=order.total||0;
+  wrap.querySelector('#fDue').value=order.due||'';
+  wrap.querySelector('#fNotes').value=order.notes||'';
 
-  const setBar = (fill,pct)=> fill.style.width = Math.max(0,Math.min(100,pct))+'%';
+  const sheet=document.createElement('div');
+  sheet.style.position='fixed'; sheet.style.left=0; sheet.style.right=0; sheet.style.bottom=0;
+  sheet.style.background='#fff'; sheet.style.borderTop='1px solid #e9eef6'; sheet.style.boxShadow='0 -10px 30px rgba(13,27,42,.08)';
+  sheet.style.borderTopLeftRadius='20px'; sheet.style.borderTopRightRadius='20px';
+  sheet.style.padding='12px 16px'; sheet.style.zIndex=50;
+  sheet.append(wrap); document.body.append(sheet);
+  const close=()=>{ document.body.removeChild(sheet); };
+  wrap.querySelector('#bCancel').onclick=close;
+  wrap.querySelector('#bSave').onclick=()=>{
+    order.name=wrap.querySelector('#fN').value.trim()||order.name;
+    order.done=Number(wrap.querySelector('#fD').value||0);
+    order.total=Number(wrap.querySelector('#fT').value||0);
+    order.due=wrap.querySelector('#fDue').value||'';
+    order.notes=wrap.querySelector('#fNotes').value||'';
+    saveOrders(update(order)); renderOrders(); close();
+  };
+}
+renderOrders();
 
-  function render(){
-    listEl.innerHTML='';
-    if(rows.length===0){ listEl.innerHTML = '<div class="muted">Keine Aufträge</div>'; return; }
-    rows.forEach(r=>{
-      const pct=r.total?Math.round(r.done/r.total*100):0;
-      const row=document.createElement('div'); row.className='row';
-      row.innerHTML=`
-        <div>
-          <div class="title">${r.name} • ${r.done} / ${r.total} ${r.due?`• ${r.due}`:''}</div>
-          <div class="meta">${new Date(r.updatedAt||r.createdAt).toLocaleString()}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;min-width:220px">
-          <div class="bar"><div class="bar__fill"></div></div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <button class="btn btn--outline is-sm" data-act="minus">-10</button>
-            <span class="btn btn--chip" style="pointer-events:none">${pct}%</span>
-            <button class="btn btn--outline is-sm" data-act="plus">+10</button>
-            <button class="btn btn--outline is-sm" data-act="edit">Edit</button>
-            <button class="btn btn--outline is-sm" data-act="del">Löschen</button>
-          </div>
-        </div>`;
-      const fill=row.querySelector('.bar__fill'); requestAnimationFrame(()=> setBar(fill,pct));
-      row.querySelector('[data-act=plus]').onclick = ()=>{ r.done = Math.min(r.total,(r.done||0)+10); r.updatedAt=CT.now(); save(); };
-      row.querySelector('[data-act=minus]').onclick= ()=>{ r.done = Math.max(0,(r.done||0)-10); r.updatedAt=CT.now(); save(); };
-      row.querySelector('[data-act=edit]').onclick = ()=> openEditor(r);
-      row.querySelector('[data-act=del]').onclick  = ()=> askDel(r);
-      listEl.append(row);
-    });
-  }
+/* Zuletzt hinzugefügt (3 Tools + 3 Docs) */
+const rec=document.getElementById('recent');
+function renderRecent(){
+  rec.innerHTML='';
+  const tools=(S.get(K_TOOLS,[])||[]).slice(0,3);
+  const docs =(S.get(K_DOCS ,[])||[]).slice(0,3);
+  const list=[...tools.map(t=>({kind:'tool',name:t.name,sub:(t.category||'')+(t.iso?(' • '+t.iso):''),img:t.photo})),
+              ...docs.map(d=>({kind:'doc',name:d.title,sub:d.category, img:d.imgData}))];
+  if(!list.length){ const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; rec.append(e); return; }
+  list.forEach(x=>{
+    const c=document.createElement('article'); c.className='card';
+    const ph=document.createElement('div'); ph.className='ph';
+    if(x.img){ const im=document.createElement('img'); im.src=x.img; ph.append(im); }
+    else ph.textContent='kein Foto';
+    const m=document.createElement('div'); m.className='meta';
+    m.innerHTML=`<div class="name">${x.name}</div><div class="tags">${x.sub||''}</div>`;
+    c.append(ph,m); rec.append(c);
+  });
+}
+renderRecent();
 
-  document.getElementById('addOrder').onclick = ()=> openEditor();
-  document.getElementById('clearDone').onclick = ()=>{ rows = rows.filter(r=> r.done < r.total); save(); };
-  render();
-})();
+/* Dock height → CSS var */
+const applyDockH=()=>{
+  const h=Math.round(document.getElementById('dock').getBoundingClientRect().height);
+  document.documentElement.style.setProperty('--dockH', h+'px');
+};
+applyDockH(); new ResizeObserver(applyDockH).observe(document.getElementById('dock'));
 </script>
 </body>
 </html>
