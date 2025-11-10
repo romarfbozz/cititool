@@ -6,69 +6,62 @@
 <title>CitiTool • Dashboard</title>
 <style>
 :root{
-  --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --accent:#ff4b4b;
-  --glass:#ffffffcc; --hair:#e9eef6; --shadow:0 10px 30px rgba(13,27,42,.08);
-  --r2:20px; --dockH:72px;
+  --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf;
+  --hair:#e9eef6; --shadow:0 10px 30px rgba(13,27,42,.08);
+  --r:18px; --dockH:78px;
 }
-*{box-sizing:border-box}
-html,body{height:100%}
+*{box-sizing:border-box} html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font:16px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,Inter,Roboto,system-ui,sans-serif}
 
 /* AppBar */
 .appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
-  background:linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.70));border-bottom:1px solid var(--hair)}
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.7));
+  border-bottom:1px solid var(--hair)}
 .appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
-.logo-line{display:flex;align-items:center;gap:10px}
-.ct-badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
-  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff, #2d6cdf, #7bb0ff);color:#fff;font-weight:900;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
-.ct-word{font:900 22px/1 "Inter",system-ui;letter-spacing:-.4px}
-.ct-word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
-.actions{display:flex;align-items:center;gap:8px}
+.logo{display:flex;align-items:center;gap:10px}
+.badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);color:#fff;font-weight:900;box-shadow:inset 0 0 0 1px #dce7ff}
+.word{font:900 22px/1 "Inter",system-ui;letter-spacing:-.4px}
+.word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-.search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;transition:width .35s ease, background .2s;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
-.search.active{width:min(56vw, 260px)}
-.search svg{position:absolute; left:12px; width:18px; height:18px; fill:#8aa0c4}
-.search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter,system-ui;color:var(--ink)}
-
-.btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
-.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
-.btn.ghost{background:#fff;border-color:#dbe5ff}
-.btn.small{height:32px;border-radius:12px}
-.btn:active{transform:translateY(1px)}
-.menu{position:relative}
-.menu .panel{position:absolute;right:0;top:110%;background:#fff;border:1px solid var(--hair);border-radius:14px;box-shadow:var(--shadow);padding:8px;display:none}
-.menu.open .panel{display:block}
-.menu .panel button{display:block;width:100%;text-align:left;margin:4px 0}
+/* Search */
+.search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;
+  transition:width .35s ease;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
+.search.active{width:min(56vw,260px)}
+.search svg{position:absolute;left:12px;width:18px;height:18px;fill:#8aa0c4}
+.search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter; color:var(--ink)}
 
 /* Layout */
 .main{max-width:1040px;margin:0 auto;padding:12px 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
-.section{background:#fff;border:1px solid var(--hair);border-radius:var(--r2);box-shadow:var(--shadow);padding:14px}
-.section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter,system-ui}
+.section{background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow);padding:14px}
+.section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter}
 .muted{color:var(--muted)}
 
-/* Schnellaktionen */
-.rows{display:grid;gap:10px}
-.row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:14px;border:1px solid #edf1f7;border-radius:16px}
-.row .l{display:flex;gap:12px;align-items:center}
-.row .ico{width:36px;height:36px;border-radius:12px;background:#eef3ff;display:grid;place-items:center}
-.row .title{font-weight:800}
-.row .sub{color:var(--muted);font-size:13px}
+/* Übersicht / Analyse */
+.kpis{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,1fr);gap:10px;overflow:auto;padding-bottom:4px}
+.kpi{background:#fff;border:1px solid #edf1f7;border-radius:16px;padding:12px;min-width:200px}
+.kpi .v{font:900 24px/1 Inter}
+.kpi .l{color:var(--muted);margin-top:6px}
 
-/* Checklist */
-.checklist{display:grid;gap:8px}
-.check{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:10px;border:1px solid #edf1f7;border-radius:12px;background:#fff}
-.check input[type="text"]{border:0;outline:0;background:transparent;font-weight:700}
-.grab{cursor:grab;color:#9aa8c4}
-
-/* Produktion */
-.order{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #edf1f7;border-radius:14px}
-.pbar{height:10px;border-radius:8px;background:#edf1f7;overflow:hidden}
+/* Produktion (компактные карточки) */
+.orders{display:grid;gap:10px}
+.order{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
+  padding:12px;border:1px solid #edf1f7;border-radius:16px}
+.order .t{font:900 18px/1.2 Inter}
+.pbar{height:10px;border-radius:8px;background:#edf1f7;overflow:hidden;margin-top:8px}
 .pbar>i{display:block;height:100%;background:#2d6cdf}
 .badge{display:inline-grid;place-items:center;min-width:46px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
-.pbtns{display:flex;gap:8px;flex-wrap:wrap}
+.i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
+.i-btn:active{transform:translateY(1px)}
 
-/* Zuletzt */
+/* Letzte Aktionen */
+.feed{display:grid;gap:8px}
+.feed .item{display:flex;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px}
+.time{font:700 12px/1 Inter;color:#586a85;width:72px}
+.text{font-weight:600}
+
+/* Zuletzt hinzugefügt */
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .card{border:1px solid #edf1f7;border-radius:14px;overflow:hidden;background:#fff}
 .card .ph{height:90px;background:#f5f8ff;display:grid;place-items:center;border-bottom:1px solid #edf1f7}
@@ -78,104 +71,61 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .tags{color:#64748b;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* Dock */
-.dock{position:fixed; left:0; right:0; bottom:0; z-index:40;
-  padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
-  backdrop-filter: blur(12px) saturate(1.2);
-  background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));
-  border-top:1px solid var(--hair);}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+  backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
 .dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
 .dock a{display:grid;justify-items:center;gap:4px;padding:10px;border-radius:14px;text-decoration:none;color:inherit}
 .dock a small{font-weight:600;font-size:12px;color:#344966}
-.dock a.active{background:#eef3ff; box-shadow:inset 0 0 0 1px #d6e5ff}
-.icon{width:22px;height:22px; fill:#2e3e55}
+.dock a.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
+.icon{width:22px;height:22px;fill:#2e3e55}
 
-@media (max-width:760px){
-  .grid{grid-template-columns:1fr}
-}
+@media (max-width:760px){ .grid{grid-template-columns:1fr} }
+
+/* Modal sheet (редактор Produktion) */
+.sheet-back{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:60}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e9eef6;box-shadow:0 -16px 40px rgba(13,27,42,.15);
+  border-top-left-radius:20px;border-top-right-radius:20px;padding:14px 16px 18px;z-index:61;max-height:78vh;overflow:auto}
+.sheet h3{margin:0 0 8px;font:800 18px/1.2 Inter}
+.rowf{display:grid;gap:6px;margin:8px 0}
+.inp{width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:10px}
+.btn{height:38px;padding:0 14px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
+.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
+.btn.ghost{background:#fff}
+.btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 </style>
 </head>
 <body>
 
 <header class="appbar">
   <div class="wrap">
-    <div class="logo-line">
-      <div class="ct-badge">CT</div>
-      <div class="ct-word"><b>CITI‧TOOL</b></div>
+    <div class="logo">
+      <div class="badge">CT</div>
+      <div class="word"><b>CITI‧TOOL</b></div>
     </div>
-    <div class="actions">
-      <div class="menu" id="newMenu">
-        <button class="btn brand" id="btnNeu">+ Neu</button>
-        <div class="panel">
-          <button data-go="./programme.html">Programm</button>
-          <button data-go="./docs.html">Dokument</button>
-          <button data-go="./tools.html">Werkzeug</button>
-        </div>
-      </div>
-      <div class="search" id="searchBox">
-        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
-        <input type="search" placeholder="Suchen…" id="q">
-      </div>
+    <div class="search" id="searchBox">
+      <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+      <input type="search" placeholder="Suchen…" id="q"/>
     </div>
   </div>
 </header>
 
-<main class="main" id="main">
-
-  <!-- Schnellaktionen -->
+<main class="main">
+  <!-- Übersicht / Analyse -->
   <section class="section">
-    <h2>Schnellaktionen</h2>
-    <div class="rows">
-      <div class="row">
-        <div class="l">
-          <div class="ico">🧩</div>
-          <div>
-            <div class="title">Neues Setup</div>
-            <div class="sub">Live-Setup anlegen</div>
-          </div>
-        </div>
-        <div class="pbtns"><a class="btn ghost small" href="./programme.html">Öffnen</a></div>
-      </div>
-      <div class="row">
-        <div class="l">
-          <div class="ico">🛠️</div>
-          <div>
-            <div class="title">Neues Werkzeug</div>
-            <div class="sub">In den Schrank hinzufügen</div>
-          </div>
-        </div>
-        <div class="pbtns"><a class="btn ghost small" href="./tools.html">Öffnen</a></div>
-      </div>
-      <div class="row">
-        <div class="l">
-          <div class="ico">📄</div>
-          <div>
-            <div class="title">Neues Dokument</div>
-            <div class="sub">Notiz/Datei anlegen</div>
-          </div>
-        </div>
-        <div class="pbtns"><a class="btn ghost small" href="./docs.html">Öffnen</a></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Setup-Checkliste -->
-  <section class="section">
-    <h2>Setup-Checkliste</h2>
-    <div class="pbtns" style="margin:0 0 8px 2px">
-      <button class="btn small" id="btnAddCheck">+ Neu</button>
-      <button class="btn small ghost" id="btnDelDone">Erledigte entfernen</button>
-    </div>
-    <div class="checklist" id="checklist"></div>
-    <div class="muted" style="margin-top:8px">Tipp: перетаскивай строку за ≡</div>
+    <h2>Übersicht</h2>
+    <div class="kpis" id="kpis"></div>
   </section>
 
   <!-- Produktion -->
   <section class="section">
     <h2>Produktion</h2>
-    <div class="pbtns" style="margin:0 0 8px 2px">
-      <button class="btn small" id="btnNewOrder">+ Neuer Auftrag</button>
-    </div>
-    <div id="orders"></div>
+    <div class="orders" id="orders"></div>
+  </section>
+
+  <!-- Letzte Aktionen -->
+  <section class="section">
+    <h2>Letzte Aktionen</h2>
+    <div class="feed" id="feed"></div>
   </section>
 
   <!-- Zuletzt hinzugefügt -->
@@ -183,15 +133,14 @@ body{margin:0;background:var(--bg);color:var(--ink);
     <h2>Zuletzt hinzugefügt</h2>
     <div class="grid" id="recent"></div>
   </section>
-
 </main>
 
-<!-- Dock с Assistent -->
+<!-- Dock -->
 <nav class="dock" id="dock">
   <div class="wrap">
     <a href="./index.html" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
     <a href="./setup2.html"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2H11v-2z"/></svg><small>Setup</small></a>
-    <a href="./tools.html"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2z"/></svg><small>Tools</small></a>
+    <a href="./tools.html"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3z"/></svg><small>Tools</small></a>
     <a href="./programme.html"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
     <a href="./docs.html"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
     <a href="./assist.html"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><small>Assist</small></a>
@@ -199,185 +148,169 @@ body{margin:0;background:var(--bg);color:var(--ink);
 </nav>
 
 <script>
-/* util storage */
-const S = {
-  get(k, def){ try{ const v=localStorage.getItem(k); return v==null?def:JSON.parse(v) }catch(e){ return def } },
-  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)) }catch(e){} }
-};
-const uid = ()=>Math.random().toString(36).slice(2,10);
-const now = ()=>Date.now();
-const K_CHECK='CT_CHECK_V1', K_PROD='CT_PROD_V1', K_TOOLS='CT_TOOLS_V1', K_DOCS='CT_DOCS_V1';
+/* ---------- storage helpers ---------- */
+const S={get(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
+const now=()=>Date.now(), uid=()=>Math.random().toString(36).slice(2,10);
+const K_PROG='CT_PROGS_V1', K_TOOLS='CT_TOOLS_V1', K_DOCS='CT_DOCS_V1', K_PROD='CT_PROD_V1';
 
-/* ensure seeds: 5 tools/docs + 5 orders + 5 checklist */
+/* ---------- seeds (минимум для теста) ---------- */
 (function seeds(){
+  if(!Array.isArray(S.get(K_PROD))) S.set(K_PROD,[]);
+  if(S.get(K_PROD).length===0){
+    const a=[]; for(let i=1;i<=5;i++) a.push({id:uid(),name:'Los '+(231+i),done:20*i,total:120+i*20,due:new Date(Date.now()+i*864e5).toISOString().slice(0,10),notes:'',createdAt:now(),updatedAt:now()});
+    S.set(K_PROD,a);
+  }
   if(!Array.isArray(S.get(K_TOOLS))) S.set(K_TOOLS,[]);
-  if(!S.get(K_TOOLS).length){
-    const arr=[];
-    for(let i=1;i<=5;i++) arr.push({id:uid(),name:'Tool '+i,iso:'CNMG1204',code:'T'+i,category:'Demo',photo:null,notes:'',createdAt:now()-i*1000,updatedAt:now()-i*1000});
-    S.set(K_TOOLS,arr);
+  if(S.get(K_TOOLS).length<5){
+    const arr=S.get(K_TOOLS,[]); for(let i=1;i<=5;i++) arr.push({id:uid(),name:'Tool '+i,iso:'CNMG1204',category:'Demo',photo:null,createdAt:now(),updatedAt:now()}); S.set(K_TOOLS,arr);
   }
   if(!Array.isArray(S.get(K_DOCS))) S.set(K_DOCS,[]);
-  if(!S.get(K_DOCS).length){
-    const arr=[];
-    for(let i=1;i<=5;i++) arr.push({id:uid(),title:'Notiz '+i,category:'Allgemein',tags:['demo'],text:'Kurztext',imgData:null,file:null,createdAt:now()-i*2000,updatedAt:now()-i*2000});
-    S.set(K_DOCS,arr);
+  if(S.get(K_DOCS).length<5){
+    const arr=S.get(K_DOCS,[]); for(let i=1;i<=5;i++) arr.push({id:uid(),title:'Notiz '+i,category:'Allgemein',imgData:null,text:'',createdAt:now(),updatedAt:now()}); S.set(K_DOCS,arr);
   }
-  if(!Array.isArray(S.get(K_PROD))) {
-    const arr=[];
-    for(let i=1;i<=5;i++) arr.push({id:uid(),name:'Los '+(230+i),done:20*i,total:100+i*20,due:new Date(Date.now()+i*864e5).toISOString().slice(0,10),notes:'',createdAt:now()-i*3000,updatedAt:now()-i*3000});
-    S.set(K_PROD,arr);
-  }
-  if(!Array.isArray(S.get(K_CHECK))) {
-    const arr=[];
-    const txt=['Schrauben prüfen','Anschläge','Kühlung','Werkzeugmessung','Nullpunkt'];
-    txt.forEach((t,i)=>arr.push({id:uid(),text:t,done:false,sort:i,createdAt:now()-i*4000,updatedAt:now()-i*4000}));
-    S.set(K_CHECK,arr);
-  }
+  if(!Array.isArray(S.get(K_PROG))) S.set(K_PROG,[]);
 })();
 
-/* AppBar: search + menu */
-const box=document.getElementById('searchBox'); const q=document.getElementById('q');
-box.addEventListener('click',()=>{box.classList.add('active'); q.focus();});
-q.addEventListener('blur',()=>{ if(!q.value) box.classList.remove('active'); });
+/* ---------- AppBar search ---------- */
+const searchBox=document.getElementById('searchBox'); const q=document.getElementById('q');
+searchBox.addEventListener('click',()=>{searchBox.classList.add('active'); q.focus();});
+q.addEventListener('blur',()=>{if(!q.value) searchBox.classList.remove('active');});
 
-const m=document.getElementById('newMenu');
-document.getElementById('btnNeu').onclick=()=> m.classList.toggle('open');
-m.querySelectorAll('.panel button').forEach(b=> b.onclick=()=> location.href=b.dataset.go);
-document.addEventListener('click',e=>{ if(!m.contains(e.target)) m.classList.remove('open'); });
-
-/* Checklist */
-const clWrap = document.getElementById('checklist');
-function loadChecks(){ return (S.get(K_CHECK,[])||[]).sort((a,b)=>a.sort-b.sort); }
-function saveChecks(arr){ S.set(K_CHECK,arr.map((x,i)=>({...x,sort:i,updatedAt:now()}))); }
-function renderChecks(){
-  const arr = loadChecks(); clWrap.innerHTML='';
-  arr.forEach((c,i)=>{
-    const el=document.createElement('div'); el.className='check'; el.draggable=true;
-    el.innerHTML=`<span class="grab">≡</span>
-      <label><input type="checkbox" ${c.done?'checked':''}/> </label>
-      <input type="text" value="${(c.text||'').replace(/"/g,'&quot;')}">`;
-    const cb=el.querySelector('input[type="checkbox"]');
-    const tx=el.querySelector('input[type="text"]');
-    cb.onchange=()=>{ c.done=cb.checked; saveChecks(arr); };
-    tx.onblur=()=>{ c.text=tx.value.trim(); saveChecks(arr); };
-    // drag
-    el.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/plain', i); });
-    el.addEventListener('dragover',e=>e.preventDefault());
-    el.addEventListener('drop',e=>{
-      e.preventDefault();
-      const from=+e.dataTransfer.getData('text/plain'); const to=i;
-      if(from===to) return;
-      const item=arr.splice(from,1)[0]; arr.splice(to,0,item); saveChecks(arr); renderChecks();
-    });
-    clWrap.append(el);
+/* ---------- KPIs ---------- */
+function pct(o){const t=Math.max(1,Number(o.total||0));const d=Math.max(0,Number(o.done||0));return Math.min(100,Math.round(d*100/t));}
+function drawKpis(){
+  const progs=S.get(K_PROG,[]), tools=S.get(K_TOOLS,[]), docs=S.get(K_DOCS,[]), prod=S.get(K_PROD,[]);
+  const doneCnt=prod.filter(o=>o.done>=o.total && o.total>0).length;
+  const mean = prod.length? Math.round(prod.reduce((s,o)=>s+pct(o),0)/prod.length) : 0;
+  const totalRecords=(progs.length+tools.length+docs.length+prod.length);
+  const today = (arr)=>arr.filter(x=> new Date(x.updatedAt||0).toDateString()===new Date().toDateString()).length;
+  const k=document.getElementById('kpis'); k.innerHTML='';
+  const items=[
+    {v:progs.length,l:'Programme'},
+    {v:tools.length,l:'Werkzeuge'},
+    {v:docs.length,l:'Dokumente'},
+    {v:prod.length,l:'Aufträge'},
+    {v:mean+' %',l:'Ø Fortschritt'},
+    {v: today(tools)+today(docs)+today(prod), l:'Aktivität heute'},
+    {v: totalRecords, l:'Speicher (Einträge)'}
+  ];
+  items.forEach(it=>{
+    const e=document.createElement('div'); e.className='kpi';
+    e.innerHTML=`<div class="v">${it.v}</div><div class="l">${it.l}</div>`;
+    k.append(e);
   });
 }
-document.getElementById('btnAddCheck').onclick=()=>{
-  const arr=loadChecks(); arr.push({id:uid(),text:'',done:false,sort:arr.length,createdAt:now(),updatedAt:now()}); saveChecks(arr); renderChecks();
-};
-document.getElementById('btnDelDone').onclick=()=>{
-  const arr=loadChecks().filter(x=>!x.done); saveChecks(arr); renderChecks();
-};
-renderChecks();
 
-/* Produktion */
-const ordWrap=document.getElementById('orders');
-function loadOrders(){ return (S.get(K_PROD,[])||[]).sort((a,b)=>b.createdAt-a.createdAt); }
-function saveOrders(arr){ S.set(K_PROD,arr); }
-function pct(o){ const t=Math.max(1,Number(o.total||0)); const d=Math.max(0,Number(o.done||0)); const p=Math.min(100, Math.round(d*100/t)); return p; }
-function card(o){
-  const el=document.createElement('div'); el.className='order';
-  const left=document.createElement('div');
-  left.innerHTML=`
-    <div style="font-weight:900">${o.name} • ${o.done} / ${o.total}</div>
-    <div class="pbar"><i style="width:${pct(o)}%"></i></div>
-    <div class="muted" style="margin-top:6px">${o.due||'—'}</div>`;
-  const right=document.createElement('div'); right.className='pbtns';
-  const bM=document.createElement('button'); bM.className='btn small ghost'; bM.textContent='-10';
-  const bP=document.createElement('button'); bP.className='btn small ghost'; bP.textContent='+10';
-  const bE=document.createElement('button'); bE.className='btn small'; bE.textContent='Edit';
-  const bD=document.createElement('button'); bD.className='btn small'; bD.textContent='Del';
-  const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pct(o)+'%';
-  bM.onclick=()=>{ o.done=Math.max(0,(o.done||0)-10); saveOrders(update(o)); renderOrders(); };
-  bP.onclick=()=>{ o.done=(o.done||0)+10; saveOrders(update(o)); renderOrders(); };
-  bD.onclick=()=>{ if(confirm('Löschen?')){ const arr=loadOrders().filter(x=>x.id!==o.id); saveOrders(arr); renderOrders(); } };
-  bE.onclick=()=> openEditor(o);
-  right.append(bM,badge,bP,bE,bD);
-  el.append(left,right);
-  return el;
+/* ---------- Produktion (карточки + i-модалка) ---------- */
+const wrapOrders=document.getElementById('orders');
+function loadOrders(){return (S.get(K_PROD,[])||[]).sort((a,b)=>b.createdAt-a.createdAt);}
+function saveOrders(a){S.set(K_PROD,a);}
+function updateOrder(o){const a=loadOrders();const i=a.findIndex(x=>x.id===o.id);if(i>=0)a[i]=o;return a;}
+function renderOrders(){
+  wrapOrders.innerHTML='';
+  loadOrders().forEach(o=>{
+    const card=document.createElement('div'); card.className='order';
+    const left=document.createElement('div');
+    left.innerHTML=`<div class="t">${o.name}</div>
+      <div class="pbar"><i style="width:${pct(o)}%"></i></div>
+      <div class="muted" style="margin-top:8px">${o.due||'—'}</div>`;
+    const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
+    const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pct(o)+'%';
+    const info=document.createElement('button'); info.className='i-btn'; info.innerHTML='ℹ️'; info.title='Details';
+    info.onclick=()=>openEditor(o);
+    right.append(badge,info);
+    card.append(left,right);
+    wrapOrders.append(card);
+  });
 }
-function update(o){ const arr=loadOrders(); const i=arr.findIndex(x=>x.id===o.id); if(i>=0) arr[i]=o; return arr; }
-function renderOrders(){ ordWrap.innerHTML=''; loadOrders().forEach(o=> ordWrap.append(card(o))); }
-document.getElementById('btnNewOrder').onclick=()=>{
-  const arr=loadOrders(); const o={id:uid(),name:'Los '+(100+arr.length),done:0,total:100,due:new Date().toISOString().slice(0,10),notes:'',createdAt:now(),updatedAt:now()};
-  arr.unshift(o); saveOrders(arr); renderOrders(); openEditor(o);
-};
 function openEditor(order){
-  // компактная модалка-щит
-  const wrap=document.createElement('div'); wrap.style.padding='8px'; wrap.innerHTML=`
-    <div style="font-weight:900;margin-bottom:8px">Auftrag bearbeiten</div>
-    <label>Name</label><input id="fN" class="inp"><br/><br/>
-    <label>Done</label><input id="fD" type="number" class="inp"><br/><br/>
-    <label>Total</label><input id="fT" type="number" class="inp"><br/><br/>
-    <label>Fällig bis</label><input id="fDue" type="date" class="inp"><br/><br/>
-    <label>Notizen</label><textarea id="fNotes" class="inp"></textarea>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px">
-      <button class="btn small" id="bCancel">Abbrechen</button>
-      <button class="btn brand small" id="bSave">Speichern</button>
+  const back=document.createElement('div'); back.className='sheet-back';
+  const sheet=document.createElement('div'); sheet.className='sheet';
+  sheet.innerHTML=`
+    <h3>${order.name}</h3>
+    <div class="rowf"><label>Done</label><input id="fD" type="number" class="inp" value="${order.done||0}"></div>
+    <div class="rowf"><label>Total</label><input id="fT" type="number" class="inp" value="${order.total||0}"></div>
+    <div class="rowf"><label>Fällig bis</label><input id="fDue" type="date" class="inp" value="${order.due||''}"></div>
+    <div class="rowf"><label>Notizen</label><textarea id="fN" class="inp" rows="3">${order.notes||''}</textarea></div>
+    <div class="btns">
+      <button class="btn ghost" id="m10">-10</button>
+      <button class="btn ghost" id="p10">+10</button>
+      <span style="flex:1"></span>
+      <button class="btn" id="del">Löschen</button>
+      <button class="btn brand" id="save">Speichern</button>
     </div>`;
-  Array.from(wrap.querySelectorAll('.inp')).forEach(el=>{el.style.width='100%';el.style.border='1px solid #dbe5ff';el.style.borderRadius='12px';el.style.padding='10px'});
-  wrap.querySelector('#fN').value=order.name||'';
-  wrap.querySelector('#fD').value=order.done||0;
-  wrap.querySelector('#fT').value=order.total||0;
-  wrap.querySelector('#fDue').value=order.due||'';
-  wrap.querySelector('#fNotes').value=order.notes||'';
-
-  const sheet=document.createElement('div');
-  sheet.style.position='fixed'; sheet.style.left=0; sheet.style.right=0; sheet.style.bottom=0;
-  sheet.style.background='#fff'; sheet.style.borderTop='1px solid #e9eef6'; sheet.style.boxShadow='0 -10px 30px rgba(13,27,42,.08)';
-  sheet.style.borderTopLeftRadius='20px'; sheet.style.borderTopRightRadius='20px';
-  sheet.style.padding='12px 16px'; sheet.style.zIndex=50;
-  sheet.append(wrap); document.body.append(sheet);
-  const close=()=>{ document.body.removeChild(sheet); };
-  wrap.querySelector('#bCancel').onclick=close;
-  wrap.querySelector('#bSave').onclick=()=>{
-    order.name=wrap.querySelector('#fN').value.trim()||order.name;
-    order.done=Number(wrap.querySelector('#fD').value||0);
-    order.total=Number(wrap.querySelector('#fT').value||0);
-    order.due=wrap.querySelector('#fDue').value||'';
-    order.notes=wrap.querySelector('#fNotes').value||'';
-    saveOrders(update(order)); renderOrders(); close();
+  const lockScroll=()=>{document.body.style.overflow='hidden';};
+  const unlockScroll=()=>{document.body.style.overflow='';};
+  lockScroll();
+  back.addEventListener('click',()=>{document.body.removeChild(back);document.body.removeChild(sheet);unlockScroll();});
+  sheet.addEventListener('click',e=>e.stopPropagation());
+  document.body.append(back,sheet);
+  // handlers
+  sheet.querySelector('#m10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Math.max(0,Number(d.value||0)-10);};
+  sheet.querySelector('#p10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Number(d.value||0)+10;};
+  sheet.querySelector('#del').onclick=()=>{ if(confirm('Auftrag löschen?')){ saveOrders(loadOrders().filter(x=>x.id!==order.id)); renderOrders(); back.click(); } };
+  sheet.querySelector('#save').onclick=()=>{
+    order.done=Number(sheet.querySelector('#fD').value||0);
+    order.total=Number(sheet.querySelector('#fT').value||0);
+    order.due=sheet.querySelector('#fDue').value||'';
+    order.notes=sheet.querySelector('#fN').value||'';
+    order.updatedAt=now();
+    saveOrders(updateOrder(order));
+    drawKpis(); renderOrders(); back.click();
   };
 }
-renderOrders();
 
-/* Zuletzt hinzugefügt (3 Tools + 3 Docs) */
-const rec=document.getElementById('recent');
+/* ---------- Letzte Aktionen (3 последних по updatedAt) ---------- */
+const feed=document.getElementById('feed');
+function renderFeed(){
+  const mk=(k,arr,fmt)=> (arr||[]).map(x=>({t:x.updatedAt||x.createdAt||0, txt:fmt(x)}));
+  const tools=mk('t', S.get(K_TOOLS,[]), x=>`Werkzeug ${x.name||x.code||''} gespeichert`);
+  const docs =mk('d', S.get(K_DOCS ,[]), x=>`Dokument „${x.title||'—'}“ geändert`);
+  const prod =mk('p', S.get(K_PROD ,[]), x=>`Auftrag ${x.name||'—'} aktualisiert`);
+  const all=[...tools,...docs,...prod].sort((a,b)=>b.t-a.t).slice(0,3);
+  const fmtTime=(t)=>{
+    const d=new Date(t); const today=new Date(); 
+    if(d.toDateString()===today.toDateString()) return d.toTimeString().slice(0,5);
+    const yest=new Date(today); yest.setDate(today.getDate()-1);
+    if(d.toDateString()===yest.toDateString()) return 'Gestern';
+    return d.toLocaleDateString();
+  };
+  feed.innerHTML='';
+  if(all.length===0){const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; feed.append(e); return;}
+  all.forEach(it=>{
+    const row=document.createElement('div'); row.className='item';
+    row.innerHTML=`<div class="time">[${fmtTime(it.t)}]</div><div class="text">${it.txt}</div>`;
+    feed.append(row);
+  });
+}
+
+/* ---------- Zuletzt hinzugefügt ---------- */
+const recent=document.getElementById('recent');
 function renderRecent(){
-  rec.innerHTML='';
-  const tools=(S.get(K_TOOLS,[])||[]).slice(0,3);
-  const docs =(S.get(K_DOCS ,[])||[]).slice(0,3);
-  const list=[...tools.map(t=>({kind:'tool',name:t.name,sub:(t.category||'')+(t.iso?(' • '+t.iso):''),img:t.photo})),
-              ...docs.map(d=>({kind:'doc',name:d.title,sub:d.category, img:d.imgData}))];
-  if(!list.length){ const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; rec.append(e); return; }
+  recent.innerHTML='';
+  const tools=(S.get(K_TOOLS,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3);
+  const docs =(S.get(K_DOCS ,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3);
+  const list=[...tools.map(t=>({name:t.name,sub:t.category, img:t.photo})),
+              ...docs.map(d=>({name:d.title,sub:d.category, img:d.imgData}))];
+  if(!list.length){const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; recent.append(e); return;}
   list.forEach(x=>{
     const c=document.createElement('article'); c.className='card';
     const ph=document.createElement('div'); ph.className='ph';
-    if(x.img){ const im=document.createElement('img'); im.src=x.img; ph.append(im); }
-    else ph.textContent='kein Foto';
+    if(x.img){const im=document.createElement('img'); im.src=x.img; ph.append(im);} else ph.textContent='kein Foto';
     const m=document.createElement('div'); m.className='meta';
     m.innerHTML=`<div class="name">${x.name}</div><div class="tags">${x.sub||''}</div>`;
-    c.append(ph,m); rec.append(c);
+    c.append(ph,m); recent.append(c);
   });
 }
-renderRecent();
 
-/* Dock height → CSS var */
-const applyDockH=()=>{
+/* ---------- init ---------- */
+function applyDockH(){
   const h=Math.round(document.getElementById('dock').getBoundingClientRect().height);
   document.documentElement.style.setProperty('--dockH', h+'px');
-};
+}
 applyDockH(); new ResizeObserver(applyDockH).observe(document.getElementById('dock'));
+
+drawKpis(); renderOrders(); renderFeed(); renderRecent();
 </script>
 </body>
 </html>
