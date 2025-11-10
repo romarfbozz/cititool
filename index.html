@@ -5,26 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>CitiTool • Dashboard</title>
 <style>
-:root{ --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --hair:#e9eef6;
+:root{ --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --accent:#ffb020; --hair:#e9eef6;
   --shadow:0 10px 30px rgba(13,27,42,.08); --dockH:78px; }
 *{box-sizing:border-box} html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,Inter,Roboto,system-ui}
 
-/* ---------- Splash ---------- */
-.splash{position:fixed;inset:0;display:grid;place-items:center;z-index:1000;
-  background:linear-gradient(180deg,#ffffff,#f2f6ff)}
-.splash .logo{display:grid;gap:14px;justify-items:center;transform:translateY(-6vh)}
-.splash .badge{width:72px;height:72px;border-radius:18px;display:grid;place-items:center;
-  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);
-  color:#fff;font:900 24px/1 Inter,system-ui;box-shadow:inset 0 0 0 1px #dce7ff}
-.splash .word{font:900 22px/1 "Inter",system-ui;letter-spacing:-.4px}
-.fade-out{animation:fadeout .5s ease forwards}
-@keyframes fadeout{to{opacity:0;visibility:hidden}}
-
-/* ---------- AppBar ---------- */
+/* AppBar */
 .appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
-  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.7));
-  border-bottom:1px solid var(--hair)}
+  background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.7));border-bottom:1px solid var(--hair)}
 .appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
 .logo-line{display:flex;align-items:center;gap:10px}
 .badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
@@ -37,7 +25,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .search svg{position:absolute;left:12px;width:18px;height:18px;fill:#8aa0c4}
 .search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter;color:var(--ink)}
 
-/* ---------- Layout ---------- */
+/* Layout */
 .main{max-width:1040px;margin:0 auto;padding:12px 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
 .section{background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow);padding:14px}
 .section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter}
@@ -45,16 +33,29 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .btn{height:38px;padding:0 14px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
 .inp{width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:10px}
+.pill{font:700 11px/1 Inter;color:#2d6cdf;background:#eef3ff;border:1px solid #d6e5ff;padding:6px 8px;border-radius:999px}
+.pill.warn{color:#8a5a00;background:#fff6e0;border-color:#ffe1a6}
 
-/* ---------- Hero Heute ---------- */
-.hero{background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.86));border:1px solid var(--hair);
-  border-radius:20px;box-shadow:var(--shadow);padding:16px 14px}
-.hero h1{margin:0 0 6px;font:900 22px/1.1 Inter;letter-spacing:-.2px}
-.chips{display:flex;gap:8px;flex-wrap:wrap}
-.chip{display:flex;align-items:center;gap:8px;border:1px solid #e1e9ff;background:#f6f9ff;border-radius:999px;padding:8px 10px}
-.chip b{font:900 14px/1 Inter}
+/* Hero Today */
+.hero{position:relative;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow);padding:14px 12px;background:rgba(255,255,255,.9);overflow:hidden}
+.hero h1{margin:0 0 6px;font:900 20px/1.1 Inter;letter-spacing:-.2px}
+.hero .row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hero .chips{display:flex;gap:8px;flex-wrap:wrap}
+.hero .chip{display:flex;align-items:center;gap:8px;border:1px solid #e1e9ff;background:#f6f9ff;border-radius:999px;padding:8px 10px}
+.hero .chip b{font:900 14px/1 Inter}
+.hero .bg{position:absolute;inset:0;pointer-events:none;opacity:.6;
+  background:
+    radial-gradient(1100px 300px at 60% -10%, rgba(45,108,223,.12), transparent 70%),
+    radial-gradient(900px 280px at 5% 30%, rgba(255,160,50,.08), transparent 70%),
+    linear-gradient(180deg,#fff 0%, #f3f6fb 60%, #eef2f9 100%);
+  mask-image: linear-gradient(#000 75%, transparent);
+}
+.hero .grid{position:absolute;inset:0;background:
+  repeating-linear-gradient(0deg, rgba(13,27,42,.06) 0 1px, transparent 1px 40px),
+  repeating-linear-gradient(90deg, rgba(13,27,42,.05) 0 1px, transparent 1px 40px);
+  filter: blur(.2px) saturate(.9);}
 
-/* ---------- Checkliste ---------- */
+/* Checkliste */
 .chk-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .list{display:grid;gap:8px}
 .task{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
@@ -62,7 +63,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .drag{width:22px;text-align:center;color:#8aa0c4;font-weight:900}
 .task.done .title{text-decoration:line-through;color:#8aa0c4}
 
-/* ---------- Produktion ---------- */
+/* Produktion */
 .orders{display:grid;gap:10px}
 .order{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #edf1f7;border-radius:16px}
 .order .t{font:900 18px/1.2 Inter}
@@ -71,14 +72,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .badge{display:inline-grid;place-items:center;min-width:46px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
 .i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
 
-/* ---------- Feeds ---------- */
+/* Feeds */
 .feed{display:grid;gap:8px}
-.row{display:flex;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
+.rowfeed{display:flex;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
 .time{font:700 12px/1 Inter;color:#586a85;width:72px}
 .text{font-weight:600}
-.pill{font:700 11px/1 Inter;color:#2d6cdf;background:#eef3ff;border:1px solid #d6e5ff;padding:6px 8px;border-radius:999px}
 
-/* ---------- KPI column (Übersicht) ---------- */
+/* KPI column (Übersicht) */
 .kpicol{display:grid;gap:8px}
 .krow{display:grid;grid-template-columns:140px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px}
 .kname{font-weight:700}
@@ -86,7 +86,13 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .kbar>i{display:block;height:100%;background:#2d6cdf}
 .kval{font:900 16px/1 Inter}
 
-/* ---------- Sheet (Produktion editor) ---------- */
+/* Backup & Restore */
+.br-wrap{display:grid;gap:10px}
+.br-head{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.br-actions{display:flex;gap:8px;flex-wrap:wrap}
+.small{font-size:12px;color:#64748b}
+
+/* Modal sheet (Produktion editor) */
 .sheet-back{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:60}
 .sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e9eef6;box-shadow:0 -16px 40px rgba(13,27,42,.15);
   border-top-left-radius:20px;border-top-right-radius:20px;padding:14px 16px 18px;z-index:61;max-height:78vh;overflow:auto}
@@ -94,7 +100,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .rowf{display:grid;gap:6px;margin:8px 0}
 .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 
-/* ---------- Dock ---------- */
+/* Dock */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
 .dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
@@ -106,16 +112,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 </head>
 <body>
 
-<!-- Splash -->
-<div id="splash" class="splash">
-  <div class="logo">
-    <div class="badge">CT</div>
-    <div class="word"><b>CITI‧TOOL</b></div>
-    <div class="muted" style="font-weight:700">lädt…</div>
-  </div>
-</div>
-
-<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
     <div class="logo-line">
@@ -130,14 +126,21 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 </header>
 
 <main class="main">
-  <!-- Hero Heute -->
-  <section class="hero" id="hero">
-    <h1 id="heroTitle">Heute</h1>
-    <p class="muted" id="heroLine">—</p>
-    <div class="chips" id="heroChips"></div>
+
+  <!-- Hero Today -->
+  <section class="hero">
+    <div class="bg"></div><div class="grid"></div>
+    <div class="row">
+      <div>
+        <h1 id="heroTitle">Heute</h1>
+        <div class="muted" id="heroLine">—</div>
+      </div>
+      <div class="chips" id="heroChips"></div>
+    </div>
+    <div class="muted small" id="heroWarn" style="margin-top:6px;display:none;">⚠ Backup überfällig — bitte sichern.</div>
   </section>
 
-  <!-- Checkliste -->
+  <!-- Setup-Checkliste -->
   <section class="section">
     <h2>Setup-Checkliste</h2>
     <div class="chk-head">
@@ -167,11 +170,29 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
     <div class="feed" id="recent"></div>
   </section>
 
-  <!-- Übersicht (в самый низ) -->
+  <!-- Übersicht (низ страницы) -->
   <section class="section">
     <h2>Übersicht</h2>
     <div class="kpicol" id="kpis"></div>
   </section>
+
+  <!-- Backup & Restore (низ страницы) -->
+  <section class="section">
+    <div class="br-head">
+      <h2 style="margin:0">Backup & Restore</h2>
+      <span id="bkIndicator" class="pill warn" style="display:none">Backup fällig</span>
+    </div>
+    <div class="br-wrap">
+      <div class="small muted" id="bkStatus">—</div>
+      <div class="br-actions">
+        <button class="btn brand" id="doBackup">Backup erstellen</button>
+        <input type="file" id="fileRestore" accept="application/json" style="display:none"/>
+        <button class="btn" id="doRestore">Wiederherstellen…</button>
+      </div>
+      <div class="small">Sichert alle lokalen <b>CT_*</b>-Daten в один JSON и позволяет восстановить их позже.</div>
+    </div>
+  </section>
+
 </main>
 
 <!-- Dock -->
@@ -187,62 +208,66 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 </nav>
 
 <script>
-/* storage helpers */
+/* Storage + keys */
 const S={get(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
 const now=()=>Date.now(), uid=()=>Math.random().toString(36).slice(2,10);
-const K_PROG='CT_PROGS_V1', K_TOOLS='CT_TOOLS_V1', K_DOCS='CT_DOCS_V1', K_PROD='CT_PROD_V1', K_CHECK='CT_CHECK_V1';
+const K={ PROG:'CT_PROGS_V1', TOOLS:'CT_TOOLS_V1', DOCS:'CT_DOCS_V1', PROD:'CT_PROD_V1', CHECK:'CT_CHECK_V1',
+          DOC_CATS:'CT_DOC_CATS_V1', TOOL_CATS:'CT_TOOL_CATS_V1', LIVE:'CT_LIVE_V1',
+          AS_MAT:'CT_AS_MAT_PRESETS_V1', AS_HIST:'CT_AS_MAT_HISTORY_V1', AS_FAS:'CT_AS_FASEN_PRESETS_V1', AS_PASS:'CT_AS_PASS_TABLE_V1',
+          BK_INFO:'CT_BACKUP_INFO_V1' };
+const ALL_KEYS=[K.PROG,K.TOOLS,K.DOCS,K.PROD,K.CHECK,K.DOC_CATS,K.TOOL_CATS,K.LIVE,K.AS_MAT,K.AS_HIST,K.AS_FAS,K.AS_PASS];
 
-/* seeds (минимально) */
+/* Seeds (минимум, если пусто) */
 (function seeds(){
-  if(!Array.isArray(S.get(K_PROD))) S.set(K_PROD,[]);
-  if(S.get(K_PROD).length===0){
+  if(!Array.isArray(S.get(K.PROD))) S.set(K.PROD,[]);
+  if(S.get(K.PROD).length===0){
     const a=[]; for(let i=1;i<=5;i++) a.push({id:uid(),name:'Los '+(231+i),done:20*i,total:120+i*20,due:new Date(Date.now()+i*864e5).toISOString().slice(0,10),notes:'',createdAt:now(),updatedAt:now()});
-    S.set(K_PROD,a);
+    S.set(K.PROD,a);
   }
-  if(!Array.isArray(S.get(K_TOOLS))) S.set(K_TOOLS,[]);
-  if(S.get(K_TOOLS).length<5){
-    const arr=S.get(K_TOOLS,[]); for(let i=1;i<=5;i++) arr.push({id:uid(),name:'Tool '+i,iso:'CNMG1204',category:'Demo',photo:null,createdAt:now(),updatedAt:now()}); S.set(K_TOOLS,arr);
+  if(!Array.isArray(S.get(K.TOOLS))) S.set(K.TOOLS,[]);
+  if(S.get(K.TOOLS).length<5){
+    const arr=S.get(K.TOOLS,[]); for(let i=1;i<=5;i++) arr.push({id:uid(),name:'Tool '+i,iso:'CNMG1204',category:'Demo',photo:null,createdAt:now(),updatedAt:now()}); S.set(K.TOOLS,arr);
   }
-  if(!Array.isArray(S.get(K_DOCS))) S.set(K_DOCS,[]);
-  if(S.get(K_DOCS).length<5){
-    const arr=S.get(K_DOCS,[]); for(let i=1;i<=5;i++) arr.push({id:uid(),title:'Notiz '+i,category:'Allgemein',imgData:null,text:'',createdAt:now(),updatedAt:now()}); S.set(K_DOCS,arr);
+  if(!Array.isArray(S.get(K.DOCS))) S.set(K.DOCS,[]);
+  if(S.get(K.DOCS).length<5){
+    const arr=S.get(K.DOCS,[]); for(let i=1;i<=5;i++) arr.push({id:uid(),title:'Notiz '+i,category:'Allgemein',imgData:null,text:'',createdAt:now(),updatedAt:now()}); S.set(K.DOCS,arr);
   }
-  if(!Array.isArray(S.get(K_CHECK))) S.set(K_CHECK,[
-    {id:uid(),text:'Spannung prüfen',done:false,sort:1,createdAt:now(),updatedAt:now()},
-    {id:uid(),text:'Werkzeugdaten laden',done:false,sort:2,createdAt:now(),updatedAt:now()},
-  ]);
+  if(!S.get(K.BK_INFO)) S.set(K.BK_INFO,{lastBackupAt:0});
 })();
 
-/* Splash hide after init */
-function hideSplash(){ const s=document.getElementById('splash'); if(!s) return; s.classList.add('fade-out'); setTimeout(()=>s.remove(),520); }
+/* Search UI */
+const searchBox=document.getElementById('searchBox'); const q=document.getElementById('q');
+searchBox.addEventListener('click',()=>{searchBox.classList.add('active'); q.focus();});
+q.addEventListener('blur',()=>{if(!q.value) searchBox.classList.remove('active');});
 
 /* Helpers */
 const pct=o=>{const t=Math.max(1,Number(o.total||0));const d=Math.max(0,Number(o.done||0));return Math.min(100,Math.round(d*100/t));};
 const today = d => (new Date(d).toDateString()===new Date().toDateString());
 
-/* AppBar search */
-const searchBox=document.getElementById('searchBox'); const q=document.getElementById('q');
-searchBox.addEventListener('click',()=>{searchBox.classList.add('active'); q.focus();});
-q.addEventListener('blur',()=>{if(!q.value) searchBox.classList.remove('active');});
-
-/* Hero */
+/* Hero Today */
 function drawHero(){
-  const progs=S.get(K_PROG,[]), tools=S.get(K_TOOLS,[]), docs=S.get(K_DOCS,[]), prod=S.get(K_PROD,[]);
+  const progs=S.get(K.PROG,[]), tools=S.get(K.TOOLS,[]), docs=S.get(K.DOCS,[]), prod=S.get(K.PROD,[]);
   const mean = prod.length? Math.round(prod.reduce((s,o)=>s+pct(o),0)/prod.length) : 0;
   const act  = [tools,docs,prod].flat().filter(x=>today(x.updatedAt||0)).length;
   const total= progs.length+tools.length+docs.length+prod.length;
+
   document.getElementById('heroTitle').textContent =
-    new Date().toLocaleDateString(undefined,{weekday:'long', day:'2-digit', month:'short'});
-  document.getElementById('heroLine').textContent = 'Alles bereit. Lokale Daten, kein Cloud-Sync.';
+    new Date().toLocaleDateString(undefined,{weekday:'short', day:'2-digit', month:'short'});
+  document.getElementById('heroLine').textContent = 'Lokal. Schnell. Übersichtlich.';
+
   const chips=document.getElementById('heroChips'); chips.innerHTML='';
   const mk=(label,val)=>{const c=document.createElement('div'); c.className='chip'; c.innerHTML=`<span class="muted">${label}</span><b>${val}</b>`; return c;}
   chips.append(mk('Aktivität heute',act), mk('Ø Fortschritt', mean+'%'), mk('Datensätze', total));
+
+  // backup overdue hint in hero
+  const info=S.get(K.BK_INFO,{lastBackupAt:0}); const overdue = (now()-(info.lastBackupAt||0)) > 7*864e5;
+  const warn=document.getElementById('heroWarn'); warn.style.display = overdue ? '' : 'none';
 }
 
 /* Checkliste */
 const elList=document.getElementById('chkList');
-function loadCheck(){return (S.get(K_CHECK,[])||[]).sort((a,b)=>a.sort-b.sort||b.createdAt-a.createdAt);}
-function saveCheck(a){S.set(K_CHECK,a);}
+function loadCheck(){const a=S.get(K.CHECK,[]); return (a||[]).sort((x,y)=>x.sort-y.sort||y.createdAt-x.createdAt);}
+function saveCheck(a){S.set(K.CHECK,a);}
 function renderCheck(){
   elList.innerHTML='';
   const arr=loadCheck();
@@ -255,7 +280,7 @@ function renderCheck(){
         <span>${it.text}</span>
       </label>
       <button class="btn" data-del>Del</button>`;
-    row.querySelector('input').onchange=(e)=>{it.done=e.target.checked; it.updatedAt=now(); saveCheck(update(it)); renderCheck();};
+    row.querySelector('input').onchange=(e)=>{it.done=e.target.checked; it.updatedAt=now(); saveCheck(updateItem(it)); renderCheck();};
     row.querySelector('[data-del]').onclick=()=>{saveCheck(loadCheck().filter(x=>x.id!==it.id)); renderCheck();};
     row.addEventListener('dragstart',ev=>{ev.dataTransfer.setData('text/plain',it.id);ev.dataTransfer.effectAllowed='move';});
     row.addEventListener('dragover',ev=>{ev.preventDefault();ev.dataTransfer.dropEffect='move';});
@@ -268,7 +293,7 @@ function renderCheck(){
     elList.append(row);
   });
 }
-function update(item){const arr=loadCheck(); const i=arr.findIndex(x=>x.id===item.id); if(i>=0) arr[i]=item; return arr;}
+function updateItem(item){const arr=loadCheck(); const i=arr.findIndex(x=>x.id===item.id); if(i>=0) arr[i]=item; return arr;}
 document.getElementById('addItem').onclick=()=>{const t=document.getElementById('newItem'); const s=(t.value||'').trim(); if(!s) return;
   const arr=loadCheck(); const max=arr.reduce((m,x)=>Math.max(m,x.sort||0),0);
   arr.push({id:uid(),text:s,done:false,sort:max+1,createdAt:now(),updatedAt:now()}); saveCheck(arr); t.value=''; renderCheck();};
@@ -277,18 +302,19 @@ document.getElementById('delDone').onclick=()=>{ saveCheck(loadCheck().filter(x=
 
 /* Produktion */
 const wrapOrders=document.getElementById('orders');
-function loadOrders(){return (S.get(K_PROD,[])||[]).sort((a,b)=>b.createdAt-a.createdAt);}
-function saveOrders(a){S.set(K_PROD,a);}
+function loadOrders(){return (S.get(K.PROD,[])||[]).sort((a,b)=>b.createdAt-a.createdAt);}
+function saveOrders(a){S.set(K.PROD,a);}
+function pctOrder(o){const t=Math.max(1,Number(o.total||0));const d=Math.max(0,Number(o.done||0));return Math.min(100,Math.round(d*100/t));}
 function renderOrders(){
   wrapOrders.innerHTML='';
   loadOrders().forEach(o=>{
     const card=document.createElement('div'); card.className='order';
     const left=document.createElement('div');
     left.innerHTML=`<div class="t">${o.name}</div>
-      <div class="pbar"><i style="width:${pct(o)}%"></i></div>
+      <div class="pbar"><i style="width:${pctOrder(o)}%"></i></div>
       <div class="muted" style="margin-top:8px">${o.due||'—'}</div>`;
     const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
-    const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pct(o)+'%';
+    const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pctOrder(o)+'%';
     const info=document.createElement('button'); info.className='i-btn'; info.innerHTML='ℹ️'; info.title='Details';
     info.onclick=()=>openEditor(o);
     right.append(badge,info);
@@ -312,8 +338,7 @@ function openEditor(order){
       <button class="btn" id="del">Löschen</button>
       <button class="btn brand" id="save">Speichern</button>
     </div>`;
-  const lockScroll=()=>{document.body.style.overflow='hidden';};
-  const unlockScroll=()=>{document.body.style.overflow='';};
+  const lockScroll=()=>{document.body.style.overflow='hidden';}; const unlockScroll=()=>{document.body.style.overflow='';};
   lockScroll();
   back.addEventListener('click',()=>{document.body.removeChild(back);document.body.removeChild(sheet);unlockScroll();});
   sheet.addEventListener('click',e=>e.stopPropagation());
@@ -336,9 +361,9 @@ function openEditor(order){
 const feed=document.getElementById('feed');
 function renderFeed(){
   const mk=(arr,fmt)=> (arr||[]).map(x=>({t:x.updatedAt||x.createdAt||0, txt:fmt(x)}));
-  const tools=mk(S.get(K_TOOLS,[]), x=>`Werkzeug ${x.name||x.code||''} gespeichert`);
-  const docs =mk(S.get(K_DOCS ,[]), x=>`Dokument „${x.title||'—'}“ geändert`);
-  const prod =mk(S.get(K_PROD ,[]), x=>`Auftrag ${x.name||'—'} aktualisiert`);
+  const tools=mk(S.get(K.TOOLS,[]), x=>`Werkzeug ${x.name||x.code||''} gespeichert`);
+  const docs =mk(S.get(K.DOCS ,[]), x=>`Dokument „${x.title||'—'}“ geändert`);
+  const prod =mk(S.get(K.PROD ,[]), x=>`Auftrag ${x.name||'—'} aktualisiert`);
   const all=[...tools,...docs,...prod].sort((a,b)=>b.t-a.t).slice(0,3);
   const fmtTime=(t)=>{ const d=new Date(t); const today=new Date(); 
     if(d.toDateString()===today.toDateString()) return d.toTimeString().slice(0,5);
@@ -348,7 +373,7 @@ function renderFeed(){
   feed.innerHTML='';
   if(all.length===0){const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; feed.append(e); return;}
   all.forEach(it=>{
-    const row=document.createElement('div'); row.className='row';
+    const row=document.createElement('div'); row.className='rowfeed';
     row.innerHTML=`<div class="time">[${fmtTime(it.t)}]</div><div class="text">${it.txt}</div>`;
     feed.append(row);
   });
@@ -358,15 +383,15 @@ function renderFeed(){
 const recent=document.getElementById('recent');
 function renderRecent(){
   recent.innerHTML='';
-  const tools=(S.get(K_TOOLS,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3)
+  const tools=(S.get(K.TOOLS,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3)
                 .map(t=>({t: t.createdAt, type:'Tool', name:t.name, sub:t.category||'', img:!!t.photo}));
-  const docs =(S.get(K_DOCS ,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3)
+  const docs =(S.get(K.DOCS ,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3)
                 .map(d=>({t: d.createdAt, type:'Dok',  name:d.title, sub:d.category||'', img:!!d.imgData}));
   const list=[...tools,...docs].sort((a,b)=>b.t-a.t);
   if(!list.length){const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; recent.append(e); return;}
   const fmt=(t)=>{const d=new Date(t); return d.toTimeString().slice(0,5);}
   list.forEach(x=>{
-    const row=document.createElement('div'); row.className='row';
+    const row=document.createElement('div'); row.className='rowfeed';
     row.innerHTML=`<div class="time">[${fmt(x.t)}]</div><span class="pill">${x.type}</span>
       <div class="text" style="flex:1">${x.name}</div><div class="muted">${x.sub||''}${x.img?' · img':''}</div>`;
     recent.append(row);
@@ -375,7 +400,7 @@ function renderRecent(){
 
 /* KPI column */
 function drawKpis(){
-  const progs=S.get(K_PROG,[]), tools=S.get(K_TOOLS,[]), docs=S.get(K_DOCS,[]), prod=S.get(K_PROD,[]);
+  const progs=S.get(K.PROG,[]), tools=S.get(K.TOOLS,[]), docs=S.get(K.DOCS,[]), prod=S.get(K.PROD,[]);
   const doneCnt=prod.filter(o=>o.done>=o.total && o.total>0).length;
   const mean = prod.length? Math.round(prod.reduce((s,o)=>s+pct(o),0)/prod.length) : 0;
   const totalRecords=(progs.length+tools.length+docs.length+prod.length);
@@ -400,6 +425,46 @@ function drawKpis(){
   });
 }
 
+/* Backup & Restore */
+function renderBackupStatus(){
+  const info=S.get(K.BK_INFO,{lastBackupAt:0});
+  const ts=info.lastBackupAt||0;
+  const el=document.getElementById('bkStatus');
+  if(!ts){ el.textContent='Noch kein Backup erstellt.'; }
+  else{
+    const d=new Date(ts);
+    el.textContent='Letztes Backup: '+ d.toLocaleString();
+  }
+  const overdue = (now()-ts) > 7*864e5;
+  document.getElementById('bkIndicator').style.display = overdue ? '' : 'none';
+  // и в Hero
+  const warnHero = document.getElementById('heroWarn');
+  if(warnHero) warnHero.style.display = overdue ? '' : 'none';
+}
+document.getElementById('doBackup').onclick=()=>{
+  const out={};
+  ALL_KEYS.forEach(k=>{ const v=localStorage.getItem(k); if(v!==null) out[k]=JSON.parse(v); });
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='citi_backup.json'; a.click();
+  URL.revokeObjectURL(a.href);
+  S.set(K.BK_INFO,{lastBackupAt:now()});
+  renderBackupStatus();
+};
+document.getElementById('doRestore').onclick=()=>{ document.getElementById('fileRestore').click(); };
+document.getElementById('fileRestore').addEventListener('change',async (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const text=await f.text(); const data=JSON.parse(text);
+    if(typeof data!=='object' || Array.isArray(data)) { alert('Falsches Format'); return; }
+    if(!confirm('Alle Daten überschreiben?')) return;
+    Object.keys(data).forEach(k=>{
+      if(ALL_KEYS.includes(k)) localStorage.setItem(k, JSON.stringify(data[k]));
+    });
+    alert('Daten wiederhergestellt');
+    renderAll();
+  }catch(err){ alert('Fehler beim Wiederherstellen'); }
+});
+
 /* Dock padding */
 function applyDockH(){
   const h=Math.round(document.getElementById('dock').getBoundingClientRect().height);
@@ -407,9 +472,9 @@ function applyDockH(){
 }
 applyDockH(); new ResizeObserver(applyDockH).observe(document.getElementById('dock'));
 
-/* init */
-drawHero(); renderCheck(); renderOrders(); renderFeed(); renderRecent(); drawKpis();
-window.addEventListener('load',()=>setTimeout(hideSplash,250)); // короткая пауза чтобы всё отрисовалось
+/* Render */
+function renderAll(){ drawHero(); renderCheck(); renderOrders(); renderFeed(); renderRecent(); drawKpis(); renderBackupStatus(); }
+renderAll();
 </script>
 </body>
 </html>
