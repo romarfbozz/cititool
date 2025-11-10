@@ -1,19 +1,17 @@
-// /ui/setup.js — v8.0 (clean header + bottom actions + reliable drawing upload)
+// /ui/setup.js — v8.1 (clean header, bottom actions, drawing picker = library/files only)
 ;(function (global) {
   "use strict";
   const K_GROUPS='CT_PROG_GROUPS_V1', K_OLD='CT_PROGS_V1', K_LIVE='CT_LIVE_V1';
   const SLOTS=12;
 
-  // ---------- CSS ----------
+  /* ---------- CSS ---------- */
   (function css(){
-    const id='ct-setup-v80-css'; if(document.getElementById(id)) return;
+    const id='ct-setup-v81-css'; if(document.getElementById(id)) return;
     const s=document.createElement('style'); s.id=id; s.textContent=`
-/* Fullscreen editor */
 .ct-ed{position:fixed;inset:0;z-index:9999;display:grid;grid-template-rows:auto 1fr auto;
   background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,.97));backdrop-filter:saturate(1.1) blur(8px)}
 .ct-ed .bar{display:grid;grid-template-columns:1fr;align-items:center;padding:12px;border-bottom:1px solid #e9eef6;background:#fff}
-.ct-ed .bar .ttl{margin:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  font:900 18px/1.1 Inter,system-ui}
+.ct-ed .bar .ttl{margin:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font:900 18px/1.1 Inter,system-ui}
 .ct-ed .cnt{overflow:auto;padding:12px;max-width:980px;margin:0 auto;width:100%}
 .ct-ed .img{width:100%;border:1px solid #edf1f7;border-radius:12px;object-fit:cover;margin-bottom:8px;background:#f5f8ff}
 .ct-ed .grp{display:grid;gap:8px;margin:8px 0}
@@ -37,22 +35,16 @@
 .inl .wrap{padding:12px;display:grid;gap:8px}
 .inl .row{display:grid;gap:6px}
 .inl .img{width:100%;max-height:160px;object-fit:contain;background:#f5f8ff;border:1px solid #edf1f7;border-radius:12px}
-
-/* Bottom actions */
-.ct-ed .actions{position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e9eef6;
-  display:flex;gap:8px;justify-content:flex-end;padding:10px 12px}
+.ct-ed .actions{position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e9eef6;display:flex;gap:8px;justify-content:flex-end;padding:10px 12px}
 .btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn.brand{background:#2d6cdf;border-color:#2d6cdf;color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
 .btn.is-sm{height:32px;border-radius:12px}
 .i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:900;display:grid;place-items:center}
 .badge-live{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:#2d6cdf;font-weight:800;padding:0 10px}
 .ct-sub{color:#6b7a90;font-size:13px}
-
-/* Bottom sheet (Preview/Picker) */
 .ct-bd{position:fixed;inset:0;z-index:11040;background:rgba(13,27,42,.25);opacity:0;pointer-events:none;transition:opacity .2s}
 .ct-bd.show{opacity:1;pointer-events:auto}
-.ct-sheet{position:fixed;left:0;right:0;bottom:0;z-index:11050;background:#fff;border-top:1px solid #e9eef6;border-radius:18px 18px 0 0;
-  box-shadow:0 -18px 40px rgba(13,27,42,.12);transform:translateY(100%);transition:transform .25s}
+.ct-sheet{position:fixed;left:0;right:0;bottom:0;z-index:11050;background:#fff;border-top:1px solid #e9eef6;border-radius:18px 18px 0 0;box-shadow:0 -18px 40px rgba(13,27,42,.12);transform:translateY(100%);transition:transform .25s}
 .ct-sheet.show{transform:translateY(0)}
 .ct-sheet .hd{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #eef2f8}
 .ct-sheet .hd .tt{font:900 16px/1 Inter,system-ui}
@@ -68,7 +60,7 @@
 `; document.head.appendChild(s);
   })();
 
-  // ---------- utils ----------
+  /* ---------- utils & storage ---------- */
   const storage={
     get(k,def){ try{ if(global.CT?.load) return global.CT.load(k,def); const r=localStorage.getItem(k); return r==null?def:JSON.parse(r);}catch{return def} },
     set(k,v){ try{ if(global.CT?.save) return global.CT.save(k,v); localStorage.setItem(k,JSON.stringify(v)); }catch{} }
@@ -87,11 +79,11 @@
     }
   };
 
-  // ---------- sheets helpers ----------
+  /* ---------- sheets helpers ---------- */
   const mkBD=()=>{ const bd=document.createElement('div'); bd.className='ct-bd'; document.body.appendChild(bd); requestAnimationFrame(()=>bd.classList.add('show')); return bd; };
   const rmBD=(bd)=>{ if(!bd) return; bd.classList.remove('show'); setTimeout(()=>bd.remove(),150); };
 
-  // ---------- Picker ----------
+  /* ---------- Picker (tools) ---------- */
   const Picker={ el:null, bd:null, esc:null, onPick:null,
     open({title='Werkzeug wählen', mode='pick', onPick}){
       this.close(); this.onPick=onPick; this.bd=mkBD();
@@ -110,7 +102,6 @@
       handle.addEventListener('touchmove',e=>{ if(sy!=null && e.touches[0].clientY - sy > 160) close(); });
 
       if(mode==='pick') this.list(); else this.create();
-
       void el.offsetHeight; setTimeout(()=> el.classList.add('show'), 0);
     },
     list(){
@@ -143,7 +134,7 @@
       const nm=row('Name','p_name'), iso=row('ISO / Code','p_iso');
       const img=document.createElement('img'); img.src=ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px';
 
-      const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.capture='environment'; fin.style.display='none'; document.body.appendChild(fin);
+      const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.style.display='none'; document.body.appendChild(fin);
       fin.onchange=()=>{ const f=fin.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>img.src=r.result; r.readAsDataURL(f); };
 
       const bar=document.createElement('div'); bar.style.display='flex'; bar.style.gap='8px'; bar.style.justifyContent='flex-end';
@@ -157,7 +148,7 @@
     close(){ if(this.el){ this.el.classList.remove('show'); const el=this.el; this.el=null; setTimeout(()=>el.remove(),180); } rmBD(this.bd); this.bd=null; if(this.esc){document.removeEventListener('keydown',this.esc); this.esc=null;} }
   };
 
-  // ---------- Preview ----------
+  /* ---------- Preview (program card) ---------- */
   const Preview={ el:null, bd:null, esc:null,
     open(g){
       this.close(); this.bd=mkBD();
@@ -200,7 +191,7 @@
     close(){ if(this.el){ this.el.classList.remove('show'); const el=this.el; this.el=null; setTimeout(()=>el.remove(),180); } rmBD(this.bd); this.bd=null; if(this.esc){document.removeEventListener('keydown',this.esc); this.esc=null;} }
   };
 
-  // ---------- data ----------
+  /* ---------- Data ---------- */
   const Setup={
     _hardSeed(){
       const demo=[]; for(let i=0;i<5;i++){ const nr=String(231800+i);
@@ -236,7 +227,7 @@
     applyLive(id,side){ const g=this.get(id); if(!g) return null; const minimal={id:g.id,nr:g.nr,side,title:g.title,slots:g.sides[side].slots,at:now()}; const cur=this.live(); cur[side]=minimal; storage.set(K_LIVE,cur); return minimal; }
   };
 
-  // ---------- Editor (clean header + bottom actions) ----------
+  /* ---------- Editor ---------- */
   const Editor={ el:null, draft:null, dirty:false, side:'RO', openPos:null,
     open(group){
       if(this.el){ this.render(group); return; }
@@ -244,19 +235,15 @@
       el.innerHTML=`
         <div class="bar"><h1 class="ttl"></h1></div>
         <div class="cnt"></div>
-        <div class="actions">
-          <button class="btn" data-a="cancel">Abbrechen</button>
-          <button class="btn brand" data-a="save">Speichern</button>
-        </div>`;
+        <div class="actions"><button class="btn" data-a="cancel">Abbrechen</button><button class="btn brand" data-a="save">Speichern</button></div>`;
       document.body.appendChild(el); this.el=el;
 
       const askClose=async()=>{ if(!this.dirty) return true; const ok=await (global.CT?.ui?.confirm? CT.ui.confirm({title:'Schließen ohne Speichern?', msg:'Änderungen gehen verloren.'}) : Promise.resolve(confirm('Schließen ohne Speichern?'))); return !!ok; };
       const doClose=async()=>{ if(await askClose()){ this._detach(); this.el.remove(); this.el=null; this.draft=null; document.documentElement.style.overflow=''; } };
       el.addEventListener('click', async e=>{
         const b=e.target.closest('button[data-a]'); if(!b) return;
-        const a=b.dataset.a;
-        if(a==='cancel') await doClose();
-        else if(a==='save') this._save();
+        if(b.dataset.a==='cancel') await doClose();
+        else if(b.dataset.a==='save') this._save();
       });
       const onKey=(e)=>{ if(e.key==='Escape') doClose(); };
       document.addEventListener('keydown', onKey); el._kill=()=>document.removeEventListener('keydown', onKey);
@@ -270,17 +257,17 @@
       const cnt=this.el.querySelector('.cnt'); const ttl=this.el.querySelector('.ttl');
       ttl.textContent=`${this.draft.title||'Programm'} — ${this.draft.nr||''}`;
 
-      // drawing: native input (надёжно на iOS)
+      // Drawing: ONLY library/files
       const img=document.createElement('img'); img.className='img'; img.src=this.draft.drawing||ph();
       const row=document.createElement('div'); row.className='grp';
-      const bSet=mkBtn('Zeichnung ändern','is-sm'), bClr=mkBtn('Entfernen','is-sm');
-      const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.capture='environment'; fin.style.display='none'; document.body.appendChild(fin);
+      const bPick=mkBtn('Zeichnung wählen','is-sm'), bClr=mkBtn('Entfernen','is-sm');
+      const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.style.display='none'; document.body.appendChild(fin);
       fin.onchange=()=>{ const f=fin.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ this.draft.drawing=r.result; img.src=r.result; this.markDirty(); }; r.readAsDataURL(f); };
-      bSet.onclick=()=>fin.click();
+      bPick.onclick=()=>fin.click();
       bClr.onclick=()=>{ this.draft.drawing=null; img.src=ph(); this.markDirty(); };
-      row.append(bSet,bClr);
+      row.append(bPick,bClr);
 
-      // fields
+      // Fields
       const f=document.createElement('div'); f.className='grp';
       f.innerHTML=`
         <label>Titel</label><input id="f_title" value="${esc(this.draft.title||'')}">
@@ -290,7 +277,7 @@
         <label>Notizen</label><textarea id="f_note">${esc(this.draft.notes||'')}</textarea>`;
       f.querySelectorAll('input,textarea').forEach(el=> el.addEventListener('input', ()=>this.markDirty()));
 
-      // side tabs + slots
+      // Side tabs + slots
       const tabs=document.createElement('div'); tabs.className='tabs';
       const bRO=tab('RO',true), bRU=tab('RU',false); tabs.append(bRO,bRU);
       bRO.onclick=()=>{ this.side='RO'; bRO.classList.add('active'); bRU.classList.remove('active'); this.openPos=null; draw(); };
@@ -320,13 +307,13 @@
             const img2=document.createElement('img'); img2.className='img'; img2.src=tool?.photo||ph();
             const r1=rowField('T-Nummer (z.B. T0101)', slot.tnum||''), r2=rowField('Alias / Titel', slot.alias||'');
             const btns=document.createElement('div'); btns.style.display='flex'; btns.style.gap='8px'; btns.style.flexWrap='wrap'; btns.style.justifyContent='flex-end';
-            const bPick=mkBtn('Aus Tools wählen'), bNew=mkBtn('Neues Werkzeug'), bDetach=mkBtn('Entfernen','is-sm'), bCancel=mkBtn('Abbrechen'), bSave=mkBtn('Speichern','brand');
-            bPick.onclick=()=> Picker.open({title:'Werkzeug wählen', mode:'pick', onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); this.markDirty(); }});
-            bNew.onclick =()=> Picker.open({title:'Neues Werkzeug', mode:'new',  onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); this.markDirty(); }});
+            const bPickT=mkBtn('Aus Tools wählen'), bNewT=mkBtn('Neues Werkzeug'), bDetach=mkBtn('Entfernen','is-sm'), bCancel=mkBtn('Abbrechen'), bSave=mkBtn('Speichern','brand');
+            bPickT.onclick=()=> Picker.open({title:'Werkzeug wählen', mode:'pick', onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); this.markDirty(); }});
+            bNewT.onclick =()=> Picker.open({title:'Neues Werkzeug', mode:'new',  onPick:(t)=>{ slot.toolId=t.id; img2.src=t.photo||ph(); this.markDirty(); }});
             bDetach.onclick=()=>{ slot.toolId=null; img2.src=ph(); this.markDirty(); };
             bCancel.onclick=()=>{ this.openPos=null; draw(); };
             bSave.onclick=()=>{ slot.tnum=r1.q.value.trim()||null; slot.alias=r2.q.value.trim(); this.markDirty(); this.openPos=null; draw(); };
-            btns.append(bPick,bNew,bDetach,bCancel,bSave);
+            btns.append(bPickT,bNewT,bDetach,bCancel,bSave);
             wrap.append(img2,r1.el,r2.el,btns); inl.append(wrap); art.append(inl);
           }
           grid.append(art);
@@ -349,7 +336,7 @@
     }
   };
 
-  // ---------- List UI ----------
+  /* ---------- List UI ---------- */
   const UI={
     els:{}, state:{q:'',side:''},
     mount({qInput,listWrap,lastWrap,chipsSides,newBtn}){
@@ -384,6 +371,6 @@
     }
   };
 
-  // export
+  // expose
   global.Setup=Setup; global.SetupUI=UI;
 })(window);
