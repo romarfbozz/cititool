@@ -1,4 +1,4 @@
-// /ui/setup.js — v7.8 (fix Picker.create + compact slot preview)
+// /ui/setup.js — v8.0 (clean header + bottom actions + reliable drawing upload)
 ;(function (global) {
   "use strict";
   const K_GROUPS='CT_PROG_GROUPS_V1', K_OLD='CT_PROGS_V1', K_LIVE='CT_LIVE_V1';
@@ -6,12 +6,14 @@
 
   // ---------- CSS ----------
   (function css(){
-    const id='ct-setup-v78-css'; if(document.getElementById(id)) return;
+    const id='ct-setup-v80-css'; if(document.getElementById(id)) return;
     const s=document.createElement('style'); s.id=id; s.textContent=`
-.ct-ed{position:fixed;inset:0;z-index:9999;display:grid;grid-template-rows:auto 1fr auto;background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.96));backdrop-filter:saturate(1.1) blur(8px)}
-.ct-ed .bar{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid #e9eef6;background:#fff}
-.ct-ed .bar .ttl{font:900 18px/1.1 Inter,system-ui}
-.ct-ed .bar .l,.ct-ed .bar .r{display:flex;gap:8px;align-items:center}
+/* Fullscreen editor */
+.ct-ed{position:fixed;inset:0;z-index:9999;display:grid;grid-template-rows:auto 1fr auto;
+  background:linear-gradient(180deg,rgba(255,255,255,.94),rgba(255,255,255,.97));backdrop-filter:saturate(1.1) blur(8px)}
+.ct-ed .bar{display:grid;grid-template-columns:1fr;align-items:center;padding:12px;border-bottom:1px solid #e9eef6;background:#fff}
+.ct-ed .bar .ttl{margin:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font:900 18px/1.1 Inter,system-ui}
 .ct-ed .cnt{overflow:auto;padding:12px;max-width:980px;margin:0 auto;width:100%}
 .ct-ed .img{width:100%;border:1px solid #edf1f7;border-radius:12px;object-fit:cover;margin-bottom:8px;background:#f5f8ff}
 .ct-ed .grp{display:grid;gap:8px;margin:8px 0}
@@ -35,16 +37,22 @@
 .inl .wrap{padding:12px;display:grid;gap:8px}
 .inl .row{display:grid;gap:6px}
 .inl .img{width:100%;max-height:160px;object-fit:contain;background:#f5f8ff;border:1px solid #edf1f7;border-radius:12px}
-.ct-ed .ft{display:flex;gap:8px;justify-content:center;padding:8px;border-top:1px solid #e9eef6;background:#fff;color:#6b7a90;font-size:12px}
+
+/* Bottom actions */
+.ct-ed .actions{position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e9eef6;
+  display:flex;gap:8px;justify-content:flex-end;padding:10px 12px}
 .btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn.brand{background:#2d6cdf;border-color:#2d6cdf;color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
 .btn.is-sm{height:32px;border-radius:12px}
 .i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:900;display:grid;place-items:center}
 .badge-live{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:#2d6cdf;font-weight:800;padding:0 10px}
 .ct-sub{color:#6b7a90;font-size:13px}
+
+/* Bottom sheet (Preview/Picker) */
 .ct-bd{position:fixed;inset:0;z-index:11040;background:rgba(13,27,42,.25);opacity:0;pointer-events:none;transition:opacity .2s}
 .ct-bd.show{opacity:1;pointer-events:auto}
-.ct-sheet{position:fixed;left:0;right:0;bottom:0;z-index:11050;background:#fff;border-top:1px solid #e9eef6;border-radius:18px 18px 0 0;box-shadow:0 -18px 40px rgba(13,27,42,.12);transform:translateY(100%);transition:transform .25s}
+.ct-sheet{position:fixed;left:0;right:0;bottom:0;z-index:11050;background:#fff;border-top:1px solid #e9eef6;border-radius:18px 18px 0 0;
+  box-shadow:0 -18px 40px rgba(13,27,42,.12);transform:translateY(100%);transition:transform .25s}
 .ct-sheet.show{transform:translateY(0)}
 .ct-sheet .hd{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #eef2f8}
 .ct-sheet .hd .tt{font:900 16px/1 Inter,system-ui}
@@ -57,7 +65,7 @@
 .ct-p-search{height:40px;border:1px solid #dbe5ff;border-radius:12px;padding:0 12px;font-weight:700;width:100%}
 .ct-tool{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:14px;padding:8px}
 .ct-tool img{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f5f8ff;border:1px solid #edf1f7}
-    `; document.head.appendChild(s);
+`; document.head.appendChild(s);
   })();
 
   // ---------- utils ----------
@@ -79,11 +87,11 @@
     }
   };
 
-  // ---------- backdrop ----------
+  // ---------- sheets helpers ----------
   const mkBD=()=>{ const bd=document.createElement('div'); bd.className='ct-bd'; document.body.appendChild(bd); requestAnimationFrame(()=>bd.classList.add('show')); return bd; };
   const rmBD=(bd)=>{ if(!bd) return; bd.classList.remove('show'); setTimeout(()=>bd.remove(),150); };
 
-  // ---------- Picker (fixed) ----------
+  // ---------- Picker ----------
   const Picker={ el:null, bd:null, esc:null, onPick:null,
     open({title='Werkzeug wählen', mode='pick', onPick}){
       this.close(); this.onPick=onPick; this.bd=mkBD();
@@ -130,21 +138,18 @@
     create(){
       const b=this.el.querySelector('.body'); b.innerHTML='';
       const row=(label,id)=>{ const el=document.createElement('div'); el.className='form-row'; el.innerHTML=`<label>${label}</label><input id="${id}">`; return {el, q:el.querySelector('input')}; };
-      const mkBtn=(label,cls='')=>{ const bt=document.createElement('button'); bt.className='btn '+cls; bt.textContent=label; return bt; }; // <-- FIX
+      const mkBtn=(label,cls='')=>{ const bt=document.createElement('button'); bt.className='btn '+cls; bt.textContent=label; return bt; };
 
       const nm=row('Name','p_name'), iso=row('ISO / Code','p_iso');
       const img=document.createElement('img'); img.src=ph(); img.style.width='100%'; img.style.border='1px solid #edf1f7'; img.style.borderRadius='12px';
 
-      const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.style.display='none'; document.body.appendChild(fin);
+      const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.capture='environment'; fin.style.display='none'; document.body.appendChild(fin);
       fin.onchange=()=>{ const f=fin.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>img.src=r.result; r.readAsDataURL(f); };
 
       const bar=document.createElement('div'); bar.style.display='flex'; bar.style.gap='8px'; bar.style.justifyContent='flex-end';
       const bPhoto=mkBtn('Foto','is-sm'), bCreate=mkBtn('Anlegen','brand is-sm');
 
-      bPhoto.onclick= async ()=>{
-        try{ if(global.CT?.uploader?.accept){ const files=await CT.uploader.accept({accept:'image/*',to:'dataURL'}); if(files?.[0]){ img.src=files[0].dataUrl; return; } } }catch{}
-        fin.click();
-      };
+      bPhoto.onclick=()=>fin.click();
       bCreate.onclick=()=>{ const t=Tools.createQuick({name:nm.q.value, iso:iso.q.value, photo:img.src.startsWith('data:')?img.src:null}); this.onPick&&this.onPick(t); this.close(); fin.remove(); };
 
       bar.append(bPhoto,bCreate); b.append(nm.el,iso.el,img,bar);
@@ -231,24 +236,18 @@
     applyLive(id,side){ const g=this.get(id); if(!g) return null; const minimal={id:g.id,nr:g.nr,side,title:g.title,slots:g.sides[side].slots,at:now()}; const cur=this.live(); cur[side]=minimal; storage.set(K_LIVE,cur); return minimal; }
   };
 
-  // ---------- Editor ----------
+  // ---------- Editor (clean header + bottom actions) ----------
   const Editor={ el:null, draft:null, dirty:false, side:'RO', openPos:null,
     open(group){
       if(this.el){ this.render(group); return; }
       const el=document.createElement('div'); el.className='ct-ed';
       el.innerHTML=`
-        <div class="bar">
-          <div class="l"><button class="btn is-sm" data-a="close">Schließen</button></div>
-          <div class="ttl"></div>
-          <div class="r">
-            <button class="btn is-sm" data-a="live-ro">In Live (RO)</button>
-            <button class="btn is-sm" data-a="live-ru">In Live (RU)</button>
-            <button class="btn is-sm" data-a="del">Löschen</button>
-            <button class="btn brand is-sm" data-a="save">Speichern</button>
-          </div>
-        </div>
+        <div class="bar"><h1 class="ttl"></h1></div>
         <div class="cnt"></div>
-        <div class="ft">Ein Editor pro Seite • Несохранённые изменения защищены</div>`;
+        <div class="actions">
+          <button class="btn" data-a="cancel">Abbrechen</button>
+          <button class="btn brand" data-a="save">Speichern</button>
+        </div>`;
       document.body.appendChild(el); this.el=el;
 
       const askClose=async()=>{ if(!this.dirty) return true; const ok=await (global.CT?.ui?.confirm? CT.ui.confirm({title:'Schließen ohne Speichern?', msg:'Änderungen gehen verloren.'}) : Promise.resolve(confirm('Schließen ohne Speichern?'))); return !!ok; };
@@ -256,11 +255,8 @@
       el.addEventListener('click', async e=>{
         const b=e.target.closest('button[data-a]'); if(!b) return;
         const a=b.dataset.a;
-        if(a==='close') await doClose();
+        if(a==='cancel') await doClose();
         else if(a==='save') this._save();
-        else if(a==='del'){ const ok=await (global.CT?.ui?.confirm? CT.ui.confirm({title:'Programm löschen?', msg:this.draft.title+' — '+this.draft.nr}) : Promise.resolve(confirm('Löschen?'))); if(ok){ Setup.remove(this.draft.id); await doClose(); UI.render(); } }
-        else if(a==='live-ro'){ Setup.applyLive(this.draft.id,'RO'); CT.ui?.toast?.('Live RO gesetzt','ok'); }
-        else if(a==='live-ru'){ Setup.applyLive(this.draft.id,'RU'); CT.ui?.toast?.('Live RU gesetzt','ok'); }
       });
       const onKey=(e)=>{ if(e.key==='Escape') doClose(); };
       document.addEventListener('keydown', onKey); el._kill=()=>document.removeEventListener('keydown', onKey);
@@ -274,13 +270,17 @@
       const cnt=this.el.querySelector('.cnt'); const ttl=this.el.querySelector('.ttl');
       ttl.textContent=`${this.draft.title||'Programm'} — ${this.draft.nr||''}`;
 
+      // drawing: native input (надёжно на iOS)
       const img=document.createElement('img'); img.className='img'; img.src=this.draft.drawing||ph();
       const row=document.createElement('div'); row.className='grp';
       const bSet=mkBtn('Zeichnung ändern','is-sm'), bClr=mkBtn('Entfernen','is-sm');
-      bSet.onclick= async ()=>{ try{ const files=await global.CT?.uploader?.accept?.({accept:'image/*',to:'dataURL'}); if(files?.[0]){ this.draft.drawing=files[0].dataUrl; img.src=this.draft.drawing; this.markDirty(); } }catch{} };
+      const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.capture='environment'; fin.style.display='none'; document.body.appendChild(fin);
+      fin.onchange=()=>{ const f=fin.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ this.draft.drawing=r.result; img.src=r.result; this.markDirty(); }; r.readAsDataURL(f); };
+      bSet.onclick=()=>fin.click();
       bClr.onclick=()=>{ this.draft.drawing=null; img.src=ph(); this.markDirty(); };
       row.append(bSet,bClr);
 
+      // fields
       const f=document.createElement('div'); f.className='grp';
       f.innerHTML=`
         <label>Titel</label><input id="f_title" value="${esc(this.draft.title||'')}">
@@ -290,6 +290,7 @@
         <label>Notizen</label><textarea id="f_note">${esc(this.draft.notes||'')}</textarea>`;
       f.querySelectorAll('input,textarea').forEach(el=> el.addEventListener('input', ()=>this.markDirty()));
 
+      // side tabs + slots
       const tabs=document.createElement('div'); tabs.className='tabs';
       const bRO=tab('RO',true), bRU=tab('RU',false); tabs.append(bRO,bRU);
       bRO.onclick=()=>{ this.side='RO'; bRO.classList.add('active'); bRU.classList.remove('active'); this.openPos=null; draw(); };
@@ -332,8 +333,7 @@
         });
       };
 
-      const cntEl=this.el.querySelector('.cnt');
-      cntEl.innerHTML=''; cntEl.append(img,row,f,tabs,grid); draw();
+      cnt.innerHTML=''; cnt.append(img,row,f,tabs,grid); draw();
 
       this._save=()=>{
         const v={ title:val('#f_title'), nr:val('#f_nr'), zeichnungsNr:val('#f_znr'), material:val('#f_mat'), notes:val('#f_note') };
@@ -341,7 +341,7 @@
         global.CT?.ui?.toast?.('Gespeichert','ok'); this.el.querySelector('.ttl').textContent=`${this.draft.title||'Programm'} — ${this.draft.nr||''}`; UI.render();
       };
 
-      function val(sel){ return (cntEl.querySelector(sel)?.value||'').trim(); }
+      function val(sel){ return (cnt.querySelector(sel)?.value||'').trim(); }
       function tab(t,act){ const b=document.createElement('button'); b.className='tab'; if(act) b.classList.add('active'); b.textContent=t; return b; }
       function rowField(label,value){ const el=document.createElement('div'); el.className='row'; el.innerHTML=`<label>${label}</label><input value="${esc(value||'')}">`; return {el, q:el.querySelector('input')}; }
       function mkBtn(label, cls=''){ const b=document.createElement('button'); b.className='btn '+cls; b.textContent=label; return b; }
