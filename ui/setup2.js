@@ -17,10 +17,10 @@
   const uid = ()=>Math.random().toString(36).slice(2,10);
   const ph  = ()=>'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="100%" height="100%" fill="#f5f8ff"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Inter,system-ui" font-size="14" fill="#8aa0c4">kein Foto</text></svg>`);
 
-  /* ---------- keys/models ---------- */
   const K_PROG_V2 = 'CT_PROG_V2';
   const K_LIVE_V2 = 'CT_PROG_LIVE_V2';
   const K_TOOLS   = 'CT_TOOLS_V1';
+  const K_UI      = 'CT_SETUP2_UI_V1'; // сохраняем состояние UI
   const SLOTS = 12;
 
   const Tools = {
@@ -29,7 +29,7 @@
     createQuick({name, iso, code, photo, category='Allgemein', notes=''}) {
       const t = {id:uid(), name:(name||'Tool').trim(), iso:iso||'', code:code||'', photo:photo||null, category, notes,
         createdAt:now(), updatedAt:now()};
-      const cur = this.list(); storage.set(K_TOOLS, [t, ...cur]); return t;
+      storage.set(K_TOOLS, [t, ...this.list()]); return t;
     }
   };
 
@@ -59,7 +59,6 @@
     return d;
   }
 
-  /* ---------- core API ---------- */
   const Setup2 = {
     ensureSeeds(){
       let arr = storage.get(K_PROG_V2, null);
@@ -119,73 +118,75 @@
     }
   };
 
-  /* ---------- UI ---------- */
   const Setup2UI = {
-    els:{}, 
-    state:{q:'', listQ:'', listCollapsed:false, activeId:null, side:'RO', openSlot:null, gridCollapsed:false},
+    els:{},
+    state:{
+      q:'', listQ:'', listCollapsed:false, activeId:null, side:'RO',
+      openSlot:null, gridCollapsed:true // по умолчанию слоты скрыты
+    },
 
     mount(opts){
       Setup2.ensureSeeds();
       this.els = opts;
 
-      // spacer height = sticky actions + dock + небольшой запас
-      const calcSpacer = ()=>{
-        const actionsH = opts.bottom.actions?.offsetHeight || 0;
-        const dockH    = opts.dockEl?.offsetHeight || 0;
-        const h = actionsH + dockH + 8;
-        if(opts.bottom.spacer) opts.bottom.spacer.style.height = h + 'px';
-      };
-      window.addEventListener('resize', calcSpacer);
-      new ResizeObserver(calcSpacer).observe(opts.bottom.actions);
-      if (opts.dockEl) new ResizeObserver(calcSpacer).observe(opts.dockEl);
+      // восстановить UI-состояние
+      const mem = storage.get(K_UI, {});
+      Object.assign(this.state, mem);
 
-      // sidebar: search + toggle
+      // выставить высоту Dock для обеих колонок
+      const applyDockH = ()=>{
+        const h = Math.round((opts.dockEl?.getBoundingClientRect().height||72));
+        document.documentElement.style.setProperty('--dockH', h+'px');
+      };
+      applyDockH();
+      if(opts.dockEl) new ResizeObserver(applyDockH).observe(opts.dockEl);
+      window.addEventListener('resize', applyDockH);
+
+      // sidebar: поиск/сворачивание
       const deb = (fn,ms)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms||220);} };
-      if(opts.listSearch){
-        opts.listSearch.addEventListener('input', deb(()=>{
-          this.state.listQ = opts.listSearch.value;
-          this.renderList();
-        }));
-      }
+      opts.listSearch?.addEventListener('input', deb(()=>{
+        this.state.listQ = opts.listSearch.value; this.persist(); this.renderList();
+      }));
       opts.listSearchClear?.addEventListener('click', ()=>{
-        this.state.listQ=''; opts.listSearch.value=''; this.renderList();
+        this.state.listQ=''; opts.listSearch.value=''; this.persist(); this.renderList();
       });
       opts.listToggleBtn?.addEventListener('click', ()=>{
-        this.state.listCollapsed = !this.state.listCollapsed;
-        this.renderList();
+        this.state.listCollapsed = !this.state.listCollapsed; this.persist(); this.renderList();
         opts.listToggleBtn.textContent = this.state.listCollapsed ? 'Einblenden' : 'Ausblenden';
       });
+      // начальный заголовок
+      opts.listToggleBtn.textContent = this.state.listCollapsed ? 'Einblenden' : 'Ausblenden';
 
-      // global search in AppBar (оставляем — фильтрует тоже)
+      // глобальный поиск в AppBar
       opts.searchInput?.addEventListener('input', deb(()=>{
-        this.state.q = opts.searchInput.value;
-        this.renderList();
+        this.state.q = opts.searchInput.value; this.persist(); this.renderList();
       }));
 
-      // create
+      // создать
       opts.newBtn?.addEventListener('click', ()=>{
         const g = Setup2.create({title:'Neues Programm'});
-        this.state.activeId = g.id; this.state.openSlot = null; this.renderAll();
+        this.state.activeId = g.id; this.state.openSlot = null; this.persist(); this.renderAll();
       });
 
-      // tabs
+      // табы
       const t = opts.tabs;
-      t.RO.onclick = ()=>{ this.state.side='RO'; this.state.openSlot=null; this.applyTabs(); this.renderGrid(); };
-      t.RU.onclick = ()=>{ this.state.side='RU'; this.state.openSlot=null; this.applyTabs(); this.renderGrid(); };
-      t.SBS.onclick= ()=>{ this.state.side='SBS'; this.state.openSlot=null; this.applyTabs(); this.renderGrid(); };
+      t.RO.onclick = ()=>{ this.state.side='RO'; this.state.openSlot=null; this.persist(); this.applyTabs(); this.renderGrid(); };
+      t.RU.onclick = ()=>{ this.state.side='RU'; this.state.openSlot=null; this.persist(); this.applyTabs(); this.renderGrid(); };
+      t.SBS.onclick= ()=>{ this.state.side='SBS'; this.state.openSlot=null; this.persist(); this.applyTabs(); this.renderGrid(); };
 
-      // actions bar
+      // действия
       opts.bar.clearAll.onclick = ()=>{ const id=this.state.activeId; const side=this.sideOne(); if(!id||!side) return; Setup2.slot.clearAll(id, side); this.markDraft(); this.renderGrid(); };
       opts.bar.autoNum.onclick  = ()=>{ const id=this.state.activeId; const side=this.sideOne(); if(!id||!side) return; Setup2.slot.autonumber(id, side); this.markDraft(); this.renderGrid(); };
-      opts.bar.clone.onclick    = ()=>{ const id=this.state.activeId; if(!id) return;
-        const from = this.sideOne(); const to = from==='RO'?'RU':'RO'; Setup2.slot.copyFromOtherSide(id, from, to); this.markDraft(); this.renderGrid(); };
+      opts.bar.clone.onclick    = ()=>{ const id=this.state.activeId; if(!id) return; const from=this.sideOne(); const to=from==='RO'?'RU':'RO'; Setup2.slot.copyFromOtherSide(id, from, to); this.markDraft(); this.renderGrid(); };
       opts.bar.toggleGrid.onclick = ()=>{
-        this.state.gridCollapsed = !this.state.gridCollapsed;
+        this.state.gridCollapsed = !this.state.gridCollapsed; this.persist();
         opts.bar.toggleGrid.textContent = this.state.gridCollapsed?'Slots einblenden':'Slots ausblenden';
         this.renderGrid();
       };
+      // установить подпись при старте
+      opts.bar.toggleGrid.textContent = this.state.gridCollapsed?'Slots einblenden':'Slots ausblenden';
 
-      // drawing pick
+      // drawing
       opts.drawingPickBtn.onclick = ()=> opts.drawingInput.click();
       opts.drawingInput.onchange = ()=>{
         const f = opts.drawingInput.files?.[0]; if(!f) return;
@@ -198,7 +199,7 @@
         const g = Setup2.get(this.state.activeId); if(!g) return; g.drawing = null; Setup2.upsert(g); this.markDraft(); this.renderHero();
       };
 
-      // fields
+      // поля
       const fs = opts.fields;
       const bind = (el, key)=> el.addEventListener('input', ()=>{
         const g = Setup2.get(this.state.activeId); if(!g) return;
@@ -206,14 +207,16 @@
       });
       bind(fs.title,'title'); bind(fs.nr,'nr'); bind(fs.znr,'zeichnungsNr'); bind(fs.mat,'material');
 
-      // bottom actions
+      // нижние кнопки
       opts.bottom.cancel.onclick = ()=>{ this.renderAll(); this.clearDraft(); };
       opts.bottom.save.onclick   = ()=>{ this.clearDraft(); this.toast('Gespeichert'); };
 
-      // initial
-      const first = Setup2.list({})[0]; this.state.activeId = first?.id || null;
-      this.renderAll(); calcSpacer();
+      // старт
+      const first = Setup2.list({})[0]; if(!this.state.activeId) this.state.activeId = first?.id || null;
+      this.renderAll();
     },
+
+    persist(){ storage.set(K_UI, this.state); },
 
     sideOne(){ return (this.state.side==='SBS')? 'RO' : this.state.side; },
     toast(msg){ console.log('[CT]', msg); },
@@ -239,7 +242,7 @@
                         <div class="meta">${g.material||'—'} • ${g.zeichnungsNr||'—'} ${(live.RO?.id===g.id||live.RU?.id===g.id)?'• <span style="font-weight:900;color:#2d6cdf">Live</span>':''}</div>`;
         const right=document.createElement('div');
         const ib=document.createElement('button'); ib.className='i-btn'; ib.textContent='i';
-        ib.onclick=()=>{ this.state.activeId=g.id; this.state.openSlot=null; this.renderAll(); };
+        ib.onclick=()=>{ this.state.activeId=g.id; this.state.openSlot=null; this.persist(); this.renderAll(); };
         right.append(ib);
         row.append(left,right);
         row.style.borderColor = (g.id===this.state.activeId)?'#d6e5ff':'#edf1f7';
@@ -342,7 +345,7 @@
         renderList('');
         q.addEventListener('input', ()=>renderList(q.value));
 
-        // quick-create with photo
+        // быстрый create с фото
         const newRow=document.createElement('div'); newRow.style.display='grid';
         newRow.style.gridTemplateColumns='1fr 1fr auto auto'; newRow.style.gap='6px';
         const nm=document.createElement('input'); nm.placeholder='Neues Werkzeug — Name';
