@@ -1,4 +1,4 @@
-// /ui/setup2.js — Setup2 Workspace (no modals, side-by-side option)
+// /ui/setup2.js — Setup2 Workspace (fix sticky/footer overlap, tidy header)
 ;(function(window){
   "use strict";
 
@@ -47,7 +47,6 @@
       sides: g.sides || {RO: emptySide('RO'), RU: emptySide('RU')},
       meta: g.meta || {createdAt: now(), updatedAt: now()}
     };
-    // ensure 12 slots per side
     ['RO','RU'].forEach(side=>{
       const s = d.sides[side];
       if(!s || !Array.isArray(s.slots)) d.sides[side] = emptySide(side);
@@ -66,7 +65,6 @@
     ensureSeeds(){
       let arr = storage.get(K_PROG_V2, null);
       if(!Array.isArray(arr) || !arr.length){
-        // 5 demo programs
         const demo = [];
         for(let i=0;i<5;i++){
           const nr = String(231850+i);
@@ -105,45 +103,22 @@
       if(i>=0) arr[i]=g; else { g.meta.createdAt = now(); arr.unshift(g); }
       storage.set(K_PROG_V2, arr); return g;
     },
-    create(init={}){
-      return this.upsert(normalizeGroup(init));
-    },
-    remove(id){
-      storage.set(K_PROG_V2, (storage.get(K_PROG_V2,[])||[]).filter(x=>x.id!==id));
-    },
-    // live
+    create(init={}){ return this.upsert(normalizeGroup(init)); },
+    remove(id){ storage.set(K_PROG_V2, (storage.get(K_PROG_V2,[])||[]).filter(x=>x.id!==id)); },
     live:{
       get(){ return storage.get(K_LIVE_V2,{RO:null,RU:null}); },
-      set(id, side){
-        const cur = storage.get(K_LIVE_V2,{RO:null,RU:null});
-        cur[side] = id ? {id, at: now()} : null;
-        storage.set(K_LIVE_V2, cur);
-      }
+      set(id, side){ const cur = storage.get(K_LIVE_V2,{RO:null,RU:null}); cur[side] = id ? {id, at: now()} : null; storage.set(K_LIVE_V2, cur); }
     },
-    // slots ops
     slot:{
-      setT(id, side, pos, t){ const g=Setup2.get(id); if(!g) return;
-        const s=g.sides[side].slots[pos-1]; s.tnum = (t||'').trim() || null; Setup2.upsert(g); },
-      setAlias(id, side, pos, a){ const g=Setup2.get(id); if(!g) return;
-        const s=g.sides[side].slots[pos-1]; s.alias = (a||'').trim(); Setup2.upsert(g); },
-      attachTool(id, side, pos, toolId){ const g=Setup2.get(id); if(!g) return;
-        const s=g.sides[side].slots[pos-1]; s.toolId = toolId; Setup2.upsert(g); },
-      detachTool(id, side, pos){ const g=Setup2.get(id); if(!g) return;
-        const s=g.sides[side].slots[pos-1]; s.toolId = null; Setup2.upsert(g); },
-      swap(id, side, a, b){ const g=Setup2.get(id); if(!g) return;
-        const arr=g.sides[side].slots; const ai=a-1, bi=b-1; [arr[ai],arr[bi]]=[arr[bi],arr[ai]];
-        // fix pos
-        arr.forEach((x,i)=>x.pos=i+1); Setup2.upsert(g); },
-      copyFromOtherSide(id, from, to){ const g=Setup2.get(id); if(!g) return;
-        g.sides[to].slots = g.sides[from].slots.map(s=>({pos:s.pos, tnum:s.tnum||null, alias:s.alias||'', toolId:s.toolId||null}));
-        Setup2.upsert(g); },
-      clearAll(id, side){ const g=Setup2.get(id); if(!g) return;
-        g.sides[side].slots.forEach(s=>{ s.tnum=null; s.alias=''; s.toolId=null; }); Setup2.upsert(g); },
-      autonumber(id, side, pattern='T{pp}{pp}'){ const g=Setup2.get(id); if(!g) return;
-        g.sides[side].slots.forEach(s=>{ const pp=String(s.pos).padStart(2,'0'); s.tnum = pattern.replaceAll('{pp}',pp); });
-        Setup2.upsert(g); },
+      setT(id, side, pos, t){ const g=Setup2.get(id); if(!g) return; const s=g.sides[side].slots[pos-1]; s.tnum = (t||'').trim() || null; Setup2.upsert(g); },
+      setAlias(id, side, pos, a){ const g=Setup2.get(id); if(!g) return; const s=g.sides[side].slots[pos-1]; s.alias = (a||'').trim(); Setup2.upsert(g); },
+      attachTool(id, side, pos, toolId){ const g=Setup2.get(id); if(!g) return; const s=g.sides[side].slots[pos-1]; s.toolId = toolId; Setup2.upsert(g); },
+      detachTool(id, side, pos){ const g=Setup2.get(id); if(!g) return; const s=g.sides[side].slots[pos-1]; s.toolId = null; Setup2.upsert(g); },
+      swap(id, side, a, b){ const g=Setup2.get(id); if(!g) return; const arr=g.sides[side].slots; const ai=a-1, bi=b-1; [arr[ai],arr[bi]]=[arr[bi],arr[ai]]; arr.forEach((x,i)=>x.pos=i+1); Setup2.upsert(g); },
+      copyFromOtherSide(id, from, to){ const g=Setup2.get(id); if(!g) return; g.sides[to].slots = g.sides[from].slots.map(s=>({pos:s.pos, tnum:s.tnum||null, alias:s.alias||'', toolId:s.toolId||null})); Setup2.upsert(g); },
+      clearAll(id, side){ const g=Setup2.get(id); if(!g) return; g.sides[side].slots.forEach(s=>{ s.tnum=null; s.alias=''; s.toolId=null; }); Setup2.upsert(g); },
+      autonumber(id, side, pattern='T{pp}{pp}'){ const g=Setup2.get(id); if(!g) return; g.sides[side].slots.forEach(s=>{ const pp=String(s.pos).padStart(2,'0'); s.tnum = pattern.replaceAll('{pp}',pp); }); Setup2.upsert(g); },
     },
-    // migration from v1 (optional button)
     migrateFromV1(){
       const K_OLD='CT_PROGS_V1';
       const old = storage.get(K_OLD,[]);
@@ -178,6 +153,14 @@
       Setup2.ensureSeeds();
       this.els = opts;
 
+      // recalc spacer under sticky bar (чтобы не перекрывать контент)
+      const calcSpacer = ()=>{
+        const h = opts.bottom.actions?.offsetHeight || 0;
+        if(opts.bottom.spacer) opts.bottom.spacer.style.height = (h+8)+'px';
+      };
+      window.addEventListener('resize', calcSpacer);
+      new ResizeObserver(calcSpacer).observe(opts.bottom.actions);
+
       // list & search
       const deb = window.CT?.debounce ? CT.debounce : (fn,ms)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms||200);} };
       opts.searchInput?.addEventListener('input', deb(()=>{
@@ -186,9 +169,7 @@
       },250));
       opts.newBtn?.addEventListener('click', ()=>{
         const g = Setup2.create({title:'Neues Programm'});
-        this.state.activeId = g.id;
-        this.state.openSlot = null;
-        this.renderAll();
+        this.state.activeId = g.id; this.state.openSlot = null; this.renderAll();
       });
       opts.migrateBtn?.addEventListener('click', ()=>{
         const {migrated} = Setup2.migrateFromV1();
@@ -230,34 +211,25 @@
       bind(fs.title,'title'); bind(fs.nr,'nr'); bind(fs.znr,'zeichnungsNr'); bind(fs.mat,'material');
 
       // bottom actions
-      opts.bottom.cancel.onclick = ()=>{
-        // reload from storage (discard unsaved draft flag)
-        this.renderAll(); this.clearDraft();
-      };
-      opts.bottom.save.onclick   = ()=>{
-        this.clearDraft();
-        this.toast('Gespeichert');
-      };
+      opts.bottom.cancel.onclick = ()=>{ this.renderAll(); this.clearDraft(); };
+      opts.bottom.save.onclick   = ()=>{ this.clearDraft(); this.toast('Gespeichert'); };
 
       // initial
       const first = Setup2.list({})[0]; this.state.activeId = first?.id || null;
-      this.renderAll();
+      this.renderAll(); calcSpacer();
     },
 
-    /* helpers */
     sideOne(){ return (this.state.side==='SBS')? 'RO' : this.state.side; },
     toast(msg, kind='ok'){ window.CT?.ui?.toast ? CT.ui.toast(msg,kind) : console.log('[toast]',msg); },
     markDraft(){ this.els.bottom.draftDot.style.display='inline'; },
     clearDraft(){ this.els.bottom.draftDot.style.display='none'; },
 
-    /* rendering */
     renderAll(){ this.renderList(); this.renderHero(); this.applyTabs(); this.renderGrid(); this.renderLiveBadges(); },
     renderList(){
       const wrap = this.els.listWrap; if(!wrap) return; wrap.innerHTML='';
       const list = Setup2.list({q:this.state.q});
       if(!list.length){ const e=document.createElement('div'); e.className='muted'; e.textContent='Noch keine Programme.'; wrap.append(e); return; }
       const live = Setup2.live.get();
-
       list.forEach(g=>{
         const row=document.createElement('div'); row.className='row';
         const left=document.createElement('div');
@@ -302,8 +274,7 @@
       const sides = this.state.side==='SBS' ? ['RO','RU'] : [this.state.side];
       sides.forEach((side,idx)=>{
         if(this.state.side==='SBS'){
-          const h=document.createElement('div'); h.style.gridColumn='1/-1'; h.style.marginTop= idx? '6px':'0';
-          h.innerHTML = `<div style="font-weight:900;margin:6px 0">${side}</div>`;
+          const h=document.createElement('div'); h.style.fontWeight='900'; h.style.margin='10px 2px 6px'; h.textContent=side;
           grid.append(h);
         }
         const SG=document.createElement('div'); SG.className='slot-grid'; grid.append(SG);
@@ -324,11 +295,9 @@
       const btn=document.createElement('button'); btn.className='btn is-sm'; btn.textContent = (this.state.openSlot===`${side}:${slot.pos}`)?'Schließen':'Bearbeiten';
       btn.onclick = ()=>{
         this.state.openSlot = (this.state.openSlot===`${side}:${slot.pos}`)? null : `${side}:${slot.pos}`;
-        // re-render only container
         const parent = art.parentElement;
         const fresh = this.renderSlotCard(Setup2.get(this.state.activeId), side, slot);
         parent.replaceChild(fresh, art);
-        // scroll into view when opened
         if(this.state.openSlot) requestAnimationFrame(()=> fresh.scrollIntoView({behavior:'smooth', block:'start'}));
       };
       meta.append(btn);
@@ -341,14 +310,12 @@
         const inl = document.createElement('div'); inl.className='sl-edit';
         const wrap= document.createElement('div'); wrap.className='wrap';
 
-        // T & Alias
         const r1 = field('T-Nummer (z.B. T0101)', slot.tnum||'');
         const r2 = field('Alias / Titel', slot.alias||'');
 
-        // Tool picker (inline)
         const picker = document.createElement('div'); picker.className='sl-tool-picker';
         picker.innerHTML = `<div class="muted">Werkzeug wählen oder neu anlegen</div>`;
-        const q = document.createElement('input'); q.placeholder='Suchen…'; q.className='ct-p-search';
+        const q = document.createElement('input'); q.placeholder='Suchen…';
         const toolsBox = document.createElement('div'); toolsBox.className='tools';
         const renderList = (qq='')=>{
           toolsBox.innerHTML='';
@@ -360,7 +327,6 @@
             const info=document.createElement('div'); info.innerHTML=`<div style="font-weight:800">${t.name}</div><div class="muted">${t.iso||'-'} • ${t.code||'-'} • ${t.category||'Allgemein'}</div>`;
             const pick=document.createElement('button'); pick.className='btn is-sm'; pick.textContent='Wählen';
             pick.onclick=()=>{ Setup2.slot.attachTool(g.id, side, slot.pos, t.id); this.markDraft();
-              // rerender card
               const parent = art.parentElement;
               const updated = this.renderSlotCard(Setup2.get(this.state.activeId), side, Setup2.get(this.state.activeId).sides[side].slots[slot.pos-1]);
               parent.replaceChild(updated, art);
@@ -371,12 +337,10 @@
         renderList('');
         q.addEventListener('input', ()=>renderList(q.value));
 
-        // quick new tool
         const newRow=document.createElement('div'); newRow.style.display='grid'; newRow.style.gridTemplateColumns='1fr 1fr auto'; newRow.style.gap='6px';
         const nm=document.createElement('input'); nm.placeholder='Neues Werkzeug — Name';
         const iso=document.createElement('input'); iso.placeholder='ISO / Code';
         const create=document.createElement('button'); create.className='btn is-sm'; create.textContent='Anlegen';
-        // quick photo
         const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.style.display='none';
         let imgData=null;
         const photoBtn=document.createElement('button'); photoBtn.className='btn is-sm'; photoBtn.textContent='Foto';
@@ -393,7 +357,6 @@
 
         picker.append(q, toolsBox, newRow);
 
-        // slot ops
         const ops=document.createElement('div'); ops.style.display='flex'; ops.style.gap='8px'; ops.style.flexWrap='wrap'; ops.style.justifyContent='flex-end';
         const bSwap=document.createElement('button'); bSwap.className='btn is-sm'; bSwap.textContent='Swap…';
         const bCopy=document.createElement('button'); bCopy.className='btn is-sm'; bCopy.textContent='Von anderer Seite';
@@ -401,8 +364,7 @@
         const bCancel=document.createElement('button'); bCancel.className='btn is-sm'; bCancel.textContent='Abbrechen';
         const bSave=document.createElement('button'); bSave.className='btn brand is-sm'; bSave.textContent='Speichern';
 
-        bSwap.onclick=()=>{
-          const other = prompt('Mit welcher Position tauschen? (1..12)','1'); const p=Number(other||0);
+        bSwap.onclick=()=>{ const other = prompt('Mit welcher Position tauschen? (1..12)','1'); const p=Number(other||0);
           if(p>=1 && p<=12){ Setup2.slot.swap(g.id, side, slot.pos, p); this.markDraft(); this.renderGrid(); }
         };
         bCopy.onclick=()=>{ const from = side==='RO'?'RU':'RO'; Setup2.slot.copyFromOtherSide(g.id, from, side); this.markDraft(); this.renderGrid(); };
@@ -433,7 +395,6 @@
     },
   };
 
-  // expose
   window.Setup2 = Setup2;
   window.Setup2UI = Setup2UI;
 
