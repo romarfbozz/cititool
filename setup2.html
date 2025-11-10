@@ -30,9 +30,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
 .btn.is-sm{height:32px;border-radius:12px}
 .btn.ghost{background:#fff;border-color:#e2e9ff}
+.btn.flat{background:#fff;border-color:#e9eef6}
 .btn:active{transform:translateY(1px)}
 
-/* Search */
+/* Search in AppBar */
 .search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;transition:width .35s ease, background .2s;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
 .search.active{width:min(56vw, 260px)}
 .search svg{position:absolute; left:12px; width:18px; height:18px; fill:#8aa0c4}
@@ -47,8 +48,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .work .card{padding:14px; position:relative;}
 
 /* Sidebar */
-.side-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.side-list{display:grid;gap:8px;max-height:calc(100vh - 220px);overflow:auto;padding-bottom:8px}
+.side-head{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:8px;align-items:center}
+.side-search{display:grid;grid-template-columns:1fr auto;gap:8px}
+.side-search input{border:1px solid #dbe5ff;border-radius:12px;padding:8px 10px;font-weight:700;width:100%}
+.side-list{display:grid;gap:8px;max-height:calc(100vh - 260px);overflow:auto;padding-bottom:8px}
 .row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border:1px solid #edf1f7;border-radius:14px}
 .row .title{font-weight:800}
 .row .meta{color:var(--muted);font-size:13px}
@@ -109,6 +112,7 @@ textarea{min-height:60px;resize:vertical}
 .dock a small{font-weight:600;font-size:12px;color:#344966}
 .dock a.active{background:#eef3ff; box-shadow:inset 0 0 0 1px #d6e5ff}
 .icon{width:22px;height:22px; fill:#2e3e55}
+.muted{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -135,7 +139,11 @@ textarea{min-height:60px;resize:vertical}
     <div class="card">
       <div class="side-head">
         <div style="font-weight:900">Programme</div>
-        <div><button class="btn is-sm" id="btnMigrate">V1→V2</button></div>
+        <button class="btn is-sm flat" id="btnToggleList">Ausblenden</button>
+      </div>
+      <div class="side-search">
+        <input type="search" id="progSearch" placeholder="Programm suchen…">
+        <button class="btn is-sm" id="btnClearProgSearch">✕</button>
       </div>
       <div id="progList" class="side-list"></div>
     </div>
@@ -177,6 +185,7 @@ textarea{min-height:60px;resize:vertical}
         <button class="btn is-sm" id="btnClearAll">Alle T löschen (Seite)</button>
         <button class="btn is-sm" id="btnAutoNum">Autonummer (Tpppp)</button>
         <button class="btn is-sm" id="btnCloneSide">RO⇄RU (kopieren)</button>
+        <button class="btn is-sm flat" id="btnToggleGrid">Slots ausblenden</button>
       </div>
 
       <div id="slotGrid" style="margin-top:10px"></div>
@@ -214,6 +223,9 @@ textarea{min-height:60px;resize:vertical}
     Setup2UI.mount({
       searchInput: q,
       listWrap: document.getElementById('progList'),
+      listSearch: document.getElementById('progSearch'),
+      listSearchClear: document.getElementById('btnClearProgSearch'),
+      listToggleBtn: document.getElementById('btnToggleList'),
       newBtn: document.getElementById('btnNewProg'),
 
       drawingImg: document.getElementById('wsDrawing'),
@@ -244,6 +256,7 @@ textarea{min-height:60px;resize:vertical}
         clearAll: document.getElementById('btnClearAll'),
         autoNum:  document.getElementById('btnAutoNum'),
         clone:    document.getElementById('btnCloneSide'),
+        toggleGrid: document.getElementById('btnToggleGrid'),
       },
 
       bottom: {
@@ -255,7 +268,6 @@ textarea{min-height:60px;resize:vertical}
         card:    document.getElementById('wsCard'),
       },
 
-      migrateBtn: document.getElementById('btnMigrate'),
       dockEl: document.querySelector('.dock'),
     });
   });
