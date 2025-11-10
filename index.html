@@ -12,7 +12,7 @@
 }
 *{box-sizing:border-box} html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font:16px/1.45 -apple-system,BlinkMacSystemFont,Inter,Roboto,system-ui,sans-serif}
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,Inter,Roboto,system-ui}
 
 /* AppBar */
 .appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
@@ -30,7 +30,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
   transition:width .35s ease;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
 .search.active{width:min(56vw,260px)}
 .search svg{position:absolute;left:12px;width:18px;height:18px;fill:#8aa0c4}
-.search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter; color:var(--ink)}
+.search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter;color:var(--ink)}
 
 /* Layout */
 .main{max-width:1040px;margin:0 auto;padding:12px 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
@@ -38,28 +38,28 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter}
 .muted{color:var(--muted)}
 
-/* Übersicht / Analyse */
-.kpis{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,1fr);gap:10px;overflow:auto;padding-bottom:4px}
-.kpi{background:#fff;border:1px solid #edf1f7;border-radius:16px;padding:12px;min-width:200px}
-.kpi .v{font:900 24px/1 Inter}
-.kpi .l{color:var(--muted);margin-top:6px}
+/* Übersicht (column KPI with bars) */
+.kpicol{display:grid;gap:8px}
+.krow{display:grid;grid-template-columns:140px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px}
+.kname{font-weight:700}
+.kbar{height:8px;border-radius:8px;background:#edf1f7;overflow:hidden}
+.kbar>i{display:block;height:100%;background:#2d6cdf}
+.kval{font:900 16px/1 Inter}
 
-/* Setup-Checkliste */
+/* Checkliste */
 .chk-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .inp{width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:10px}
 .btn{height:38px;padding:0 14px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
 .list{display:grid;gap:8px}
-.task{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
-  border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
+.task{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
 .task[draggable="true"]{cursor:grab}
 .drag{width:22px;text-align:center;color:#8aa0c4;font-weight:900}
 .task.done .title{text-decoration:line-through;color:#8aa0c4}
 
-/* Produktion (компактные карточки) */
+/* Produktion */
 .orders{display:grid;gap:10px}
-.order{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;
-  padding:12px;border:1px solid #edf1f7;border-radius:16px}
+.order{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #edf1f7;border-radius:16px}
 .order .t{font:900 18px/1.2 Inter}
 .pbar{height:10px;border-radius:8px;background:#edf1f7;overflow:hidden;margin-top:8px}
 .pbar>i{display:block;height:100%;background:#2d6cdf}
@@ -67,20 +67,12 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
 .i-btn:active{transform:translateY(1px)}
 
-/* Letzte Aktionen */
+/* Feeds (Letzte Aktionen + Zuletzt hinzugefügt) */
 .feed{display:grid;gap:8px}
-.feed .item{display:flex;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px}
+.row{display:flex;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
 .time{font:700 12px/1 Inter;color:#586a85;width:72px}
 .text{font-weight:600}
-
-/* Zuletzt hinzugefügt */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.card{border:1px solid #edf1f7;border-radius:14px;overflow:hidden;background:#fff}
-.card .ph{height:90px;background:#f5f8ff;display:grid;place-items:center;border-bottom:1px solid #edf1f7}
-.card .ph img{width:100%;height:100%;object-fit:cover}
-.card .meta{padding:10px}
-.card .name{font-weight:800}
-.tags{color:#64748b;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{font:700 11px/1 Inter;color:#2d6cdf;background:#eef3ff;border:1px solid #d6e5ff;padding:6px 8px;border-radius:999px}
 
 /* Dock */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
@@ -91,9 +83,7 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .dock a.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
 .icon{width:22px;height:22px;fill:#2e3e55}
 
-@media (max-width:760px){ .grid{grid-template-columns:1fr} }
-
-/* Modal sheet (редактор Produktion) */
+/* Modal sheet (Produktion editor) */
 .sheet-back{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:60}
 .sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e9eef6;box-shadow:0 -16px 40px rgba(13,27,42,.15);
   border-top-left-radius:20px;border-top-right-radius:20px;padding:14px 16px 18px;z-index:61;max-height:78vh;overflow:auto}
@@ -118,10 +108,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
 </header>
 
 <main class="main">
-  <!-- Übersicht / Analyse -->
+  <!-- Übersicht (column) -->
   <section class="section">
     <h2>Übersicht</h2>
-    <div class="kpis" id="kpis"></div>
+    <div class="kpicol" id="kpis"></div>
   </section>
 
   <!-- Setup-Checkliste -->
@@ -148,10 +138,10 @@ body{margin:0;background:var(--bg);color:var(--ink);
     <div class="feed" id="feed"></div>
   </section>
 
-  <!-- Zuletzt hinzugefügt -->
+  <!-- Zuletzt hinzugefügt (как лента) -->
   <section class="section">
     <h2>Zuletzt hinzugefügt</h2>
-    <div class="grid" id="recent"></div>
+    <div class="feed" id="recent"></div>
   </section>
 </main>
 
@@ -160,20 +150,20 @@ body{margin:0;background:var(--bg);color:var(--ink);
   <div class="wrap">
     <a href="./index.html" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
     <a href="./setup2.html"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2H11v-2z"/></svg><small>Setup</small></a>
-    <a href="./tools.html"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3z"/></svg><small>Tools</small></a>
+    <a href="./tools.html"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2z"/></svg><small>Tools</small></a>
     <a href="./programme.html"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
-    <a href="./docs.html"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+    <a href="./docs.html"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/></svg><small>Docs</small></a>
     <a href="./assist.html"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><small>Assist</small></a>
   </div>
 </nav>
 
 <script>
-/* ---------- storage helpers ---------- */
+/* storage helpers */
 const S={get(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}},set(k,v){localStorage.setItem(k,JSON.stringify(v))}};
 const now=()=>Date.now(), uid=()=>Math.random().toString(36).slice(2,10);
 const K_PROG='CT_PROGS_V1', K_TOOLS='CT_TOOLS_V1', K_DOCS='CT_DOCS_V1', K_PROD='CT_PROD_V1', K_CHECK='CT_CHECK_V1';
 
-/* ---------- seeds (минимум для теста) ---------- */
+/* seeds (минимальные) */
 (function seeds(){
   if(!Array.isArray(S.get(K_PROD))) S.set(K_PROD,[]);
   if(S.get(K_PROD).length===0){
@@ -194,37 +184,47 @@ const K_PROG='CT_PROGS_V1', K_TOOLS='CT_TOOLS_V1', K_DOCS='CT_DOCS_V1', K_PROD='
   ]);
 })();
 
-/* ---------- AppBar search ---------- */
+/* AppBar search */
 const searchBox=document.getElementById('searchBox'); const q=document.getElementById('q');
 searchBox.addEventListener('click',()=>{searchBox.classList.add('active'); q.focus();});
 q.addEventListener('blur',()=>{if(!q.value) searchBox.classList.remove('active');});
 
-/* ---------- KPIs ---------- */
+/* KPI helpers */
 function pct(o){const t=Math.max(1,Number(o.total||0));const d=Math.max(0,Number(o.done||0));return Math.min(100,Math.round(d*100/t));}
 function drawKpis(){
   const progs=S.get(K_PROG,[]), tools=S.get(K_TOOLS,[]), docs=S.get(K_DOCS,[]), prod=S.get(K_PROD,[]);
   const doneCnt=prod.filter(o=>o.done>=o.total && o.total>0).length;
   const mean = prod.length? Math.round(prod.reduce((s,o)=>s+pct(o),0)/prod.length) : 0;
   const totalRecords=(progs.length+tools.length+docs.length+prod.length);
-  const today = (arr)=>arr.filter(x=> new Date(x.updatedAt||0).toDateString()===new Date().toDateString()).length;
-  const k=document.getElementById('kpis'); k.innerHTML='';
-  const items=[
-    {v:progs.length,l:'Programme'},
-    {v:tools.length,l:'Werkzeuge'},
-    {v:docs.length,l:'Dokumente'},
-    {v:prod.length,l:'Aufträge'},
-    {v:mean+' %',l:'Ø Fortschritt'},
-    {v: today(tools)+today(docs)+today(prod), l:'Aktivität heute'},
-    {v: totalRecords, l:'Speicher (Einträge)'}
+  const today=(arr)=>arr.filter(x=> new Date(x.updatedAt||0).toDateString()===new Date().toDateString()).length;
+
+  const rows=[
+    {name:'Programme', val:progs.length, type:'count'},
+    {name:'Werkzeuge', val:tools.length, type:'count'},
+    {name:'Dokumente', val:docs.length, type:'count'},
+    {name:'Aufträge',  val:prod.length, type:'count'},
+    {name:'Ø Fortschritt', val:mean, type:'bar'},
+    {name:'Aktivität heute', val:today(tools)+today(docs)+today(prod), type:'count'},
+    {name:'Speicher (Einträge)', val:totalRecords, type:'count'}
   ];
-  items.forEach(it=>{
-    const e=document.createElement('div'); e.className='kpi';
-    e.innerHTML=`<div class="v">${it.v}</div><div class="l">${it.l}</div>`;
-    k.append(e);
+
+  const k=document.getElementById('kpis'); k.innerHTML='';
+  rows.forEach(r=>{
+    const row=document.createElement('div'); row.className='krow';
+    const name=`<div class="kname">${r.name}</div>`;
+    let middle='';
+    if(r.type==='bar'){
+      middle=`<div class="kbar"><i style="width:${r.val}%"></i></div>`;
+    }else{
+      middle=`<div class="muted"> </div>`;
+    }
+    const right=`<div class="kval">${r.type==='bar'? r.val+' %' : r.val}</div>`;
+    row.innerHTML=name+middle+right;
+    k.append(row);
   });
 }
 
-/* ---------- Setup-Checkliste ---------- */
+/* Checkliste */
 const elList=document.getElementById('chkList');
 function loadCheck(){return (S.get(K_CHECK,[])||[]).sort((a,b)=>a.sort-b.sort || b.createdAt-a.createdAt);}
 function saveCheck(a){S.set(K_CHECK,a);}
@@ -232,7 +232,7 @@ function renderCheck(){
   elList.innerHTML='';
   const arr=loadCheck();
   if(!arr.length){const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; elList.append(e); return;}
-  arr.forEach((it,idx)=>{
+  arr.forEach((it)=>{
     const row=document.createElement('div'); row.className='task'+(it.done?' done':''); row.draggable=true; row.dataset.id=it.id;
     row.innerHTML=`
       <div class="drag">≡</div>
@@ -241,57 +241,40 @@ function renderCheck(){
         <span>${it.text}</span>
       </label>
       <button class="btn" data-del>Del</button>`;
-    // checkbox
     row.querySelector('input').onchange=(e)=>{it.done=e.target.checked; it.updatedAt=now(); saveCheck(update(it)); renderCheck();};
-    // delete
     row.querySelector('[data-del]').onclick=()=>{saveCheck(loadCheck().filter(x=>x.id!==it.id)); renderCheck();};
-    // drag&drop
-    row.addEventListener('dragstart',ev=>{ev.dataTransfer.setData('text/plain',it.id); ev.dataTransfer.effectAllowed='move';});
-    row.addEventListener('dragover',ev=>{ev.preventDefault(); ev.dataTransfer.dropEffect='move';});
+    row.addEventListener('dragstart',ev=>{ev.dataTransfer.setData('text/plain',it.id);ev.dataTransfer.effectAllowed='move';});
+    row.addEventListener('dragover',ev=>{ev.preventDefault();ev.dataTransfer.dropEffect='move';});
     row.addEventListener('drop',ev=>{
       ev.preventDefault();
-      const fromId=ev.dataTransfer.getData('text/plain');
-      if(!fromId || fromId===it.id) return;
-      const arr=loadCheck();
-      const fromI=arr.findIndex(x=>x.id===fromId);
-      const toI=arr.findIndex(x=>x.id===it.id);
-      const [m]=arr.splice(fromI,1);
-      arr.splice(toI,0,m);
-      // пересчёт sort
-      arr.forEach((x,i)=>x.sort=i+1);
-      saveCheck(arr); renderCheck();
+      const fromId=ev.dataTransfer.getData('text/plain'); if(!fromId||fromId===it.id) return;
+      const arr=loadCheck(); const fi=arr.findIndex(x=>x.id===fromId); const ti=arr.findIndex(x=>x.id===it.id);
+      const [m]=arr.splice(fi,1); arr.splice(ti,0,m); arr.forEach((x,i)=>x.sort=i+1); saveCheck(arr); renderCheck();
     });
     elList.append(row);
   });
 }
-function update(item){
-  const arr=loadCheck(); const i=arr.findIndex(x=>x.id===item.id);
-  if(i>=0) arr[i]=item; return arr;
-}
-document.getElementById('addItem').onclick=()=>{
-  const t=document.getElementById('newItem'); const s=(t.value||'').trim(); if(!s) return;
-  const arr=loadCheck(); const maxSort=arr.reduce((m,x)=>Math.max(m,x.sort||0),0);
-  arr.push({id:uid(),text:s,done:false,sort:maxSort+1,createdAt:now(),updatedAt:now()});
-  saveCheck(arr); t.value=''; renderCheck();
-};
+function update(item){const arr=loadCheck(); const i=arr.findIndex(x=>x.id===item.id); if(i>=0) arr[i]=item; return arr;}
+document.getElementById('addItem').onclick=()=>{const t=document.getElementById('newItem'); const s=(t.value||'').trim(); if(!s) return;
+  const arr=loadCheck(); const max=arr.reduce((m,x)=>Math.max(m,x.sort||0),0);
+  arr.push({id:uid(),text:s,done:false,sort:max+1,createdAt:now(),updatedAt:now()}); saveCheck(arr); t.value=''; renderCheck();};
 document.getElementById('newItem').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); document.getElementById('addItem').click(); }});
 document.getElementById('delDone').onclick=()=>{ saveCheck(loadCheck().filter(x=>!x.done)); renderCheck(); };
 
-/* ---------- Produktion (карточки + i-модалка) ---------- */
+/* Produktion */
 const wrapOrders=document.getElementById('orders');
 function loadOrders(){return (S.get(K_PROD,[])||[]).sort((a,b)=>b.createdAt-a.createdAt);}
 function saveOrders(a){S.set(K_PROD,a);}
-function pctOrder(o){const t=Math.max(1,Number(o.total||0));const d=Math.max(0,Number(o.done||0));return Math.min(100,Math.round(d*100/t));}
 function renderOrders(){
   wrapOrders.innerHTML='';
   loadOrders().forEach(o=>{
     const card=document.createElement('div'); card.className='order';
     const left=document.createElement('div');
     left.innerHTML=`<div class="t">${o.name}</div>
-      <div class="pbar"><i style="width:${pctOrder(o)}%"></i></div>
+      <div class="pbar"><i style="width:${pct(o)}%"></i></div>
       <div class="muted" style="margin-top:8px">${o.due||'—'}</div>`;
     const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
-    const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pctOrder(o)+'%';
+    const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pct(o)+'%';
     const info=document.createElement('button'); info.className='i-btn'; info.innerHTML='ℹ️'; info.title='Details';
     info.onclick=()=>openEditor(o);
     right.append(badge,info);
@@ -321,7 +304,6 @@ function openEditor(order){
   back.addEventListener('click',()=>{document.body.removeChild(back);document.body.removeChild(sheet);unlockScroll();});
   sheet.addEventListener('click',e=>e.stopPropagation());
   document.body.append(back,sheet);
-  // handlers
   sheet.querySelector('#m10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Math.max(0,Number(d.value||0)-10);};
   sheet.querySelector('#p10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Number(d.value||0)+10;};
   sheet.querySelector('#del').onclick=()=>{ if(confirm('Auftrag löschen?')){ saveOrders(loadOrders().filter(x=>x.id!==order.id)); drawKpis(); renderOrders(); back.click(); } };
@@ -336,7 +318,7 @@ function openEditor(order){
   };
 }
 
-/* ---------- Letzte Aktionen (3 последних по updatedAt) ---------- */
+/* Feeds */
 const feed=document.getElementById('feed');
 function renderFeed(){
   const mk=(arr,fmt)=> (arr||[]).map(x=>({t:x.updatedAt||x.createdAt||0, txt:fmt(x)}));
@@ -352,38 +334,42 @@ function renderFeed(){
   feed.innerHTML='';
   if(all.length===0){const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; feed.append(e); return;}
   all.forEach(it=>{
-    const row=document.createElement('div'); row.className='item';
+    const row=document.createElement('div'); row.className='row';
     row.innerHTML=`<div class="time">[${fmtTime(it.t)}]</div><div class="text">${it.txt}</div>`;
     feed.append(row);
   });
 }
 
-/* ---------- Zuletzt hinzugefügt ---------- */
+/* Zuletzt hinzugefügt — как лента */
 const recent=document.getElementById('recent');
 function renderRecent(){
   recent.innerHTML='';
-  const tools=(S.get(K_TOOLS,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3);
-  const docs =(S.get(K_DOCS ,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3);
-  const list=[...tools.map(t=>({name:t.name,sub:t.category, img:t.photo})),
-              ...docs.map(d=>({name:d.title,sub:d.category, img:d.imgData}))];
+  const tools=(S.get(K_TOOLS,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3)
+                .map(t=>({t: t.createdAt, type:'Tool', name:t.name, sub:t.category||'', img:!!t.photo}));
+  const docs =(S.get(K_DOCS ,[])||[]).sort((a,b)=>b.createdAt-a.createdAt).slice(0,3)
+                .map(d=>({t: d.createdAt, type:'Dok',  name:d.title, sub:d.category||'', img:!!d.imgData}));
+  const list=[...tools,...docs].sort((a,b)=>b.t-a.t);
   if(!list.length){const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; recent.append(e); return;}
+  const fmt=(t)=>{const d=new Date(t); return d.toTimeString().slice(0,5);}
   list.forEach(x=>{
-    const c=document.createElement('article'); c.className='card';
-    const ph=document.createElement('div'); ph.className='ph';
-    if(x.img){const im=document.createElement('img'); im.src=x.img; ph.append(im);} else ph.textContent='kein Foto';
-    const m=document.createElement('div'); m.className='meta';
-    m.innerHTML=`<div class="name">${x.name}</div><div class="tags">${x.sub||''}</div>`;
-    c.append(ph,m); recent.append(c);
+    const row=document.createElement('div'); row.className='row';
+    row.innerHTML=`
+      <div class="time">[${fmt(x.t)}]</div>
+      <span class="pill">${x.type}</span>
+      <div class="text" style="flex:1">${x.name}</div>
+      <div class="muted">${x.sub || ''}${x.img?' · img':''}</div>`;
+    recent.append(row);
   });
 }
 
-/* ---------- init ---------- */
+/* Dock padding */
 function applyDockH(){
   const h=Math.round(document.getElementById('dock').getBoundingClientRect().height);
   document.documentElement.style.setProperty('--dockH', h+'px');
 }
 applyDockH(); new ResizeObserver(applyDockH).observe(document.getElementById('dock'));
 
+/* init */
 drawKpis(); renderCheck(); renderOrders(); renderFeed(); renderRecent();
 </script>
 </body>
