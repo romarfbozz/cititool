@@ -9,7 +9,10 @@
   --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --hair:#e9eef6;
   --glass:#ffffffcc; --shadow:0 10px 30px rgba(13,27,42,.08);
 }
-*{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--bg);color:var(--ink);
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);
   font:16px/1.45 -apple-system,BlinkMacSystemFont,Segoe UI,Inter,Roboto,system-ui,sans-serif}
 
 /* AppBar */
@@ -26,6 +29,7 @@
 .btn{height:40px;padding:0 14px;border-radius:14px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
 .btn.is-sm{height:32px;border-radius:12px}
+.btn:active{transform:translateY(1px)}
 
 /* Search */
 .search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;transition:width .35s ease, background .2s;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
@@ -39,7 +43,7 @@
 
 .card{background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow)}
 .sidebar .card{padding:12px}
-.work .card{padding:14px}
+.work .card{padding:14px; position:relative;}
 
 /* Sidebar */
 .side-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
@@ -49,25 +53,27 @@
 .row .meta{color:var(--muted);font-size:13px}
 .i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:900;display:grid;place-items:center}
 
-/* Workspace */
-.ws-head{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px;align-items:start}
+/* Workspace header */
+.ws-head{display:grid;grid-template-columns:280px 1fr;gap:12px;margin-bottom:10px;align-items:start}
+@media (max-width:760px){ .ws-head{grid-template-columns:1fr} }
 .ws-hero{display:grid;gap:8px}
-.ws-hero img{width:100%;height:180px;border-radius:14px;border:1px solid #edf1f7;object-fit:cover;background:#f5f8ff}
-.fields{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.ws-hero img{width:100%;height:200px;border-radius:14px;border:1px solid #edf1f7;object-fit:cover;background:#f5f8ff}
+.fields{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
 @media (max-width:920px){ .fields{grid-template-columns:repeat(2,1fr)} }
 label{font-weight:800}
 input,textarea,select{border:1px solid #dbe5ff;border-radius:12px;padding:10px 12px;font-weight:700;width:100%}
 textarea{min-height:60px;resize:vertical}
-.ws-tabs{display:flex;gap:8px;margin-top:6px}
+.ws-tabs{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
 .tab{padding:8px 12px;border:1px solid #dbe5ff;background:#fff;border-radius:12px;font-weight:800}
 .tab.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
-.live-badge{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:800;padding:0 10px}
+.live-badge{display:inline-grid;place-items:center;min-width:70px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
 
+/* Slots */
 .slot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
 @media (max-width:700px){ .slot-grid{grid-template-columns:repeat(2,1fr)} }
 .slot{border:1px solid #edf1f7;border-radius:16px;background:#fff;box-shadow:var(--shadow);overflow:hidden}
-.slot .ph{height:84px;background:#f5f8ff;display:grid;place-items:center;border-bottom:1px solid #edf1f7}
-.slot .ph img{max-width:100%;max-height:84px;object-fit:cover}
+.slot .ph{height:90px;background:#f5f8ff;display:grid;place-items:center;border-bottom:1px solid #edf1f7}
+.slot .ph img{max-width:100%;max-height:90px;object-fit:cover}
 .slot .meta{padding:10px}
 .slot .meta .t{font-weight:800}
 .slot .meta .n{color:var(--muted);font-size:13px}
@@ -80,9 +86,13 @@ textarea{min-height:60px;resize:vertical}
 .tool-item{display:grid;grid-template-columns:56px 1fr auto;gap:8px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:6px}
 .tool-item img{width:56px;height:56px;object-fit:cover;border-radius:10px;background:#f5f8ff;border:1px solid #edf1f7}
 
-.ws-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin-top:10px}
-.ws-actions{position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e9eef6;display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;margin-top:10px}
-.muted{color:var(--muted)} .badge{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:800;padding:0 10px}
+/* Workspace actions (sticky) */
+.ws-bar{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start;margin-top:10px}
+.ws-actions{position:sticky;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e9eef6;display:flex;gap:8px;justify-content:flex-end;padding:10px 12px;margin-top:12px}
+.ws-spacer{height:72px} /* резерв под sticky, перестраховка */
+
+.muted{color:var(--muted)}
+.badge{display:inline-grid;place-items:center;min-width:42px;height:28px;border-radius:10px;background:#eef3ff;color:var(--brand);font-weight:800;padding:0 10px}
 </style>
 </head>
 <body>
@@ -104,14 +114,12 @@ textarea{min-height:60px;resize:vertical}
 </header>
 
 <main class="page">
-  <!-- Sidebar: list of programs -->
+  <!-- Sidebar -->
   <aside class="sidebar">
     <div class="card">
       <div class="side-head">
         <div style="font-weight:900">Programme</div>
-        <div>
-          <button class="btn is-sm" id="btnMigrate">V1→V2</button>
-        </div>
+        <div><button class="btn is-sm" id="btnMigrate">V1→V2</button></div>
       </div>
       <div id="progList" class="side-list"></div>
     </div>
@@ -119,22 +127,22 @@ textarea{min-height:60px;resize:vertical}
 
   <!-- Workspace -->
   <section class="work">
-    <div class="card">
+    <div class="card" id="wsCard">
       <div class="ws-head">
         <div class="ws-hero">
           <img id="wsDrawing" alt="">
-          <div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <button class="btn is-sm" id="btnChooseDrawing">Zeichnung wählen</button>
             <button class="btn is-sm" id="btnClearDrawing">Entfernen</button>
-            <span class="muted" id="wsDraftDot" style="margin-left:8px;display:none">● Draft</span>
+            <span class="muted" id="wsDraftDot" style="display:none">● Draft</span>
           </div>
         </div>
         <div>
-          <div class="live" style="display:flex;gap:6px;justify-content:flex-end">
+          <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-bottom:6px">
             <span class="live-badge" id="liveRO">Live RO</span>
             <span class="live-badge" id="liveRU">Live RU</span>
           </div>
-          <div class="ws-tabs">
+          <div class="ws-tabs" style="justify-content:flex-end">
             <button class="tab active" data-side="RO" id="tabRO">RO</button>
             <button class="tab" data-side="RU" id="tabRU">RU</button>
             <button class="tab" data-side="SBS" id="tabSBS">Side-by-Side</button>
@@ -155,17 +163,17 @@ textarea{min-height:60px;resize:vertical}
         <button class="btn is-sm" id="btnCloneSide">RO⇄RU (kopieren)</button>
       </div>
 
-      <div id="slotGrid" class="slot-grid"></div>
+      <div id="slotGrid"></div>
 
-      <div class="ws-actions">
+      <div class="ws-actions" id="wsActions">
         <button class="btn" id="btnCancel">Abbrechen</button>
         <button class="btn brand" id="btnSave">Speichern</button>
       </div>
+      <div class="ws-spacer" id="wsSpacer"></div>
     </div>
   </section>
 </main>
 
-<!-- hidden file input (only library/files) -->
 <input type="file" id="drawingInput" accept="image/*" style="display:none"/>
 
 <script src="./ui/setup2.js"></script>
@@ -176,7 +184,7 @@ textarea{min-height:60px;resize:vertical}
   box.addEventListener('click', ()=>{ box.classList.add('active'); q.focus(); });
   q.addEventListener('blur', ()=>{ if(!q.value) box.classList.remove('active'); });
 
-  // Mount Setup2
+  // Mount
   window.addEventListener('DOMContentLoaded', ()=>{
     Setup2UI.mount({
       searchInput: q,
@@ -217,6 +225,9 @@ textarea{min-height:60px;resize:vertical}
         cancel: document.getElementById('btnCancel'),
         save:   document.getElementById('btnSave'),
         draftDot: document.getElementById('wsDraftDot'),
+        actions: document.getElementById('wsActions'),
+        spacer:  document.getElementById('wsSpacer'),
+        card:    document.getElementById('wsCard'),
       },
 
       migrateBtn: document.getElementById('btnMigrate'),
