@@ -32,6 +32,17 @@ window.CT = window.CT || (function(){
     document.querySelectorAll('.dock a').forEach(a=> a.classList.toggle('active', a.dataset.id === id));
   };
 
+CT.i = {
+  bind() {
+    document.querySelectorAll('.ct-i[data-id]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const id = btn.dataset.id;
+        CT.emit && CT.emit('info:open', { id });
+      });
+    });
+  }
+};
+
   // ---- checklist widget ----
   CT.neo.checklist = (root, items, {onChange}={})=>{
     const render = ()=>{
@@ -151,3 +162,4 @@ window.CT = window.CT || (function(){
 
   return CT;
 })();
+
