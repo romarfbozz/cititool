@@ -1,8 +1,7 @@
-// /ui/setup2.js — Setup2 Workspace (fix sticky/footer overlap, tidy header)
 ;(function(window){
   "use strict";
 
-  /* ========= storage utils ========= */
+  /* ---------- storage utils ---------- */
   const storage = {
     get(k, def){ try{
       if(window.CT?.load) return CT.load(k, def);
@@ -18,7 +17,7 @@
   const uid = ()=>Math.random().toString(36).slice(2,10);
   const ph  = ()=>'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="100%" height="100%" fill="#f5f8ff"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Inter,system-ui" font-size="14" fill="#8aa0c4">kein Foto</text></svg>`);
 
-  /* ========= keys & models ========= */
+  /* ---------- keys/models ---------- */
   const K_PROG_V2 = 'CT_PROG_V2';
   const K_LIVE_V2 = 'CT_PROG_LIVE_V2';
   const K_TOOLS   = 'CT_TOOLS_V1';
@@ -60,18 +59,17 @@
     return d;
   }
 
-  /* ========= core data API ========= */
+  /* ---------- core API ---------- */
   const Setup2 = {
     ensureSeeds(){
       let arr = storage.get(K_PROG_V2, null);
       if(!Array.isArray(arr) || !arr.length){
         const demo = [];
-        for(let i=0;i<5;i++){
+        for(let i=0;i<3;i++){
           const nr = String(231850+i);
           const g = normalizeGroup({
             id: uid(),
             nr, title:`Programm ${nr}`, zeichnungsNr:`Z${nr}`, material: i%2? '1.4112':'C45',
-            drawing:null, notes:'',
             sides: {RO:emptySide('RO'), RU:emptySide('RU')},
             meta: {createdAt: now()-(5-i)*10000, updatedAt: now()-(5-i)*10000}
           });
@@ -146,27 +144,30 @@
     }
   };
 
-  /* ========= UI ========= */
+  /* ---------- UI ---------- */
   const Setup2UI = {
     els:{}, state:{q:'', activeId:null, side:'RO', openSlot:null},
     mount(opts){
       Setup2.ensureSeeds();
       this.els = opts;
 
-      // recalc spacer under sticky bar (чтобы не перекрывать контент)
+      // spacer height = sticky actions + dock + небольшой запас
       const calcSpacer = ()=>{
-        const h = opts.bottom.actions?.offsetHeight || 0;
-        if(opts.bottom.spacer) opts.bottom.spacer.style.height = (h+8)+'px';
+        const actionsH = opts.bottom.actions?.offsetHeight || 0;
+        const dockH    = opts.dockEl?.offsetHeight || 0;
+        const h = actionsH + dockH + 8;
+        if(opts.bottom.spacer) opts.bottom.spacer.style.height = h + 'px';
       };
       window.addEventListener('resize', calcSpacer);
       new ResizeObserver(calcSpacer).observe(opts.bottom.actions);
+      if (opts.dockEl) new ResizeObserver(calcSpacer).observe(opts.dockEl);
 
       // list & search
-      const deb = window.CT?.debounce ? CT.debounce : (fn,ms)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms||200);} };
+      const deb = (fn,ms)=>{ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms||220);} };
       opts.searchInput?.addEventListener('input', deb(()=>{
         this.state.q = opts.searchInput.value;
         this.renderList();
-      },250));
+      }));
       opts.newBtn?.addEventListener('click', ()=>{
         const g = Setup2.create({title:'Neues Programm'});
         this.state.activeId = g.id; this.state.openSlot = null; this.renderAll();
@@ -186,8 +187,8 @@
       // bar actions
       opts.bar.clearAll.onclick = ()=>{ const id=this.state.activeId; const side=this.sideOne(); if(!id||!side) return; Setup2.slot.clearAll(id, side); this.markDraft(); this.renderGrid(); };
       opts.bar.autoNum.onclick  = ()=>{ const id=this.state.activeId; const side=this.sideOne(); if(!id||!side) return; Setup2.slot.autonumber(id, side); this.markDraft(); this.renderGrid(); };
-      opts.bar.clone.onclick    = ()=>{ const id=this.state.activeId; const side=this.sideOne(); if(!id) return;
-        const from = side==='RO'?'RO':'RU', to = side==='RO'?'RU':'RO'; Setup2.slot.copyFromOtherSide(id, from, to); this.markDraft(); this.renderGrid(); };
+      opts.bar.clone.onclick    = ()=>{ const id=this.state.activeId; if(!id) return;
+        const from = this.sideOne(); const to = from==='RO'?'RU':'RO'; Setup2.slot.copyFromOtherSide(id, from, to); this.markDraft(); this.renderGrid(); };
 
       // drawing pick
       opts.drawingPickBtn.onclick = ()=> opts.drawingInput.click();
@@ -220,7 +221,7 @@
     },
 
     sideOne(){ return (this.state.side==='SBS')? 'RO' : this.state.side; },
-    toast(msg, kind='ok'){ window.CT?.ui?.toast ? CT.ui.toast(msg,kind) : console.log('[toast]',msg); },
+    toast(msg){ console.log('[CT]', msg); },
     markDraft(){ this.els.bottom.draftDot.style.display='inline'; },
     clearDraft(){ this.els.bottom.draftDot.style.display='none'; },
 
@@ -234,7 +235,7 @@
         const row=document.createElement('div'); row.className='row';
         const left=document.createElement('div');
         left.innerHTML=`<div class="title">${g.title} — ${g.nr}</div>
-                        <div class="meta">${g.material||'—'} • ${g.zeichnungsNr||'—'} ${(live.RO?.id===g.id||live.RU?.id===g.id)?'• <span class="badge">Live</span>':''}</div>`;
+                        <div class="meta">${g.material||'—'} • ${g.zeichnungsNr||'—'} ${(live.RO?.id===g.id||live.RU?.id===g.id)?'• <span style="font-weight:900;color:#2d6cdf">Live</span>':''}</div>`;
         const right=document.createElement('div');
         const ib=document.createElement('button'); ib.className='i-btn'; ib.textContent='i';
         ib.onclick=()=>{ this.state.activeId=g.id; this.state.openSlot=null; this.renderAll(); };
@@ -272,7 +273,7 @@
       const g = Setup2.get(this.state.activeId); if(!g){ grid.innerHTML='<div class="muted">Kein Programm gewählt</div>'; return; }
 
       const sides = this.state.side==='SBS' ? ['RO','RU'] : [this.state.side];
-      sides.forEach((side,idx)=>{
+      sides.forEach((side)=>{
         if(this.state.side==='SBS'){
           const h=document.createElement('div'); h.style.fontWeight='900'; h.style.margin='10px 2px 6px'; h.textContent=side;
           grid.append(h);
@@ -294,6 +295,7 @@
       meta.innerHTML=`<div class="t">Pos ${slot.pos} • ${slot.tnum||'—'}</div><div class="n">${slot.alias || tool?.name || 'kein Werkzeug'}</div>`;
       const btn=document.createElement('button'); btn.className='btn is-sm'; btn.textContent = (this.state.openSlot===`${side}:${slot.pos}`)?'Schließen':'Bearbeiten';
       btn.onclick = ()=>{
+        // только один открытый редактор
         this.state.openSlot = (this.state.openSlot===`${side}:${slot.pos}`)? null : `${side}:${slot.pos}`;
         const parent = art.parentElement;
         const fresh = this.renderSlotCard(Setup2.get(this.state.activeId), side, slot);
@@ -327,9 +329,7 @@
             const info=document.createElement('div'); info.innerHTML=`<div style="font-weight:800">${t.name}</div><div class="muted">${t.iso||'-'} • ${t.code||'-'} • ${t.category||'Allgemein'}</div>`;
             const pick=document.createElement('button'); pick.className='btn is-sm'; pick.textContent='Wählen';
             pick.onclick=()=>{ Setup2.slot.attachTool(g.id, side, slot.pos, t.id); this.markDraft();
-              const parent = art.parentElement;
-              const updated = this.renderSlotCard(Setup2.get(this.state.activeId), side, Setup2.get(this.state.activeId).sides[side].slots[slot.pos-1]);
-              parent.replaceChild(updated, art);
+              this.state.openSlot=null; this.renderGrid();
             };
             row.append(im,info,pick); toolsBox.append(row);
           });
@@ -337,21 +337,21 @@
         renderList('');
         q.addEventListener('input', ()=>renderList(q.value));
 
-        const newRow=document.createElement('div'); newRow.style.display='grid'; newRow.style.gridTemplateColumns='1fr 1fr auto'; newRow.style.gap='6px';
+        // quick-create with photo
+        const newRow=document.createElement('div'); newRow.style.display='grid';
+        newRow.style.gridTemplateColumns='1fr 1fr auto auto'; newRow.style.gap='6px';
         const nm=document.createElement('input'); nm.placeholder='Neues Werkzeug — Name';
         const iso=document.createElement('input'); iso.placeholder='ISO / Code';
         const create=document.createElement('button'); create.className='btn is-sm'; create.textContent='Anlegen';
+        const photoBtn=document.createElement('button'); photoBtn.className='btn is-sm'; photoBtn.textContent='Foto';
         const fin=document.createElement('input'); fin.type='file'; fin.accept='image/*'; fin.style.display='none';
         let imgData=null;
-        const photoBtn=document.createElement('button'); photoBtn.className='btn is-sm'; photoBtn.textContent='Foto';
         photoBtn.onclick=()=>fin.click();
         fin.onchange=()=>{ const f=fin.files?.[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ imgData = r.result; this.toast('Foto geladen'); }; r.readAsDataURL(f); };
         create.onclick=()=>{
           const t = Tools.createQuick({name:nm.value, iso:iso.value, photo:imgData});
           Setup2.slot.attachTool(g.id, side, slot.pos, t.id); this.markDraft();
-          const parent = art.parentElement;
-          const updated = this.renderSlotCard(Setup2.get(this.state.activeId), side, Setup2.get(this.state.activeId).sides[side].slots[slot.pos-1]);
-          parent.replaceChild(updated, art);
+          this.state.openSlot=null; this.renderGrid();
         };
         newRow.append(nm, iso, create, photoBtn, fin);
 
@@ -371,8 +371,7 @@
         bDetach.onclick=()=>{ Setup2.slot.detachTool(g.id, side, slot.pos); this.markDraft(); this.renderGrid(); };
         bCancel.onclick=()=>{ this.state.openSlot=null; this.renderGrid(); };
         bSave.onclick=()=>{
-          const T = r1.q.value.trim(); const ok = /^T\d{4}$/.test(T);
-          if(!ok) this.toast('T-Nummer ungewöhnlich', 'warn');
+          const T = r1.q.value.trim();
           Setup2.slot.setT(g.id, side, slot.pos, T||null);
           Setup2.slot.setAlias(g.id, side, slot.pos, r2.q.value.trim());
           this.markDraft(); this.state.openSlot=null; this.renderGrid();
