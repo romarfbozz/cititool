@@ -163,3 +163,84 @@ body{
   transform: translateY(1px);
   box-shadow: 0 1px 1px rgba(0,0,0,0.08);
 }
+
+/* ===================================================================
+   CT • Harmonize (append-only overrides) — unified across all modules
+   -------------------------------------------------------------------
+   Положить В КОНЕЦ Neo.css. Ничего не удаляем, только переопределяем.
+   =================================================================== */
+
+/* 1) Brand (ровно как в Setup2/Docs) */
+.ct-badge{
+  width:26px !important;
+  height:26px !important;
+  border-radius:8px !important;
+  display:grid; place-items:center;
+  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff) !important;
+  color:#fff !important;
+  font:900 10px/1 Inter,system-ui !important;
+  letter-spacing:.2px !important;
+  box-shadow:inset 0 0 0 1px #dce7ff !important;
+}
+.ct-word{
+  font:900 15px/1 "Inter",system-ui !important;
+  letter-spacing:-.2px !important;
+}
+.ct-word b{
+  background:linear-gradient(180deg,#0d1b2a,#2c3950) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  color:transparent !important;
+}
+
+/* 2) Unified Info-Button (ℹ️) — компактный */
+.ct-i{
+  display:grid; place-items:center;
+  width:36px; height:36px;
+  border-radius:12px;
+  border:1px solid #dbe5ff;
+  background:#fff; color:#2e3e55;
+  box-shadow:0 1px 2px rgba(0,0,0,.03);
+  transition:transform .12s ease, background .12s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+.ct-i:hover{ background:rgba(45,108,223,.06) }
+.ct-i:active{ transform:translateY(1px) }
+.ct-i svg, .ct-i span{ width:18px; height:18px; fill:currentColor; }
+
+/* 3) Unified Sheet Modal (как в Setup2/Docs) */
+.ct-backdrop{
+  position:fixed; inset:0;
+  background:rgba(10,18,30,.35);
+  backdrop-filter:blur(3px);
+  z-index:900;
+}
+.ct-sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:910;
+  width:min(680px,96vw);
+  max-height:66vh; overflow:auto;
+  margin:0 auto;
+  background:#fff;
+  border-top:1px solid #e9eef6;
+  border-top-left-radius:18px; border-top-right-radius:18px;
+  box-shadow:0 -14px 36px rgba(13,27,42,.12);
+  padding:12px 14px 16px;
+}
+.ct-sheet header{
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px; margin-bottom:6px;
+}
+.ct-sheet header .close{
+  width:32px; height:32px;
+  border-radius:10px; border:1px solid #dbe5ff;
+  background:#fff; display:grid; place-items:center;
+}
+.ct-sheet .rowf{ display:grid; gap:6px; margin:6px 0 }
+.ct-sheet .btns{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px }
+
+/* 4) (опционально) Унификация Dock на 6 пунктов */
+.dock .wrap{
+  grid-template-columns:repeat(6,1fr) !important;
+}
+
+/* Конец Harmonize */
