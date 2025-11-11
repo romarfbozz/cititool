@@ -7,7 +7,7 @@
 <style>
 :root{
   --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --hair:#e9eef6;
-  --shadow:0 10px 30px rgba(13,27,42,.08); --dockH:78px; --r2:22px;
+  --shadow:0 10px 30px rgba(13,27,42,.08); --dockH:78px;
 }
 
 /* Base */
@@ -19,15 +19,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
 .inp{width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:10px}
 
-/* Brand (единый 32/18) */
+/* Brand (как в Setup2) */
 .brand{display:flex;align-items:center;gap:10px}
 .brand .badge{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
   background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);color:#fff;
-  font:900 12px/1 Inter;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
+  font:900 12px/1 Inter,system-ui;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
 .brand .word{font:900 18px/1 "Inter",system-ui;letter-spacing:-.3px}
 .brand .word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* AppBar */
+/* AppBar (как в Setup2) */
 .appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
   background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.70));border-bottom:1px solid var(--hair)}
 .appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
@@ -38,7 +38,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter;color:var(--ink)}
 
 /* Layout */
-.main{max-width:1040px;margin:0 auto;padding:0 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
+.main{max-width:1040px;margin:0 auto;padding:8px 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
 .section{background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow);padding:14px}
 .section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter}
 
@@ -50,49 +50,59 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .drag{width:22px;text-align:center;color:#8aa0c4;font-weight:900}
 .task.done .title{text-decoration:line-through;color:#8aa0c4}
 
-/* Produktion */
+/* Produktion (компакт, как договаривались) */
 .orders{display:grid;gap:10px}
 .order{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px;border:1px solid #edf1f7;border-radius:16px}
 .order .t{font:900 18px/1.2 Inter}
 .pbar{height:10px;border-radius:8px;background:#edf1f7;overflow:hidden;margin-top:8px}
 .pbar>i{display:block;height:100%;background:#2d6cdf}
 .badge{display:inline-grid;place-items:center;min-width:46px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
-.i-btn{width:56px;height:56px;border-radius:18px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center;font-weight:900;color:#2d6cdf}
+.i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
 
-/* Unified Sheet / Modal — компактнее */
-.backdrop{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:900}
-.sheet{
-  position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid #e9eef6;
-  border-top-left-radius:18px;border-top-right-radius:18px;box-shadow:0 -16px 40px rgba(13,27,42,.15);
-  padding:10px 12px 14px;z-index:910;max-height:62vh;overflow:auto
+/* Unified Sheet / Modal (1:1 c Setup2) */
+.backdrop{
+  position:fixed; inset:0;
+  background:rgba(10,18,30,.32);
+  backdrop-filter:blur(2px);
+  z-index:900;
 }
-.sheet header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.sheet header h3{margin:0;font:800 16px/1.2 Inter}
-.sheet header .close{width:34px;height:34px;border-radius:10px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
+.sheet{
+  position:fixed; left:0; right:0; bottom:0; z-index:910;
+  background:#fff; border-top:1px solid #e9eef6;
+  border-top-left-radius:16px; border-top-right-radius:16px;
+  box-shadow:0 -18px 36px rgba(13,27,42,.18);
+  padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+  max-height:52vh; overflow:auto; overscroll-behavior:contain;
+}
+.sheet header{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.sheet header h3{margin:0;font:800 17px/1.2 Inter,system-ui}
+.sheet header .close{
+  width:32px;height:32px;border-radius:10px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center
+}
 .sheet .rowf{display:grid;gap:6px;margin:6px 0}
 .sheet .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.sheet .inp{padding:8px;border-radius:10px}
+.sheet .btn{height:34px;padding:0 12px;border-radius:10px}
+.sheet .btn.brand{box-shadow:0 6px 16px rgba(45,108,223,.22)}
+@media (min-width:768px){ .sheet{max-height:48vh} }
 
-/* Feed / Recent */
+/* Feed / Recent / KPIs / Backup */
 .feed{display:grid;gap:8px}
 .rowfeed{display:flex;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
 .time{font:700 12px/1 Inter;color:#586a85;width:72px}
 .text{font-weight:600}
-
-/* KPIs */
 .kpicol{display:grid;gap:8px}
 .krow{display:grid;grid-template-columns:140px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px}
 .kname{font-weight:700}
 .kbar{height:8px;border-radius:8px;background:#edf1f7;overflow:hidden}
 .kbar>i{display:block;height:100%;background:#2d6cdf}
 .kval{font:900 16px/1 Inter}
-
-/* Backup */
 .br-wrap{display:grid;gap:10px}
 .br-head{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
 .br-actions{display:flex;gap:8px;flex-wrap:wrap}
 .small{font-size:12px;color:#64748b}
 
-/* Dock */
+/* Dock (как в Setup2, 1:1) */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
 .dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
@@ -116,6 +126,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 </header>
 
 <main class="main">
+  <!-- Setup-Checkliste -->
   <section class="section">
     <h2>Setup-Checkliste</h2>
     <div class="chk-head">
@@ -127,26 +138,31 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
     <div id="chkList" class="list"></div>
   </section>
 
+  <!-- Produktion -->
   <section class="section">
     <h2>Produktion</h2>
     <div class="orders" id="orders"></div>
   </section>
 
+  <!-- Letzte Aktionen -->
   <section class="section">
     <h2>Letzte Aktionen</h2>
     <div class="feed" id="feed"></div>
   </section>
 
+  <!-- Zuletzt hinzugefügt -->
   <section class="section">
     <h2>Zuletzt hinzugefügt</h2>
     <div class="feed" id="recent"></div>
   </section>
 
+  <!-- Übersicht -->
   <section class="section">
     <h2>Übersicht</h2>
     <div class="kpicol" id="kpis"></div>
   </section>
 
+  <!-- Backup -->
   <section class="section">
     <div class="br-head">
       <h2 style="margin:0">Backup & Restore</h2>
@@ -186,7 +202,7 @@ const S={get(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d
 const now=()=>Date.now(), uid=()=>Math.random().toString(36).slice(2,10);
 const K={ PROG:'CT_PROGS_V1', TOOLS:'CT_TOOLS_V1', DOCS:'CT_DOCS_V1', PROD:'CT_PROD_V1', CHECK:'CT_CHECK_V1', BK:'CT_BACKUP_INFO_V1' };
 
-/* Seeds */
+/* Seeds (минимум) */
 (function(){
   if(!Array.isArray(S.get(K.PROD))) S.set(K.PROD,[]);
   if(S.get(K.PROD).length===0){
@@ -258,13 +274,13 @@ function renderOrders(){
   });
 }
 
-/* Compact sheet */
+/* Sheet (как в Setup2) */
 function openOrderSheet(order){
   const back=document.createElement('div'); back.className='backdrop';
   const sheet=document.createElement('div'); sheet.className='sheet';
   sheet.innerHTML=`
     <header>
-      <div class="brand"><div class="badge">CT</div><div class="word" style="font-size:18px"><b>CITI‧TOOL</b></div></div>
+      <div class="brand"><div class="badge">CT</div><div class="word"><b>CITI‧TOOL</b></div></div>
       <button class="close" title="Schließen">✕</button>
     </header>
     <h3>${order.name}</h3>
