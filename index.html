@@ -7,7 +7,7 @@
 <style>
 :root{
   --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --hair:#e9eef6;
-  --shadow:0 10px 30px rgba(13,27,42,.08); --dockH:78px; --r2:22px;
+  --shadow:0 10px 30px rgba(13,27,42,.08); --dockH:78px;
 }
 
 /* Base */
@@ -19,7 +19,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
 .inp{width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:10px}
 
-/* Brand — 1:1 как в Setup2 */
+/* Brand — идентично модулям (как в docs/setup2) */
 .brand{display:flex;align-items:center;gap:6px}
 .brand .badge{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;
   background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);color:#fff;
@@ -27,7 +27,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .brand .word{font:900 15px/1 "Inter",system-ui;letter-spacing:-.2px}
 .brand .word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
 
-/* AppBar (как в Setup2) */
+/* AppBar — как в других модулях */
 .appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
   background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.70));border-bottom:1px solid var(--hair)}
 .appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
@@ -60,16 +60,17 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
 .i-btn svg{width:18px;height:18px;fill:#2e3e55}
 
-/* Unified Sheet / Modal — 1:1 Setup2 */
+/* Sheet/Modal — компактно, 1:1 со страницей Docs */
 .backdrop{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:900}
 .sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:910;
-  width:min(680px,96vw);max-height:66vh;overflow:auto;margin:0 auto;
+  width:min(640px,94vw);max-height:60vh;overflow:auto;margin:0 auto;
   background:#fff;border-top:1px solid #e9eef6;border-top-left-radius:18px;border-top-right-radius:18px;
-  box-shadow:0 -14px 36px rgba(13,27,42,.12);padding:12px 14px 16px;
+  box-shadow:0 -12px 30px rgba(13,27,42,.12);padding:12px 14px 16px;
 }
 .sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
 .sheet header .close{width:32px;height:32px;border-radius:10px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
+.sheet h3{margin:0 0 6px;font:800 18px/1.2 Inter}
 .sheet .rowf{display:grid;gap:6px;margin:6px 0}
 .sheet .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 
@@ -93,7 +94,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .br-actions{display:flex;gap:8px;flex-wrap:wrap}
 .small{font-size:12px;color:#64748b}
 
-/* Dock — 1:1 Setup2 */
+/* Dock — 1:1 как в остальных модулях */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
 .dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
@@ -266,7 +267,7 @@ function renderOrders(){
   });
 }
 
-/* Sheet (Setup2-стиль) */
+/* Sheet (как в Docs) */
 function openOrderSheet(order){
   const back=document.createElement('div'); back.className='backdrop';
   const sheet=document.createElement('div'); sheet.className='sheet';
@@ -352,7 +353,7 @@ function drawKpis(){
     {name:'Dokumente', val:docs.length, type:'count'},
     {name:'Aufträge',  val:prod.length, type:'count'},
     {name:'Ø Fortschritt', val:mean, type:'bar'},
-    {name:'Aktivität сегодня', val:todayCnt(tools)+todayCnt(docs)+todayCnt(prod), type:'count'},
+    {name:'Aktivität heute', val:todayCnt(tools)+todayCnt(docs)+todayCnt(prod), type:'count'},
     {name:'Erledigt', val:doneCnt, type:'count'},
     {name:'Speicher (Einträge)', val:total, type:'count'},
   ];
