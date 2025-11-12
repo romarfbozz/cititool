@@ -13,7 +13,8 @@
 /* Base */
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,Inter,Roboto,system-ui}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,Inter,Roboto,system-ui}
 .muted{color:var(--muted)}
 .btn{height:38px;padding:0 14px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
 .btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
@@ -23,6 +24,20 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);
   background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.70));border-bottom:1px solid var(--hair)}
 .appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+
+/* Logo 1:1 как Setup2/Docs */
+.logo-line{display:flex;align-items:center;gap:10px}
+.logo-line .ct-badge{
+  width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);
+  color:#fff;font:900 13px/1 Inter,system-ui;letter-spacing:.2px;
+  box-shadow:inset 0 0 0 1px #dce7ff
+}
+.logo-line .ct-word{
+  font:900 20px/1 "Inter",system-ui;letter-spacing:-.35px;
+  background:linear-gradient(180deg,#0d1b2a,#2c3950);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
 
 /* Search */
 .search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;
@@ -40,9 +55,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .chk-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .list{display:grid;gap:8px}
 .task{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
-.task[draggable="true"]{cursor:grab}
-.drag{width:22px;text-align:center;color:#8aa0c4;font-weight:900}
 .task.done .title{text-decoration:line-through;color:#8aa0c4}
+.drag{width:22px;text-align:center;color:#8aa0c4;font-weight:900;user-select:none;cursor:grab}
 
 /* Produktion */
 .orders{display:grid;gap:10px}
@@ -50,33 +64,34 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .order .t{font:900 18px/1.2 Inter}
 .pbar{height:10px;border-radius:8px;background:#edf1f7;overflow:hidden;margin-top:8px}
 .pbar>i{display:block;height:100%;background:#2d6cdf}
-.ct-badge{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
-  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff, #2d6cdf, #7bb0ff);color:#fff;font-weight:900;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
-.ct-word{font:900 22px/1 "Inter",system-ui;letter-spacing:-.4px}
-.ct-word b{background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
-.actions{display:flex;align-items:center;gap:8px}
+.badge{display:inline-grid;place-items:center;min-width:46px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
+.i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
+.i-btn svg{width:18px;height:18px;fill:#2e3e55}
 
-/* Sheet/Modal (компакт как в Docs/Setup2) */
+/* Sheet (как Setup2/Docs — компакт) */
 .backdrop{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:900}
 .sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:910;
-  width:min(640px,94vw);max-height:60vh;overflow:auto;margin:0 auto;
-  background:#fff;border-top:1px solid #e9eef6;border-top-left-radius:18px;border-top-right-radius:18px;
+  width:min(480px,94vw);max-height:60vh;overflow:auto;margin:0 auto;
+  background:#fff;border-top:1px solid #e9eef6;border-radius:18px;
   box-shadow:0 -12px 30px rgba(13,27,42,.12);padding:12px 14px 16px;
 }
-.sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+.sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.sheet header .ct-badge{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;
+  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);
+  color:#fff;font:900 13px/1 Inter,system-ui;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
+.sheet header .ct-word{font:900 20px/1 "Inter",system-ui;letter-spacing:-.35px;
+  background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
 .sheet header .close{width:32px;height:32px;border-radius:10px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
 .sheet h3{margin:0 0 6px;font:800 18px/1.2 Inter}
 .sheet .rowf{display:grid;gap:6px;margin:6px 0}
 .sheet .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
 
-/* Feed / Recent */
+/* Feed / KPIs / Backup */
 .feed{display:grid;gap:8px}
 .rowfeed{display:flex;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px;background:#fff}
 .time{font:700 12px/1 Inter;color:#586a85;width:72px}
 .text{font-weight:600}
-
-/* KPIs */
 .kpicol{display:grid;gap:8px}
 .krow{display:grid;grid-template-columns:140px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:12px;padding:10px}
 .kname{font-weight:700}
@@ -84,13 +99,11 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .kbar>i{display:block;height:100%;background:#2d6cdf}
 .kval{font:900 16px/1 Inter}
 
-/* Backup */
 .br-wrap{display:grid;gap:10px}
-.br-head{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap}
 .br-actions{display:flex;gap:8px;flex-wrap:wrap}
 .small{font-size:12px;color:#64748b}
 
-/* Dock — 1:1 */
+/* Dock */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
   backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
 .dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
@@ -98,22 +111,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system
 .dock a small{font-weight:600;font-size:12px;color:#344966}
 .dock a.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
 .icon{width:22px;height:22px;fill:#2e3e55}
-
-/* === ЖЁСТКИЙ ОВЕРРАЙД ЛОГО (точно как в Docs/Setup2) === */
-header.appbar .wrap .ct-badge{
-  width:40px !important; height:40px !important; aspect-ratio:1/1 !important;
-  border-radius:8px !important; display:grid !important; place-items:center !important;
-  background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff) !important;
-  color:#fff !important; font:900 10px/1 Inter,system-ui !important; letter-spacing:.2px !important;
-  box-shadow:inset 0 0 0 1px #dce7ff !important; flex:0 0 auto !important;
-}
-header.appbar .wrap .ct-word{
-  font:900 15px/1 "Inter",system-ui !important; letter-spacing:-.2px !important;
-}
-header.appbar .wrap .ct-word b{
-  background:linear-gradient(180deg,#0d1b2a,#2c3950) !important;
-  -webkit-background-clip:text !important; background-clip:text !important; color:transparent !important;
-}
 </style>
 </head>
 <body>
@@ -121,11 +118,7 @@ header.appbar .wrap .ct-word b{
 <!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
-    <!-- ВАЖНО: используем ct-badge / ct-word, как в остальных модулях -->
-    <div class="logo-line">
-      <div class="ct-badge">CT</div>
-      <div class="ct-word"><b>CITI‧TOOL</b></div>
-    </div>
+    <div class="logo-line"><div class="ct-badge">CT</div><div class="ct-word"><b>CITI‧TOOL</b></div></div>
     <div class="search" id="searchBox">
       <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
       <input type="search" placeholder="Suchen…" id="q"/>
@@ -172,9 +165,7 @@ header.appbar .wrap .ct-word b{
 
   <!-- Backup -->
   <section class="section">
-    <div class="br-head">
-      <h2 style="margin:0">Backup & Restore</h2>
-    </div>
+    <h2>Backup & Restore</h2>
     <div class="br-wrap">
       <div class="small muted" id="bkStatus">—</div>
       <div class="br-actions">
@@ -182,7 +173,6 @@ header.appbar .wrap .ct-word b{
         <input type="file" id="fileRestore" accept="application/json" style="display:none"/>
         <button class="btn" id="doRestore">Wiederherstellen…</button>
       </div>
-      <div class="small">Sichert alle lokalen <b>CT_*</b>-Daten в один JSON и позволяет восстановить их später.</div>
     </div>
   </section>
 </main>
@@ -214,7 +204,7 @@ const K={ PROG:'CT_PROGS_V1', TOOLS:'CT_TOOLS_V1', DOCS:'CT_DOCS_V1', PROD:'CT_P
 (function(){
   if(!Array.isArray(S.get(K.PROD))) S.set(K.PROD,[]);
   if(S.get(K.PROD).length===0){
-    const a=[]; for(let i=1;i<=5;i++) a.push({id:uid(),name:'Los '+(231+i),done:20*i,total:120+i*20,due:new Date(Date.now()+i*864e5).toISOString().slice(0,10),notes:'',createdAt:now(),updatedAt:now()});
+    const a=[]; for(let i=1;i<=5;i++) a.push({id:uid(),name:'Los '+(231+i),done:20*i,total:120+i*20,due:'',notes:'',createdAt:now(),updatedAt:now()});
     S.set(K.PROD,a);
   }
   if(!Array.isArray(S.get(K.CHECK))) S.set(K.CHECK,[
@@ -289,7 +279,7 @@ function openOrderSheet(order){
   const sheet=document.createElement('div'); sheet.className='sheet';
   sheet.innerHTML=`
     <header>
-      <div style="display:flex;align-items:center;gap:6px">
+      <div style="display:flex;align-items:center;gap:8px">
         <div class="ct-badge">CT</div><div class="ct-word"><b>CITI‧TOOL</b></div>
       </div>
       <button class="close" title="Schließen">✕</button>
@@ -308,11 +298,12 @@ function openOrderSheet(order){
     </div>`;
   const lock=()=>{document.body.style.overflow='hidden'}; const unlock=()=>{document.body.style.overflow=''}
   lock(); document.body.append(back,sheet);
-  back.addEventListener('click',()=>{sheet.remove(); back.remove(); unlock();});
-  sheet.querySelector('.close').onclick=()=>{back.click()};
+  const close=()=>{sheet.remove(); back.remove(); unlock();};
+  back.addEventListener('click',close);
+  sheet.querySelector('.close').onclick=close;
   sheet.querySelector('#m10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Math.max(0,Number(d.value||0)-10);};
   sheet.querySelector('#p10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Number(d.value||0)+10;};
-  sheet.querySelector('#del').onclick=()=>{ if(confirm('Auftrag löschen?')){ saveOrders(loadOrders().filter(x=>x.id!==order.id)); renderAll(); back.click(); } };
+  sheet.querySelector('#del').onclick=()=>{ if(confirm('Auftrag löschen?')){ saveOrders(loadOrders().filter(x=>x.id!==order.id)); renderAll(); close(); } };
   sheet.querySelector('#save').onclick=()=>{
     order.done=Number(sheet.querySelector('#fD').value||0);
     order.total=Number(sheet.querySelector('#fT').value||0);
@@ -320,11 +311,11 @@ function openOrderSheet(order){
     order.notes=sheet.querySelector('#fN').value||'';
     order.updatedAt=Date.now();
     const arr=loadOrders(); const i=arr.findIndex(x=>x.id===order.id); if(i>=0) arr[i]=order; saveOrders(arr);
-    renderAll(); back.click();
+    renderAll(); close();
   };
 }
 
-/* Feed / Recent / KPIs / Backup */
+/* Feeds / Recent / KPIs / Backup */
 function renderFeed(){
   const mk=(arr,fmt)=> (arr||[]).map(x=>({t:x.updatedAt||x.createdAt||0, txt:fmt(x)}));
   const tools=mk(S.get('CT_TOOLS_V1',[]), x=>`Werkzeug ${x.name||x.code||''} gespeichert`);
