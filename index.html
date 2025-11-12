@@ -39,7 +39,8 @@ body{margin:0;background:var(--bg);color:var(--ink);
   -webkit-background-clip:text;background-clip:text;color:transparent
 }
 
-/* Search */
+/* Actions (Neu + Search) */
+.actions{display:flex;align-items:center;gap:8px}
 .search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;
   transition:width .35s;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
 .search.active{width:min(56vw,260px)}
@@ -65,10 +66,12 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .pbar{height:10px;border-radius:8px;background:#edf1f7;overflow:hidden;margin-top:8px}
 .pbar>i{display:block;height:100%;background:#2d6cdf}
 .badge{display:inline-grid;place-items:center;min-width:46px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
+
+/* Info button (единый SVG как в других модулях) */
 .i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
 .i-btn svg{width:18px;height:18px;fill:#2e3e55}
 
-/* Sheet (как Setup2/Docs — компакт) */
+/* Sheet (компакт) */
 .backdrop{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:900}
 .sheet{
   position:fixed;left:0;right:0;bottom:0;z-index:910;
@@ -86,6 +89,12 @@ body{margin:0;background:var(--bg);color:var(--ink);
 .sheet h3{margin:0 0 6px;font:800 18px/1.2 Inter}
 .sheet .rowf{display:grid;gap:6px;margin:6px 0}
 .sheet .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+
+/* Neu sheet */
+.neu-list{display:grid;gap:8px;margin-top:6px}
+.neu-item{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #edf1f7;border-radius:12px;background:#fff;text-decoration:none;color:inherit}
+.neu-item:hover{background:#f5f8ff}
+.neu-item svg{width:20px;height:20px;fill:#2e3e55}
 
 /* Feed / KPIs / Backup */
 .feed{display:grid;gap:8px}
@@ -119,9 +128,12 @@ body{margin:0;background:var(--bg);color:var(--ink);
 <header class="appbar">
   <div class="wrap">
     <div class="logo-line"><div class="ct-badge">CT</div><div class="ct-word"><b>CITI‧TOOL</b></div></div>
-    <div class="search" id="searchBox">
-      <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
-      <input type="search" placeholder="Suchen…" id="q"/>
+    <div class="actions">
+      <button class="btn brand" id="btnNeu">Neu</button>
+      <div class="search" id="searchBox">
+        <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
+        <input type="search" placeholder="Suchen…" id="q"/>
+      </div>
     </div>
   </div>
 </header>
@@ -265,7 +277,10 @@ function renderOrders(){
     const right=document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
     const badge=document.createElement('span'); badge.className='badge'; badge.textContent=pct(o)+'%';
     const info=document.createElement('button'); info.className='i-btn'; info.title='Details';
-    info.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`;
+    /* SVG иконки i (единый) */
+    info.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1 8h-2v-6h2v6Z"/>
+    </svg>`;
     info.onclick=()=>openOrderSheet(o);
     right.append(badge,info);
     card.append(left,right);
@@ -273,10 +288,12 @@ function renderOrders(){
   });
 }
 
-/* Sheet */
+/* Sheets: Order editor + Neu chooser */
+function makeBackdrop(){const b=document.createElement('div');b.className='backdrop';return b;}
+function lock(){document.body.style.overflow='hidden'}function unlock(){document.body.style.overflow=''}
+
 function openOrderSheet(order){
-  const back=document.createElement('div'); back.className='backdrop';
-  const sheet=document.createElement('div'); sheet.className='sheet';
+  const back=makeBackdrop(); const sheet=document.createElement('div'); sheet.className='sheet';
   sheet.innerHTML=`
     <header>
       <div style="display:flex;align-items:center;gap:8px">
@@ -296,11 +313,9 @@ function openOrderSheet(order){
       <button class="btn" id="del">Löschen</button>
       <button class="btn brand" id="save">Speichern</button>
     </div>`;
-  const lock=()=>{document.body.style.overflow='hidden'}; const unlock=()=>{document.body.style.overflow=''}
-  lock(); document.body.append(back,sheet);
   const close=()=>{sheet.remove(); back.remove(); unlock();};
-  back.addEventListener('click',close);
-  sheet.querySelector('.close').onclick=close;
+  document.body.append(back,sheet); lock();
+  back.addEventListener('click',close); sheet.querySelector('.close').onclick=close;
   sheet.querySelector('#m10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Math.max(0,Number(d.value||0)-10);};
   sheet.querySelector('#p10').onclick=()=>{const d=sheet.querySelector('#fD'); d.value=Number(d.value||0)+10;};
   sheet.querySelector('#del').onclick=()=>{ if(confirm('Auftrag löschen?')){ saveOrders(loadOrders().filter(x=>x.id!==order.id)); renderAll(); close(); } };
@@ -314,6 +329,37 @@ function openOrderSheet(order){
     renderAll(); close();
   };
 }
+
+function openNeuSheet(){
+  const back=makeBackdrop(); const sheet=document.createElement('div'); sheet.className='sheet';
+  sheet.innerHTML=`
+    <header>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="ct-badge">CT</div><div class="ct-word"><b>CITI‧TOOL</b></div>
+      </div>
+      <button class="close" title="Schließen">✕</button>
+    </header>
+    <h3>Neu</h3>
+    <div class="neu-list">
+      <a class="neu-item" href="./tools.html#new">
+        <svg viewBox="0 0 24 24"><path d="M3 13h4l3 7h4l3-7h4v-2h-5l-3-7h-4l-3 7H3v2z"/></svg>
+        <div><div style="font-weight:800">Neues Werkzeug</div><div class="muted" style="font-size:12px">In Schrank anlegen</div></div>
+      </a>
+      <a class="neu-item" href="./docs.html#new">
+        <svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/></svg>
+        <div><div style="font-weight:800">Neues Dokument</div><div class="muted" style="font-size:12px">Notiz oder Datei</div></div>
+      </a>
+      <a class="neu-item" href="./programme.html#new">
+        <svg viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg>
+        <div><div style="font-weight:800">Neues Programm</div><div class="muted" style="font-size:12px">Nr/Seite/Slots</div></div>
+      </a>
+    </div>`;
+  const close=()=>{sheet.remove(); back.remove(); unlock();};
+  document.body.append(back,sheet); lock();
+  back.addEventListener('click',close); sheet.querySelector('.close').onclick=close;
+}
+
+document.getElementById('btnNeu').addEventListener('click', openNeuSheet);
 
 /* Feeds / Recent / KPIs / Backup */
 function renderFeed(){
