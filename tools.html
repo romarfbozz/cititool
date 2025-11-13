@@ -4,373 +4,308 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <title>CitiTool • Tools</title>
-<link rel="stylesheet" href="./ui/neo.css">
+<style>
+:root{ --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --hair:#e9eef6; --shadow:0 10px 30px rgba(13,27,42,.08); --dockH:78px }
+*{box-sizing:border-box} html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 -apple-system,BlinkMacSystemFont,Inter,Roboto,system-ui}
+
+/* AppBar (логотип 36×36 + слово 20px) */
+.appbar{position:sticky;top:0;z-index:30;backdrop-filter:saturate(1.1) blur(8px);background:linear-gradient(180deg,rgba(255,255,255,.85),rgba(255,255,255,.70));border-bottom:1px solid var(--hair)}
+.appbar .wrap{max-width:1040px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px;justify-content:space-between}
+.logo-line{display:flex;align-items:center;gap:10px}
+.ct-badge{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);color:#fff;font:900 13px/1 Inter;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
+.ct-word{font:900 20px/1 "Inter";letter-spacing:-.35px;background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
+.actions{display:flex;align-items:center;gap:8px}
+.btn{height:38px;padding:0 14px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;font-weight:800}
+.btn.brand{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(45,108,223,.25)}
+.search{position:relative;display:flex;align-items:center;overflow:hidden;width:44px;height:40px;border-radius:12px;transition:width .35s;background:#fff;border:1px solid var(--hair);box-shadow:inset 0 1px 2px rgba(0,0,0,.04)}
+.search.active{width:min(56vw,260px)} .search svg{position:absolute;left:12px;width:18px;height:18px;fill:#8aa0c4}
+.search input{border:0;outline:0;width:100%;height:100%;padding:0 12px 0 38px;background:transparent;font:600 14px/1.2 Inter;color:var(--ink)}
+
+/* Layout */
+.main{max-width:1040px;margin:0 auto;padding:12px 16px calc(16px + var(--dockH) + env(safe-area-inset-bottom));display:grid;gap:14px}
+.section{background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:var(--shadow);padding:14px}
+.section h2{margin:2px 4px 12px;font:800 22px/1.2 Inter}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media (max-width:640px){ .grid{grid-template-columns:1fr} }
+.card{display:grid;grid-template-columns:72px 1fr auto;gap:10px;align-items:center;border:1px solid #edf1f7;border-radius:16px;padding:10px}
+.thumb{width:72px;height:72px;border-radius:12px;background:#eef3ff;display:grid;place-items:center;overflow:hidden}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.meta .name{font:900 16px/1.2 Inter}
+.meta .sub{color:#6b7a90;font-weight:600}
+.badge{display:inline-grid;place-items:center;min-width:46px;height:28px;border-radius:10px;background:#eef3ff;color:#244b9a;font-weight:900;padding:0 10px}
+
+/* i-button */
+.i-btn{width:36px;height:36px;border-radius:12px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
+.i-btn svg{width:18px;height:18px;fill:#2e3e55}
+
+/* Sheet */
+.backdrop{position:fixed;inset:0;background:rgba(10,18,30,.35);backdrop-filter:blur(3px);z-index:900}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:910;width:min(520px,94vw);max-height:70vh;overflow:auto;margin:0 auto;background:#fff;border-top:1px solid #e9eef6;border-radius:18px;box-shadow:0 -12px 30px rgba(13,27,42,.12);padding:12px 14px 16px}
+.sheet header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.sheet header .ct-badge{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:conic-gradient(from 230deg at 30% 30%, #7bb0ff,#2d6cdf,#7bb0ff);color:#fff;font:900 13px/1 Inter;letter-spacing:.2px;box-shadow:inset 0 0 0 1px #dce7ff}
+.sheet header .ct-word{font:900 20px/1 "Inter";letter-spacing:-.35px;background:linear-gradient(180deg,#0d1b2a,#2c3950);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sheet header .close{width:32px;height:32px;border-radius:10px;border:1px solid #dbe5ff;background:#fff;display:grid;place-items:center}
+.sheet .rowf{display:grid;gap:6px;margin:6px 0}
+.sheet .btns{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+.inp{width:100%;border:1px solid #dbe5ff;border-radius:12px;padding:10px}
+.muted{color:#6b7a90}
+
+/* Dock */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:40;padding:8px env(safe-area-inset-right) calc(8px + env(safe-area-inset-bottom)) env(safe-area-inset-left);backdrop-filter:blur(12px) saturate(1.2);background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.85));border-top:1px solid var(--hair)}
+.dock .wrap{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+.dock a{display:grid;justify-items:center;gap:4px;padding:10px;border-radius:14px;text-decoration:none;color:inherit}
+.dock a small{font-weight:600;font-size:12px;color:#344966}
+.dock a.active{background:#eef3ff;box-shadow:inset 0 0 0 1px #d6e5ff}
+.icon{width:22px;height:22px;fill:#2e3e55}
+</style>
 </head>
 <body>
 
-<!-- фон -->
-<div class="hero-bg"><div class="hero-grid"></div></div>
-
-<!-- AppBar -->
 <header class="appbar">
   <div class="wrap">
-    <div class="logo-line">
-      <div class="ct-badge">CT</div>
-      <div class="ct-word"><b>CITI‧TOOL</b></div>
-    </div>
+    <div class="logo-line"><div class="ct-badge">CT</div><div class="ct-word"><b>CITI‧TOOL</b></div></div>
     <div class="actions">
-      <button class="btn" id="btnNew">Neues Werkzeug</button>
+      <button class="btn brand" id="btnNew">Neues Werkzeug</button>
       <div class="search" id="searchBox">
         <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 105.29 14.29l4.7 4.7 1.41-1.41-4.7-4.7A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4z"/></svg>
-        <input type="search" placeholder="Suchen…" id="q" autocomplete="off">
+        <input type="search" placeholder="Suchen…" id="q"/>
       </div>
     </div>
   </div>
 </header>
 
 <main class="main">
-
-  <!-- Letztes Werkzeug + Категории -->
   <section class="section">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin:2px 4px 12px">
-      <h2 style="margin:0">Letztes Werkzeug</h2>
-      <button class="btn btn--outline is-sm" id="btnCats">Kategorien…</button>
+    <h2>Schrank</h2>
+    <div class="controls">
+      <select id="cat" class="inp" style="max-width:220px"></select>
+      <button class="btn" id="manageCats">Kategorien…</button>
     </div>
-    <div class="list" id="latestWrap"></div>
+    <div class="grid" id="grid"></div>
   </section>
-
-  <!-- Список инструментов -->
-  <section class="section">
-    <h2>Werkzeuge</h2>
-    <div class="list" id="toolList"></div>
-  </section>
-
 </main>
 
-<!-- Dock -->
-<nav class="dock">
+<nav class="dock" id="dock">
   <div class="wrap">
-    <a href="./index.html" data-id="dash"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
-    <a href="./setup.html" data-id="setup"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2h-2v-2z"/></svg><small>Setup</small></a>
-    <a href="./tools.html" class="active" data-id="tools"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
-    <a href="./setup.html" data-id="programs"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
-    <a href="./docs.html" data-id="docs"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/><path d="M8 13h8v2H8zM8 17h8v2H8z"/></svg><small>Docs</small></a>
+    <a href="./index.html"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/></svg><small>Dash</small></a>
+    <a href="./setup2.html"><svg class="icon" viewBox="0 0 24 24"><path d="M19.14 12.94a7 7 0 10-7.08 7.06 7 7 0 007.08-7.06zM11 6h2v6h-2V6zm0 8h2v2H11v-2z"/></svg><small>Setup</small></a>
+    <a href="./tools.html" class="active"><svg class="icon" viewBox="0 0 24 24"><path d="M22 19l-8-8 2-2 8 8-2 2zM14.3 7.7l-1-1L9 11v2h2l4.3-4.3zM7 2l3 3-2 2-3-3L7 2zM2 7l3 3-2 2-3-3L2 7zM3 14h6v8H3z"/></svg><small>Tools</small></a>
+    <a href="./programme.html"><svg class="icon" viewBox="0 0 24 24"><path d="M3 4h18v2H3V4zm0 4h12v2H3V8zm0 4h18v2H3v-2zm0 4h12v2H3v-2z"/></svg><small>Programme</small></a>
+    <a href="./docs.html"><svg class="icon" viewBox="0 0 24 24"><path d="M6 2h9l5 5v15a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2zm8 1.5V8h4.5"/></svg><small>Docs</small></a>
+    <a href="./assist.html"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg><small>Assist</small></a>
   </div>
 </nav>
 
-<script src="./ui/neo.js"></script>
-<script src="./ui/tools.js"></script>
+<!-- Neo Store -->
+<script src="./ui/neo-store.js"></script>
 <script>
-CT.neo.wireSearch(document.getElementById('searchBox'), document.getElementById('q'));
-CT.neo.shrinkOnScroll();
-CT.neo.setActiveDock('tools');
+const K={TOOLS:'CT_TOOLS_V1', CATS:'CT_TOOL_CATS_V1'};
+const grid=document.getElementById('grid'), selCat=document.getElementById('cat');
+const now=()=>Date.now(), uid=()=>Math.random().toString(36).slice(2,10);
 
-Tools.ensureSeeds();
+/* UI helpers */
+function makeBackdrop(){const d=document.createElement('div'); d.className='backdrop'; return d;}
+function lock(){document.body.style.overflow='hidden'} function unlock(){document.body.style.overflow=''}
 
-/* ---- state ---- */
-const state={ q:'' };
-CT.on('search', q=>{ state.q=q||''; renderList(); });
-
-/* ---- refs ---- */
-const listEl = document.getElementById('toolList');
-const latestWrap = document.getElementById('latestWrap');
-
-/* ---- viewer ---- */
-function openViewer(t){
-  const box=document.createElement('div');
-
-  // top image / placeholder
-  const top=document.createElement('div');
-  if (t.photo){
-    const img=document.createElement('img'); img.src=t.photo; img.alt='Foto'; img.style.width='100%'; img.style.borderRadius='12px';
-    top.append(img);
-  }else{
-    const ph=document.createElement('div');
-    ph.style.height='160px'; ph.style.border='1px solid #edf1f7'; ph.style.borderRadius='12px';
-    ph.style.display='grid'; ph.style.placeItems='center'; ph.style.color='#6b7a90'; ph.style.fontWeight='800';
-    ph.textContent='kein Foto'; top.append(ph);
+/* Seeds */
+function ensureSeeds(){
+  if(!Array.isArray(S.get(K.CATS))) S.set(K.CATS, ['Allgemein','Drehen','Bohren']);
+  if(!Array.isArray(S.get(K.TOOLS))||S.get(K.TOOLS).length===0){
+    const demo=[];
+    for(let i=1;i<=5;i++){
+      demo.push({id:uid(), name:`T0${i} Rundstahl`, code:`T0${i}0${i}`, iso:'DCMT 11T3', category:i%2? 'Drehen':'Bohren', photo:null, notes:'', createdAt:now(), updatedAt:now()});
+    }
+    S.set(K.TOOLS, demo);
   }
+}
 
-  const h=document.createElement('h3'); h.textContent=t.name; h.style.margin='12px 0 6px';
-  const meta=document.createElement('div'); meta.className='meta';
-  meta.textContent=`${t.category} • ${new Date(Number(t.updatedAt||t.createdAt)).toLocaleString()}`;
-
-  const body=document.createElement('div');
-  if (t.iso || t.code){
-    const p1=document.createElement('div'); p1.className='meta';
-    p1.textContent=[t.iso,t.code].filter(Boolean).join(' • ');
-    body.append(p1);
-  }
-  if (t.notes){
-    const p2=document.createElement('p'); p2.textContent=t.notes;
-    body.append(p2);
-  }
-
-  const tagsWrap=document.createElement('div');
-  tagsWrap.style.display='flex'; tagsWrap.style.flexWrap='wrap'; tagsWrap.style.gap='6px'; tagsWrap.style.marginTop='8px';
-  (t.tags||[]).forEach(tag=>{
-    const s=document.createElement('span'); s.className='tag tag--sm'; s.textContent=tag; tagsWrap.append(s);
-  });
-
-  box.append(top,h,meta,body,tagsWrap);
-
-  CT.ui.modal.open({
-    title:'Werkzeug',
-    contentEl:box,
-    footer:[
-      {label:'Löschen', kind:'danger', onClick:()=>{
-        CT.ui.confirm({title:'Löschen?', msg:`«${t.name}» wirklich entfernen?`}).then(ok=>{
-          if(ok){ Tools.remove(t.id); CT.ui.modal.close(); render(); }
-        });
-      }},
-      {label:'Bearbeiten', onClick:()=>{ CT.ui.modal.close(); openEditor(t); }},
-      {label:'Schließen', onClick:()=>CT.ui.modal.close()}
-    ],
-    wide:true
+/* Render */
+function optionsCats(){
+  const cats=S.get(K.CATS, ['Allgemein']);
+  selCat.innerHTML='<option value="">Alle Kategorien</option>' + cats.map(c=>`<option>${c}</option>`).join('');
+}
+function render(){
+  grid.innerHTML='';
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  const cat=(selCat.value||'');
+  const tools=(S.get(K.TOOLS,[])||[]).filter(t=>{
+    if(cat && t.category!==cat) return false;
+    if(!q) return true;
+    const hay=[t.name||'', t.code||'', t.iso||'', t.category||''].join(' ').toLowerCase();
+    return hay.includes(q);
+  }).sort((a,b)=>b.createdAt-a.createdAt);
+  if(tools.length===0){ const e=document.createElement('div'); e.className='muted'; e.textContent='Noch nichts…'; grid.append(e); return; }
+  tools.forEach(t=>{
+    const card=document.createElement('div'); card.className='card';
+    const th=document.createElement('div'); th.className='thumb';
+    if(t.photo){ const img=new Image(); img.src=t.photo; th.append(img); } else { th.textContent='kein Foto'; th.style.color='#6b7a90'; th.style.fontWeight='800'; }
+    const meta=document.createElement('div'); meta.className='meta';
+    meta.innerHTML=`<div class="name">${t.name}</div><div class="sub">${t.iso||t.code||''} · ${t.category||'Allgemein'}</div>`;
+    const info=document.createElement('button'); info.className='i-btn'; info.title='Details';
+    info.innerHTML=`<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 7a1 1 0 1 1 0-2 1 1 0 0 1 0 2Zm1 8h-2v-6h2v6Z"/></svg>`;
+    info.onclick=()=>openSheet(t);
+    card.append(th, meta, info);
+    grid.append(card);
   });
 }
 
-/* ---- editor (с удалением фото) ---- */
-function openEditor(tool){
-  const cats = Tools.loadCats();
-  if (tool && tool.category && !cats.includes(tool.category)) cats.push(tool.category);
+/* CRUD */
+function saveTool(tool){
+  const arr=S.get(K.TOOLS,[]);
+  const i=arr.findIndex(x=>x.id===tool.id);
+  if(i>=0) arr[i]=tool; else arr.unshift(tool);
+  S.set(K.TOOLS,arr);
+}
+function removeTool(id){
+  S.set(K.TOOLS, S.get(K.TOOLS,[]).filter(x=>x.id!==id));
+}
 
-  const initial = tool
-    ? { name:tool.name, category:tool.category||cats[0]||'Allgemein', iso:tool.iso||'', code:tool.code||'', tags:(tool.tags||[]).join(', '), notes:tool.notes||'' }
-    : { name:'', category:cats[0]||'Allgemein', iso:'', code:'', tags:'', notes:'' };
+/* Sheet */
+function openSheet(tool){
+  const isNew = !tool;
+  if(isNew){ tool={id:uid(), name:'', code:'', iso:'', category:'Allgemein', photo:null, notes:'', createdAt:now(), updatedAt:now()}; }
+  const back=makeBackdrop(); const sheet=document.createElement('div'); sheet.className='sheet';
+  sheet.innerHTML=`
+    <header>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="ct-badge">CT</div><div class="ct-word"><b>CITI‧TOOL</b></div>
+      </div>
+      <button class="close" title="Schließen">✕</button>
+    </header>
+    <div class="rowf">
+      <div class="thumb" style="width:100%;height:160px;border:1px solid #edf1f7"><img id="ph" style="display:${tool.photo?'block':'none'};width:100%;height:100%;object-fit:cover"/><div id="phX" style="display:${tool.photo?'none':'grid'};place-items:center;color:#6b7a90;font-weight:800;height:100%">kein Foto</div></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="file" accept="image/*" id="file" style="display:none"/>
+        <button class="btn" id="btnImg">Foto wählen…</button>
+        <button class="btn" id="btnDelImg">Foto entfernen</button>
+      </div>
+    </div>
+    <div class="rowf"><label>Name</label><input class="inp" id="fName" value="${tool.name||''}"/></div>
+    <div class="rowf"><label>ISO/Code</label><input class="inp" id="fIso" value="${tool.iso||tool.code||''}"/></div>
+    <div class="rowf"><label>Kategorie</label><select class="inp" id="fCat"></select></div>
+    <div class="rowf"><label>Notizen</label><textarea class="inp" id="fNotes" rows="3">${tool.notes||''}</textarea></div>
+    <div class="btns">
+      ${isNew? '' : '<button class="btn" id="del">Löschen</button>'}
+      <button class="btn brand" id="save">Speichern</button>
+    </div>`;
+  const close=()=>{sheet.remove(); back.remove(); unlock();};
+  document.body.append(back,sheet); lock();
+  back.addEventListener('click',close); sheet.querySelector('.close').onclick=close;
 
-  let removePhoto=false;
+  // fill cats
+  const cats=S.get(K.CATS,['Allgemein']); const fCat=sheet.querySelector('#fCat');
+  fCat.innerHTML=cats.map(c=>`<option ${tool.category===c?'selected':''}>${c}</option>`).join('');
 
-  const form = CT.ui.form.create({
-    values: initial,
-    fields: [
-      {type:'text', key:'name', label:'Name', placeholder:'CNMG120408'},
-      {type:'select', key:'category', label:'Kategorie', options: cats},
-      {type:'text', key:'iso', label:'ISO'},
-      {type:'text', key:'code', label:'Code'},
-      {type:'text', key:'tags', label:'Tags (comma)'},
-      {type:'textarea', key:'notes', label:'Notizen', rows:4},
-      {type:'file', key:'file', label:'Foto/Datei', accept:'.png,.jpg,.jpeg,.webp'}
-    ]
+  const imgEl=sheet.querySelector('#ph'), phX=sheet.querySelector('#phX');
+  if(tool.photo) imgEl.src=tool.photo;
+
+  sheet.querySelector('#btnImg').onclick=()=>sheet.querySelector('#file').click();
+  sheet.querySelector('#file').addEventListener('change', async e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const data=await f.arrayBuffer(); const b=new Blob([data]); const u=URL.createObjectURL(b);
+    const img=new Image(); img.onload=()=>{
+      const c=document.createElement('canvas'); const max=512;
+      let w=img.width, h=img.height; if(w>h && w>max){ h=Math.round(h*max/w); w=max } else if(h>max){ w=Math.round(w*max/h); h=max }
+      c.width=w; c.height=h; const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+      tool.photo=c.toDataURL('image/jpeg',0.9); imgEl.src=tool.photo; imgEl.style.display='block'; phX.style.display='none';
+      URL.revokeObjectURL(u);
+    }; img.src=u;
   });
+  sheet.querySelector('#btnDelImg').onclick=()=>{ tool.photo=null; imgEl.removeAttribute('src'); imgEl.style.display='none'; phX.style.display='grid'; };
 
-  // preview + remove
-  const preview=document.createElement('div');
-  preview.style.display='flex'; preview.style.alignItems='center'; preview.style.gap='10px'; preview.style.margin='0 0 10px';
-  if (tool && tool.photo){
-    const img=document.createElement('img'); img.src=tool.photo; img.width=64; img.height=64; img.style.borderRadius='10px';
-    const del=document.createElement('button'); del.className='btn btn--outline is-sm'; del.textContent='Foto entfernen';
-    del.onclick=()=>{ removePhoto=true; preview.innerHTML='<div class="meta">Foto wird entfernt</div>'; };
-    preview.append(img, del);
+  if(!isNew){
+    sheet.querySelector('#del').onclick=()=>{ if(confirm('Werkzeug löschen?')){ removeTool(tool.id); render(); close(); } };
   }
-  const fileInput = form.el.querySelector('input[type=file]');
-  fileInput.addEventListener('change', ()=>{ removePhoto=false; });
-
-  // + neue Kategorie
-  const toolsBar=document.createElement('div');
-  toolsBar.style.display='flex'; toolsBar.style.justifyContent='space-between'; toolsBar.style.margin='0 0 8px';
-  const btnNewCat=document.createElement('button'); btnNewCat.className='btn btn--outline is-sm'; btnNewCat.textContent='+ Neue Kategorie';
-  btnNewCat.onclick=()=>{
-    const cf=CT.ui.form.create({values:{name:''},fields:[{type:'text',key:'name',label:'Name'}]});
-    CT.ui.modal.open({
-      title:'Kategorie hinzufügen',
-      contentEl:cf.el,
-      footer:[
-        {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
-        {label:'Hinzufügen',kind:'primary',onClick:()=>{
-          const v=cf.getValues(); const name=(v.name||'').trim(); if(!name){cf.setErrors({name:'Pflichtfeld'});return;}
-          Tools.cats.add(name); CT.ui.modal.close(); CT.ui.modal.close(); openEditor(tool);
-        }}
-      ]
-    });
+  sheet.querySelector('#save').onclick=()=>{
+    tool.name=(sheet.querySelector('#fName').value||'').trim()||'Ohne Name';
+    const iso=(sheet.querySelector('#fIso').value||'').trim(); tool.iso=iso; tool.code=iso;
+    tool.category=sheet.querySelector('#fCat').value||'Allgemein';
+    tool.notes=sheet.querySelector('#fNotes').value||'';
+    tool.updatedAt=now(); if(!tool.createdAt) tool.createdAt=now();
+    // ensure cat exists
+    const cats=S.get(K.CATS,[]); if(!cats.includes(tool.category)) { cats.push(tool.category); S.set(K.CATS,cats); optionsCats(); }
+    saveTool(tool); render(); close();
   };
-  toolsBar.append(document.createTextNode(''), btnNewCat);
-
-  const holder=document.createElement('div');
-  if (preview.childNodes.length) holder.append(preview);
-  holder.append(toolsBar, form.el);
-
-  CT.ui.modal.open({
-    title: tool ? 'Werkzeug bearbeiten' : 'Neues Werkzeug',
-    contentEl: holder,
-    footer:[
-      {label:'Abbrechen', onClick:()=>CT.ui.modal.close()},
-      {label:'Speichern', kind:'primary', onClick: async ()=>{
-        const v=form.getValues();
-        if (!v.name || !v.name.trim()){ form.setErrors({name:'Pflichtfeld'}); return; }
-        const patch={
-          name: v.name.trim(),
-          category: (v.category||'Allgemein').trim(),
-          iso: v.iso||'',
-          code: v.code||'',
-          tags: v.tags ? v.tags.split(',').map(s=>s.trim()).filter(Boolean) : [],
-          notes: v.notes||'',
-        };
-        const f=fileInput.files && fileInput.files[0];
-        if (f){
-          const imgData = /^image\//.test(f.type) ? await Tools.resizeImageToDataURL(f,512) : null;
-          patch.photo = imgData;
-        } else if (removePhoto){
-          patch.photo = null;
-        }
-        if (tool){ Tools.update(tool.id, patch); } else { Tools.create(patch); }
-        CT.ui.modal.close(); render();
-      }}
-    ],
-    wide:true
-  });
 }
 
-/* ---- categories manager ---- */
-document.getElementById('btnCats').onclick=()=>{
-  const cats = Tools.loadCats();
-  const box=document.createElement('div'); const list=document.createElement('div');
+/* Manage categories */
+function openCats(){
+  const back=makeBackdrop(); const sheet=document.createElement('div'); sheet.className='sheet';
+  const cats=([...S.get(K.CATS,[])]);
+  sheet.innerHTML=`
+    <header>
+      <div style="display:flex;align-items:center;gap:8px"><div class="ct-badge">CT</div><div class="ct-word"><b>CITI‧TOOL</b></div></div>
+      <button class="close" title="Schließen">✕</button>
+    </header>
+    <h3>Kategorien</h3>
+    <div id="catList"></div>
+    <div class="rowf" style="display:flex;gap:8px">
+      <input class="inp" id="newCat" placeholder="Neue Kategorie…"/>
+      <button class="btn" id="addCat">Hinzufügen</button>
+    </div>`;
+  const close=()=>{sheet.remove(); back.remove(); unlock();};
+  document.body.append(back,sheet); lock(); back.addEventListener('click',close); sheet.querySelector('.close').onclick=close;
 
-  function refresh(){
-    list.innerHTML=''; cats.splice(0,cats.length,...Tools.loadCats());
-    cats.forEach(c=>{
-      const row=document.createElement('div'); row.className='row';
-      const left=document.createElement('div'); left.innerHTML=`<div class="title">${c}</div>`;
-      const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
-      const bRen=document.createElement('button'); bRen.className='btn btn--outline is-sm'; bRen.textContent='Umbenennen';
-      const bDel=document.createElement('button'); bDel.className='btn btn--outline is-sm'; bDel.textContent='Löschen';
-      bRen.onclick=()=>{
-        const f=CT.ui.form.create({values:{to:c},fields:[{type:'text',key:'to',label:'Neuer Name',placeholder:c}]});
-        CT.ui.modal.open({
-          title:`Kategorie «${c}» umbenennen`,
-          contentEl:f.el,
-          footer:[
-            {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
-            {label:'Speichern',kind:'primary',onClick:()=>{
-              const v=f.getValues(); const to=(v.to||'').trim(); if(!to){f.setErrors({to:'Pflichtfeld'});return;}
-              Tools.cats.rename(c,to); CT.ui.modal.close(); document.getElementById('btnCats').click();
-            }}
-          ]
-        });
+  function draw(){
+    const wrap=sheet.querySelector('#catList'); wrap.innerHTML='';
+    S.get(K.CATS,[]).forEach(c=>{
+      const row=document.createElement('div'); row.className='rowf'; row.style.display='flex'; row.style.gap='8px'; row.style.alignItems='center';
+      row.innerHTML=`<input class="inp" value="${c}" data-old="${c}" style="flex:1"/>
+                     <button class="btn" data-del>Del</button>`;
+      row.querySelector('[data-del]').onclick=()=>{
+        const cat=c; const reas='Allgemein';
+        const list=S.get(K.TOOLS,[]).map(t=> t.category===cat ? {...t, category:reas, updatedAt:now()} : t);
+        S.set(K.TOOLS,list);
+        S.set(K.CATS, S.get(K.CATS,[]).filter(x=>x!==cat));
+        optionsCats(); render(); draw();
       };
-      bDel.onclick=()=>{
-        const f=CT.ui.form.create({values:{reassign:'Allgemein'},fields:[{type:'select',key:'reassign',label:'Werkzeuge zu',options:Tools.loadCats()}]});
-        CT.ui.modal.open({
-          title:`Kategorie «${c}» löschen`,
-          contentEl:f.el,
-          footer:[
-            {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
-            {label:'Löschen',kind:'danger',onClick:()=>{
-              const v=f.getValues(); Tools.cats.remove(c, v.reassign||'Allgemein'); CT.ui.modal.close(); document.getElementById('btnCats').click();
-            }}
-          ]
-        });
-      };
-      right.append(bRen,bDel); row.append(left,right); list.append(row);
+      row.querySelector('input').addEventListener('change', e=>{
+        const from=e.target.dataset.old; const to=(e.target.value||'').trim();
+        if(!to || from===to) { e.target.value=from; return; }
+        // rename in tools
+        const list=S.get(K.TOOLS,[]).map(t=> t.category===from ? {...t, category:to, updatedAt:now()} : t);
+        S.set(K.TOOLS,list);
+        const cats=S.get(K.CATS,[]).map(x=> x===from? to : x);
+        S.set(K.CATS,[...new Set(cats)]);
+        optionsCats(); render(); draw();
+      });
+      wrap.append(row);
     });
   }
+  draw();
 
-  const add=document.createElement('div'); add.className='row';
-  const btn=document.createElement('button'); btn.className='btn'; btn.textContent='+ Hinzufügen';
-  btn.onclick=()=>{
-    const f=CT.ui.form.create({values:{name:''},fields:[{type:'text',key:'name',label:'Name'}]});
-    CT.ui.modal.open({
-      title:'Neue Kategorie',
-      contentEl:f.el,
-      footer:[
-        {label:'Abbrechen',onClick:()=>CT.ui.modal.close()},
-        {label:'Hinzufügen',kind:'primary',onClick:()=>{
-          const v=f.getValues(); const name=(v.name||'').trim(); if(!name){f.setErrors({name:'Pflichtfeld'});return;}
-          Tools.cats.add(name); CT.ui.modal.close(); refresh();
-        }}
-      ]
-    });
+  sheet.querySelector('#addCat').onclick=()=>{
+    const v=(sheet.querySelector('#newCat').value||'').trim(); if(!v) return;
+    const cats=S.get(K.CATS,[]); if(!cats.includes(v)){ cats.push(v); S.set(K.CATS,cats); optionsCats(); render(); }
+    sheet.querySelector('#newCat').value='';
+    draw();
   };
-  add.append(document.createElement('div'), btn);
-
-  box.append(add, list);
-  refresh();
-
-  CT.ui.modal.open({
-    title:'Kategorien',
-    contentEl:box,
-    footer:[{label:'Schließen',onClick:()=>CT.ui.modal.close()}],
-    wide:true
-  });
-};
-
-/* ---- latest ---- */
-function renderLatest(){
-  latestWrap.innerHTML='';
-  const all = Tools.list({});
-  if (all.length===0){
-    const row=document.createElement('div'); row.className='row';
-    const left=document.createElement('div'); left.innerHTML='<div class="title">Noch nichts hinzugefügt</div><div class="meta">Lege dein erstes Werkzeug an</div>';
-    const right=document.createElement('div'); const btn=document.createElement('button'); btn.className='btn btn--outline is-sm'; btn.textContent='Neues Werkzeug'; btn.onclick=()=>openEditor();
-    right.append(btn); row.append(left,right); latestWrap.append(row); return;
-  }
-  const t=all[0];
-  const row=document.createElement('div'); row.className='row';
-  const left=document.createElement('div');
-  const grid=document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='56px auto'; grid.style.gap='10px';
-
-  const ph=document.createElement('div');
-  ph.style.width='56px'; ph.style.height='56px'; ph.style.border='1px solid #edf1f7'; ph.style.borderRadius='10px';
-  ph.style.display='grid'; ph.style.placeItems='center'; ph.style.color='#6b7a90'; ph.style.fontWeight='800';
-  if (t.photo){ const img=document.createElement('img'); img.src=t.photo; img.width=56; img.height=56; img.style.borderRadius='10px'; ph.innerHTML=''; ph.append(img); } else { ph.textContent='CT'; }
-
-  const tw=document.createElement('div');
-  const title=document.createElement('div'); title.className='title'; title.textContent=t.name;
-  const meta=document.createElement('div'); meta.className='meta'; meta.textContent=`${t.category} • ${[t.iso,t.code].filter(Boolean).join(' • ')}`;
-  const txt=document.createElement('div'); txt.className='meta'; txt.textContent=(t.notes||'').slice(0,120);
-  tw.append(title,meta,txt);
-
-  grid.append(ph,tw); left.append(grid);
-
-  const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
-  const bInfo=document.createElement('button'); bInfo.className='btn btn--outline is-sm'; bInfo.textContent='i';
-  bInfo.onclick=()=>openViewer(t);
-  right.append(bInfo);
-
-  row.append(left,right); latestWrap.append(row);
 }
 
-/* ---- list ---- */
-function renderList(){
-  listEl.innerHTML='';
-  const arr=Tools.list({q:state.q});
-  if (arr.length===0){
-    const empty=document.createElement('div'); empty.className='row';
-    empty.innerHTML='<div class="muted">Keine Werkzeuge</div>'; listEl.append(empty); return;
-  }
-  arr.forEach(t=>{
-    const row=document.createElement('div'); row.className='row';
-    const left=document.createElement('div');
-    const grid=document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='56px auto'; grid.style.gap='10px';
+/* Events */
+document.getElementById('btnNew').onclick=()=>openSheet(null);
+document.getElementById('manageCats').onclick=openCats;
 
-    const ph=document.createElement('div');
-    ph.style.width='56px'; ph.style.height='56px'; ph.style.border='1px solid #edf1f7'; ph.style.borderRadius='10px';
-    ph.style.display='grid'; ph.style.placeItems='center'; ph.style.color='#6b7a90'; ph.style.fontWeight='800';
-    if (t.photo){ const img=document.createElement('img'); img.src=t.photo; img.width=56; img.height=56; img.style.borderRadius='10px'; ph.innerHTML=''; ph.append(img); } else { ph.textContent='CT'; }
+const box=document.getElementById('searchBox'), q=document.getElementById('q');
+box.addEventListener('click', ()=>{ box.classList.add('active'); q.focus(); });
+q.addEventListener('blur', ()=>{ if(!q.value) box.classList.remove('active'); render(); });
+q.addEventListener('input', render);
+selCat.addEventListener('change', render);
 
-    const tw=document.createElement('div');
-    const title=document.createElement('div'); title.className='title'; title.textContent=t.name;
-    const meta=document.createElement('div'); meta.className='meta'; meta.textContent=`${t.category} • ${[t.iso,t.code].filter(Boolean).join(' • ')}`;
-    const txt=document.createElement('div'); txt.className='meta'; txt.textContent=(t.notes||'').slice(0,120);
-    tw.append(title,meta,txt);
-
-    grid.append(ph,tw); left.append(grid);
-
-    const right=document.createElement('div'); right.style.display='flex'; right.style.gap='6px';
-    const bInfo=document.createElement('button'); bInfo.className='btn btn--outline is-sm'; bInfo.textContent='i';
-    bInfo.onclick=()=>openViewer(t);
-    right.append(bInfo);
-
-    row.append(left,right); listEl.append(row);
-  });
-}
-
-/* ---- new tool btn ---- */
-document.getElementById('btnNew').onclick=()=>openEditor();
-
-/* ---- init ---- */
-function render(){ renderLatest(); renderList(); }
-render();
+/* Boot */
+(async function(){
+  await NeoStore.ready();
+  ensureSeeds();
+  optionsCats();
+  if(location.hash==='#new') { openSheet(null); history.replaceState(null,'',location.pathname); }
+  render();
+  // dock pad
+  const dock=document.getElementById('dock'); const pad=()=>document.documentElement.style.setProperty('--dockH', Math.round(dock.getBoundingClientRect().height)+'px'); pad(); new ResizeObserver(pad).observe(dock);
+})();
 </script>
 </body>
 </html>
