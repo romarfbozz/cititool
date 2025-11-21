@@ -168,6 +168,58 @@
       color: #4b5563;
     }
 
+    /* Spindle toggle */
+
+    .spindle-toggle {
+      display: flex;
+      gap: 4px;
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border);
+      background: #f9fafb;
+      overflow-x: auto;
+    }
+
+    .spindle-toggle-btn {
+      border-radius: 999px;
+      padding: 3px 8px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      font-size: 10px;
+      cursor: pointer;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .spindle-toggle-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+
+    .spindle-color-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+
+    .spindle-color-sp4 {
+      background: var(--sp4);
+    }
+
+    .spindle-color-sp3 {
+      background: var(--sp3);
+    }
+
+    .spindle-color-dummy1 {
+      background: var(--dummy1);
+    }
+
+    .spindle-color-dummy2 {
+      background: var(--dummy2);
+    }
+
     /* Plan table */
 
     .plan {
@@ -176,7 +228,6 @@
 
     .plan-header {
       display: grid;
-      grid-template-columns: 40px repeat(4, minmax(0, 1fr));
       background: #e5e7eb;
       border-bottom: 1px solid var(--border);
       font-size: 11px;
@@ -204,29 +255,28 @@
       font-size: 10px;
     }
 
-    .sp4 {
+    .sp4-label {
       border-color: var(--sp4);
       color: var(--sp4);
     }
 
-    .sp3 {
+    .sp3-label {
       border-color: var(--sp3);
       color: var(--sp3);
     }
 
-    .dummy1 {
+    .dummy1-label {
       border-color: var(--dummy1);
       color: var(--dummy1);
     }
 
-    .dummy2 {
+    .dummy2-label {
       border-color: var(--dummy2);
       color: var(--dummy2);
     }
 
     .plan-body-row {
       display: grid;
-      grid-template-columns: 40px repeat(4, minmax(0, 1fr));
       border-top: 1px solid #f3f4f6;
       font-size: 11px;
       background: #fff;
@@ -560,21 +610,8 @@
 
     <!-- PLAN -->
     <section class="card plan" style="margin-bottom: 10px;">
-      <div class="plan-header">
-        <div class="plan-header-cell" style="color:#9ca3af;">#</div>
-        <div class="plan-header-cell">
-          <span class="plan-header-label sp4">SP4</span>
-        </div>
-        <div class="plan-header-cell">
-          <span class="plan-header-label sp3">SP3</span>
-        </div>
-        <div class="plan-header-cell">
-          <span class="plan-header-label dummy1">Dummy 1</span>
-        </div>
-        <div class="plan-header-cell">
-          <span class="plan-header-label dummy2">Dummy 2</span>
-        </div>
-      </div>
+      <div class="spindle-toggle" id="spindle-toggle"></div>
+      <div class="plan-header" id="plan-header"></div>
       <div id="plan-body"></div>
     </section>
 
@@ -649,10 +686,10 @@
     ];
 
     const spindles = [
-      { id: "SP4", label: "SP4", className: "sp4" },
-      { id: "SP3", label: "SP3", className: "sp3" },
-      { id: "DUMMY1", label: "Dummy 1", className: "dummy1" },
-      { id: "DUMMY2", label: "Dummy 2", className: "dummy2" }
+      { id: "SP4", label: "SP4", labelClass: "sp4-label", dotClass: "spindle-color-sp4" },
+      { id: "SP3", label: "SP3", labelClass: "sp3-label", dotClass: "spindle-color-sp3" },
+      { id: "DUMMY1", label: "Dummy 1", labelClass: "dummy1-label", dotClass: "spindle-color-dummy1" },
+      { id: "DUMMY2", label: "Dummy 2", labelClass: "dummy2-label", dotClass: "spindle-color-dummy2" }
     ];
 
     const rows = [1, 2, 3, 4, 5, 6];
@@ -679,15 +716,20 @@
     let searchTerm = "";
     let dragData = null; // { type: "LIB_OP" | "PLAN_OP", operationId?, row?, spindleId? }
 
+    // показываем либо все, либо один шпиндель
+    let activeSpindleView = "ALL"; // "ALL" | "SP4" | "SP3" | "DUMMY1" | "DUMMY2"
+
     // modal / editor state
     let editingSlot = null; // { row, spindleId }
 
     // ---------- DOM ----------
 
+    const planHeaderEl = document.getElementById("plan-header");
     const planBodyEl = document.getElementById("plan-body");
     const libraryGridEl = document.getElementById("library-grid");
     const categoryTabsEl = document.getElementById("category-tabs");
     const searchInputEl = document.getElementById("search-input");
+    const spindleToggleEl = document.getElementById("spindle-toggle");
 
     const modalBackdropEl = document.getElementById("modal-backdrop");
     const modalTitleMainEl = document.getElementById("modal-title-main");
@@ -698,20 +740,93 @@
     const modalCancelBtn = document.getElementById("modal-cancel-btn");
     const modalSaveBtn = document.getElementById("modal-save-btn");
 
+    // ---------- SPINDLE TOGGLE ----------
+
+    function renderSpindleToggle() {
+      spindleToggleEl.innerHTML = "";
+
+      // All button
+      const allBtn = document.createElement("button");
+      allBtn.className = "spindle-toggle-btn" + (activeSpindleView === "ALL" ? " active" : "");
+      allBtn.textContent = "All";
+      allBtn.addEventListener("click", () => {
+        activeSpindleView = "ALL";
+        renderSpindleToggle();
+        renderPlan();
+      });
+      spindleToggleEl.appendChild(allBtn);
+
+      spindles.forEach(sp => {
+        const btn = document.createElement("button");
+        btn.className = "spindle-toggle-btn" + (activeSpindleView === sp.id ? " active" : "");
+        const dot = document.createElement("span");
+        dot.className = "spindle-color-dot " + sp.dotClass;
+        const label = document.createElement("span");
+        label.textContent = sp.label;
+        btn.appendChild(dot);
+        btn.appendChild(label);
+
+        btn.addEventListener("click", () => {
+          activeSpindleView = sp.id;
+          renderSpindleToggle();
+          renderPlan();
+        });
+
+        spindleToggleEl.appendChild(btn);
+      });
+    }
+
     // ---------- RENDER PLAN ----------
 
+    function getVisibleSpindles() {
+      if (activeSpindleView === "ALL") return spindles;
+      return spindles.filter(s => s.id === activeSpindleView);
+    }
+
     function renderPlan() {
+      const visibleSpindles = getVisibleSpindles();
+
+      // header
+      planHeaderEl.innerHTML = "";
+      const headerRow = document.createElement("div");
+      headerRow.className = "plan-header";
+      headerRow.style.gridTemplateColumns =
+        "40px repeat(" + visibleSpindles.length + ", minmax(0, 1fr))";
+
+      const indexHeader = document.createElement("div");
+      indexHeader.className = "plan-header-cell";
+      indexHeader.style.color = "#9ca3af";
+      indexHeader.textContent = "#";
+      headerRow.appendChild(indexHeader);
+
+      visibleSpindles.forEach(sp => {
+        const cell = document.createElement("div");
+        cell.className = "plan-header-cell";
+
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "plan-header-label " + sp.labelClass;
+        labelSpan.textContent = sp.label;
+
+        cell.appendChild(labelSpan);
+        headerRow.appendChild(cell);
+      });
+
+      planHeaderEl.appendChild(headerRow);
+
+      // body
       planBodyEl.innerHTML = "";
       rows.forEach(row => {
         const rowEl = document.createElement("div");
         rowEl.className = "plan-body-row";
+        rowEl.style.gridTemplateColumns =
+          "40px repeat(" + visibleSpindles.length + ", minmax(0, 1fr))";
 
         const indexEl = document.createElement("div");
         indexEl.className = "plan-row-index";
         indexEl.textContent = row;
         rowEl.appendChild(indexEl);
 
-        spindles.forEach(sp => {
+        visibleSpindles.forEach(sp => {
           const cellEl = document.createElement("div");
           cellEl.className = "plan-cell";
           cellEl.dataset.row = row;
@@ -975,6 +1090,7 @@
     });
 
     // ---------- INIT ----------
+    renderSpindleToggle();
     renderPlan();
     renderCategoryTabs();
     renderLibrary();
