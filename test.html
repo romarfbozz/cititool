@@ -16,6 +16,7 @@
       --sp3: #3b82f6;
       --dummy1: #f59e0b;
       --dummy2: #94a3b8;
+      --split-red: #dc2626;
     }
 
     * {
@@ -36,61 +37,21 @@
       min-height: 100vh;
     }
 
-    .flex {
-      display: flex;
-    }
+    .flex { display: flex; }
+    .flex-row { flex-direction: row; }
+    .flex-col { flex-direction: column; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .items-center { align-items: center; }
+    .gap-1 { gap: 4px; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
 
-    .flex-row {
-      flex-direction: row;
-    }
-
-    .flex-col {
-      flex-direction: column;
-    }
-
-    .justify-between {
-      justify-content: space-between;
-    }
-
-    .justify-center {
-      justify-content: center;
-    }
-
-    .items-center {
-      align-items: center;
-    }
-
-    .gap-1 {
-      gap: 4px;
-    }
-
-    .gap-2 {
-      gap: 8px;
-    }
-
-    .gap-3 {
-      gap: 12px;
-    }
-
-    .text-xs {
-      font-size: 11px;
-    }
-
-    .text-sm {
-      font-size: 13px;
-    }
-
-    .font-semibold {
-      font-weight: 600;
-    }
-
-    .font-medium {
-      font-weight: 500;
-    }
-
-    .text-muted {
-      color: var(--text-muted);
-    }
+    .text-xs { font-size: 11px; }
+    .text-sm { font-size: 13px; }
+    .font-semibold { font-weight: 600; }
+    .font-medium { font-weight: 500; }
+    .text-muted { color: var(--text-muted); }
 
     .btn {
       border-radius: 999px;
@@ -101,16 +62,13 @@
       cursor: pointer;
       white-space: nowrap;
     }
-
-    .btn-ghost {
-      background: transparent;
-    }
-
+    .btn-ghost { background: transparent; }
     .btn-primary {
       background: var(--accent);
       color: #fff;
       border-color: var(--accent);
     }
+    .btn-full { flex: 1; }
 
     .card {
       background: var(--card-bg);
@@ -118,7 +76,6 @@
       border: 1px solid var(--border);
       box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
     }
-
     .card-soft {
       background: var(--card-bg);
       border-radius: 16px;
@@ -129,14 +86,12 @@
     header {
       margin-bottom: 8px;
     }
-
     header .subtitle {
       text-transform: uppercase;
       letter-spacing: 0.08em;
       font-size: 10px;
       color: #9ca3af;
     }
-
     header .title {
       font-size: 13px;
       font-weight: 600;
@@ -155,7 +110,6 @@
       font-size: 11px;
       margin-bottom: 8px;
     }
-
     .chip-step .circle {
       width: 22px;
       height: 22px;
@@ -178,7 +132,6 @@
       background: #f9fafb;
       overflow-x: auto;
     }
-
     .spindle-toggle-btn {
       border-radius: 999px;
       padding: 3px 8px;
@@ -191,40 +144,24 @@
       align-items: center;
       gap: 4px;
     }
-
     .spindle-toggle-btn.active {
       background: #0f172a;
       color: #ffffff;
       border-color: #0f172a;
     }
-
     .spindle-color-dot {
       width: 10px;
       height: 10px;
       border-radius: 999px;
     }
-
-    .spindle-color-sp4 {
-      background: var(--sp4);
-    }
-
-    .spindle-color-sp3 {
-      background: var(--sp3);
-    }
-
-    .spindle-color-dummy1 {
-      background: var(--dummy1);
-    }
-
-    .spindle-color-dummy2 {
-      background: var(--dummy2);
-    }
+    .spindle-color-sp4 { background: var(--sp4); }
+    .spindle-color-sp3 { background: var(--sp3); }
+    .spindle-color-dummy1 { background: var(--dummy1); }
+    .spindle-color-dummy2 { background: var(--dummy2); }
 
     /* Plan table */
 
-    .plan {
-      overflow: hidden;
-    }
+    .plan { overflow: hidden; }
 
     .plan-header {
       display: grid;
@@ -232,18 +169,13 @@
       border-bottom: 1px solid var(--border);
       font-size: 11px;
     }
-
     .plan-header-cell {
       padding: 6px 4px;
       text-align: center;
       border-left: 1px solid var(--border);
       font-weight: 600;
     }
-
-    .plan-header-cell:first-child {
-      border-left: none;
-    }
-
+    .plan-header-cell:first-child { border-left: none; }
     .plan-header-label {
       display: inline-flex;
       align-items: center;
@@ -254,26 +186,10 @@
       border-style: solid;
       font-size: 10px;
     }
-
-    .sp4-label {
-      border-color: var(--sp4);
-      color: var(--sp4);
-    }
-
-    .sp3-label {
-      border-color: var(--sp3);
-      color: var(--sp3);
-    }
-
-    .dummy1-label {
-      border-color: var(--dummy1);
-      color: var(--dummy1);
-    }
-
-    .dummy2-label {
-      border-color: var(--dummy2);
-      color: var(--dummy2);
-    }
+    .sp4-label { border-color: var(--sp4); color: var(--sp4); }
+    .sp3-label { border-color: var(--sp3); color: var(--sp3); }
+    .dummy1-label { border-color: var(--dummy1); color: var(--dummy1); }
+    .dummy2-label { border-color: var(--dummy2); color: var(--dummy2); }
 
     .plan-body-row {
       display: grid;
@@ -281,19 +197,16 @@
       font-size: 11px;
       background: #fff;
     }
-
     .plan-row-index {
       padding: 10px 4px;
       text-align: center;
       color: #9ca3af;
     }
-
     .plan-cell {
       padding: 6px 4px;
       border-left: 1px solid #f3f4f6;
       position: relative;
     }
-
     .plan-cell-inner {
       height: 40px;
       border-radius: 8px;
@@ -306,33 +219,28 @@
       cursor: pointer;
       overflow: hidden;
     }
-
     .plan-cell-inner.filled {
       border-style: solid;
       border-color: #d1d5db;
       background: #f9fafb;
     }
-
     .plan-cell-inner.drop-active {
       border-width: 2px;
       border-style: dashed;
       border-color: #0ea5e9;
       background: #e0f2fe;
     }
-
     .plan-cell-text {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
     .plan-cell-category {
       margin-left: 6px;
       font-size: 9px;
       text-transform: uppercase;
       color: #9ca3af;
     }
-
     .plan-cell-clear {
       position: absolute;
       top: 4px;
@@ -358,14 +266,12 @@
       justify-content: space-between;
       margin-bottom: 6px;
     }
-
     .tabs {
       display: flex;
       gap: 6px;
       overflow-x: auto;
       padding-bottom: 4px;
     }
-
     .tab {
       border-radius: 999px;
       padding: 4px 10px;
@@ -376,7 +282,6 @@
       cursor: pointer;
       color: #4b5563;
     }
-
     .tab.active {
       background: #0f172a;
       color: #fff;
@@ -389,12 +294,10 @@
       align-items: center;
       margin-bottom: 4px;
     }
-
     .search-input-wrapper {
       position: relative;
       flex: 1;
     }
-
     .search-input {
       width: 100%;
       border-radius: 999px;
@@ -402,7 +305,6 @@
       padding: 6px 22px 6px 10px;
       font-size: 11px;
     }
-
     .search-icon {
       position: absolute;
       right: 7px;
@@ -416,11 +318,10 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
-      max-height: 280px;
+      max-height: 220px;
       overflow-y: auto;
       padding-top: 4px;
     }
-
     .lib-card {
       border-radius: 10px;
       border: 1px solid var(--border);
@@ -431,18 +332,13 @@
       gap: 4px;
       cursor: grab;
     }
-
-    .lib-card:active {
-      cursor: grabbing;
-    }
-
+    .lib-card:active { cursor: grabbing; }
     .lib-card-top {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 4px;
     }
-
     .lib-icon {
       width: 28px;
       height: 28px;
@@ -454,7 +350,6 @@
       font-size: 10px;
       color: #4b5563;
     }
-
     .lib-pin {
       font-size: 12px;
       color: #d1d5db;
@@ -462,7 +357,6 @@
       background: transparent;
       cursor: pointer;
     }
-
     .lib-name {
       font-size: 11px;
       font-weight: 500;
@@ -472,19 +366,82 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-
     .lib-cat {
       font-size: 9px;
       text-transform: uppercase;
       color: #9ca3af;
     }
-
     .empty-text {
       grid-column: 1 / -1;
       text-align: center;
       font-size: 11px;
       color: #9ca3af;
       padding: 16px 0;
+    }
+
+    /* Program table (1000 / 2000 MPF) */
+
+    .program-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .program-header span {
+      white-space: nowrap;
+    }
+
+    .program-grid-header-row,
+    .program-grid-row {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    .program-grid-header-row {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: #f9fafb;
+    }
+
+    .program-grid-row {
+      border-bottom: 1px solid #e5e7eb;
+      min-height: 32px;
+    }
+
+    .program-grid-cell {
+      border-right: 1px solid var(--border);
+      padding: 4px;
+      font-size: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+    .program-grid-cell:last-child {
+      border-right: none;
+    }
+
+    .program-grid-cell-header {
+      text-align: center;
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    .program-split {
+      border-left: 2px solid var(--split-red);
+    }
+
+    .program-cell-main {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .program-cell-sub {
+      margin-top: 2px;
+      font-size: 9px;
+      color: #6b7280;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     /* Modal */
@@ -498,7 +455,6 @@
       justify-content: center;
       z-index: 50;
     }
-
     .modal {
       width: 100%;
       max-width: 480px;
@@ -511,7 +467,6 @@
       flex-direction: column;
       gap: 8px;
     }
-
     .modal-header {
       display: flex;
       justify-content: space-between;
@@ -519,18 +474,15 @@
       gap: 8px;
       margin-bottom: 4px;
     }
-
     .modal-title-main {
       font-size: 13px;
       font-weight: 600;
       color: var(--text-main);
     }
-
     .modal-title-sub {
       font-size: 11px;
       color: #9ca3af;
     }
-
     .modal-close {
       font-size: 12px;
       color: #6b7280;
@@ -538,7 +490,6 @@
       border: none;
       cursor: pointer;
     }
-
     .modal-body {
       overflow-y: auto;
       padding-right: 4px;
@@ -550,12 +501,10 @@
       gap: 4px;
       margin-bottom: 8px;
     }
-
     .field-label {
       font-size: 10px;
       color: #6b7280;
     }
-
     .field-input,
     .field-select,
     .field-textarea {
@@ -565,26 +514,13 @@
       font-size: 11px;
       font-family: inherit;
     }
-
     .field-textarea {
       min-height: 60px;
       resize: vertical;
     }
 
-    .modal-footer {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .btn-full {
-      flex: 1;
-    }
-
     @media (min-width: 640px) {
-      .app {
-        padding-top: 16px;
-      }
+      .app { padding-top: 16px; }
     }
   </style>
 </head>
@@ -616,7 +552,7 @@
     </section>
 
     <!-- LIBRARY -->
-    <section class="card-soft" style="padding:10px;">
+    <section class="card-soft" style="padding:10px; margin-bottom:10px;">
       <div class="section-header">
         <span class="text-xs font-semibold">Operation Library</span>
         <button class="btn btn-ghost text-xs">Manage templates</button>
@@ -637,6 +573,16 @@
       </div>
 
       <div class="library-grid" id="library-grid"></div>
+    </section>
+
+    <!-- PROGRAM TABLE 1000 / 2000 MPF -->
+    <section class="card-soft" style="padding:10px;">
+      <div class="program-header">
+        <span>Schlitten 1 / Kanal 1 — 1000.MPF</span>
+        <span>Schlitten 2 / Kanal 2 — 2000.MPF</span>
+      </div>
+      <div id="program-grid-header"></div>
+      <div id="program-grid-body"></div>
     </section>
   </div>
 
@@ -662,6 +608,13 @@
             <option value="INNEN">Innen Bearbeitung</option>
             <option value="RADIAL">Radial Bearbeitung</option>
             <option value="AXIAL">Axial</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="field-label">Kanal / Programm</label>
+          <select id="field-kanal" class="field-select">
+            <option value="1">Schlitten 1 / Kanal 1 — 1000.MPF</option>
+            <option value="2">Schlitten 2 / Kanal 2 — 2000.MPF</option>
           </select>
         </div>
         <div class="field">
@@ -703,7 +656,7 @@
       { id: "op6", name: "Axial drilling", category: "AXIAL", description: "" },
     ];
 
-    // plan[row][spindleId] = operationId | null
+    // plan[row][spindleId] = { operationId, kanal } | null
     const plan = {};
     rows.forEach(row => {
       plan[row] = {};
@@ -715,15 +668,20 @@
     let activeCategory = "AUSSEN";
     let searchTerm = "";
     let dragData = null; // { type: "LIB_OP" | "PLAN_OP", operationId?, row?, spindleId? }
-
-    // показываем либо все, либо один шпиндель
-    let activeSpindleView = "ALL"; // "ALL" | "SP4" | "SP3" | "DUMMY1" | "DUMMY2"
-
-    // modal / editor state
+    let activeSpindleView = "ALL"; // "ALL" | one of spindle ids
     let editingSlot = null; // { row, spindleId }
 
-    // ---------- DOM ----------
+    // Program table config (как на бумаге)
+    const programColumns = [
+      { kanal: 1, spindleId: "DUMMY1", label: "Dummy 1" },
+      { kanal: 1, spindleId: "SP4", label: "Spindel 4" },
+      { kanal: 1, spindleId: "SP3", label: "Spindel 3" },
+      { kanal: 2, spindleId: "SP4", label: "Spindel 4" },
+      { kanal: 2, spindleId: "SP3", label: "Spindel 3" },
+      { kanal: 2, spindleId: "DUMMY2", label: "Dummy 2" },
+    ];
 
+    // ---------- DOM ----------
     const planHeaderEl = document.getElementById("plan-header");
     const planBodyEl = document.getElementById("plan-body");
     const libraryGridEl = document.getElementById("library-grid");
@@ -731,21 +689,33 @@
     const searchInputEl = document.getElementById("search-input");
     const spindleToggleEl = document.getElementById("spindle-toggle");
 
+    const programGridHeaderEl = document.getElementById("program-grid-header");
+    const programGridBodyEl = document.getElementById("program-grid-body");
+
     const modalBackdropEl = document.getElementById("modal-backdrop");
     const modalTitleMainEl = document.getElementById("modal-title-main");
     const fieldNameEl = document.getElementById("field-name");
     const fieldCategoryEl = document.getElementById("field-category");
+    const fieldKanalEl = document.getElementById("field-kanal");
     const fieldRemarkEl = document.getElementById("field-remark");
     const modalCloseBtn = document.getElementById("modal-close-btn");
     const modalCancelBtn = document.getElementById("modal-cancel-btn");
     const modalSaveBtn = document.getElementById("modal-save-btn");
+
+    // ---------- UTILS ----------
+
+    function getDefaultKanalForSpindle(spindleId) {
+      if (spindleId === "DUMMY1") return 1;
+      if (spindleId === "DUMMY2") return 2;
+      return 1;
+    }
 
     // ---------- SPINDLE TOGGLE ----------
 
     function renderSpindleToggle() {
       spindleToggleEl.innerHTML = "";
 
-      // All button
+      // All
       const allBtn = document.createElement("button");
       allBtn.className = "spindle-toggle-btn" + (activeSpindleView === "ALL" ? " active" : "");
       allBtn.textContent = "All";
@@ -776,12 +746,72 @@
       });
     }
 
-    // ---------- RENDER PLAN ----------
-
     function getVisibleSpindles() {
       if (activeSpindleView === "ALL") return spindles;
       return spindles.filter(s => s.id === activeSpindleView);
     }
+
+    // ---------- PROGRAM TABLE RENDER ----------
+
+    function renderProgramTable() {
+      // header row
+      programGridHeaderEl.innerHTML = "";
+      const headerRow = document.createElement("div");
+      headerRow.className = "program-grid-header-row";
+
+      programColumns.forEach((col, idx) => {
+        const cell = document.createElement("div");
+        cell.className = "program-grid-cell program-grid-cell-header";
+        if (idx === 3) cell.classList.add("program-split");
+        cell.textContent = col.label;
+        headerRow.appendChild(cell);
+      });
+
+      programGridHeaderEl.appendChild(headerRow);
+
+      // body rows
+      programGridBodyEl.innerHTML = "";
+      rows.forEach(row => {
+        const rowEl = document.createElement("div");
+        rowEl.className = "program-grid-row";
+
+        programColumns.forEach((col, idx) => {
+          const cell = document.createElement("div");
+          cell.className = "program-grid-cell";
+          if (idx === 3) cell.classList.add("program-split");
+
+          const assign = plan[row][col.spindleId];
+          let mainText = "";
+          let subText = "";
+
+          if (assign && assign.kanal === col.kanal) {
+            const op = operations.find(o => o.id === assign.operationId);
+            if (op) {
+              mainText = op.name;
+              subText = op.description || "";
+            }
+          }
+
+          const mainDiv = document.createElement("div");
+          mainDiv.className = "program-cell-main";
+          mainDiv.textContent = mainText;
+          cell.appendChild(mainDiv);
+
+          if (subText) {
+            const subDiv = document.createElement("div");
+            subDiv.className = "program-cell-sub";
+            subDiv.textContent = subText;
+            cell.appendChild(subDiv);
+          }
+
+          rowEl.appendChild(cell);
+        });
+
+        programGridBodyEl.appendChild(rowEl);
+      });
+    }
+
+    // ---------- PLAN RENDER ----------
 
     function renderPlan() {
       const visibleSpindles = getVisibleSpindles();
@@ -802,11 +832,9 @@
       visibleSpindles.forEach(sp => {
         const cell = document.createElement("div");
         cell.className = "plan-header-cell";
-
         const labelSpan = document.createElement("span");
         labelSpan.className = "plan-header-label " + sp.labelClass;
         labelSpan.textContent = sp.label;
-
         cell.appendChild(labelSpan);
         headerRow.appendChild(cell);
       });
@@ -835,18 +863,15 @@
           const inner = document.createElement("div");
           inner.className = "plan-cell-inner";
 
-          const opId = plan[row][sp.id];
+          const assign = plan[row][sp.id];
+          const opId = assign && assign.operationId;
           const op = operations.find(o => o.id === opId);
 
           if (op) {
             inner.classList.add("filled");
             inner.draggable = true;
             inner.addEventListener("dragstart", () => {
-              dragData = {
-                type: "PLAN_OP",
-                row,
-                spindleId: sp.id
-              };
+              dragData = { type: "PLAN_OP", row, spindleId: sp.id };
             });
             inner.addEventListener("dragend", () => {
               dragData = null;
@@ -876,22 +901,18 @@
             cellEl.appendChild(clearBtn);
           }
 
-          // Click -> open editor
           inner.addEventListener("click", () => {
             openEditor(row, sp.id);
           });
 
-          // Drag over / drop
           cellEl.addEventListener("dragover", (e) => {
             e.preventDefault();
             if (!dragData) return;
             inner.classList.add("drop-active");
           });
-
           cellEl.addEventListener("dragleave", () => {
             inner.classList.remove("drop-active");
           });
-
           cellEl.addEventListener("drop", (e) => {
             e.preventDefault();
             inner.classList.remove("drop-active");
@@ -904,6 +925,9 @@
 
         planBodyEl.appendChild(rowEl);
       });
+
+      // каждая перерисовка плана обновляет и таблицу 1000/2000
+      renderProgramTable();
     }
 
     function clearDropHighlights() {
@@ -917,25 +941,27 @@
       if (!dragData) return;
 
       if (dragData.type === "LIB_OP") {
-        plan[row][spindleId] = dragData.operationId;
+        plan[row][spindleId] = {
+          operationId: dragData.operationId,
+          kanal: getDefaultKanalForSpindle(spindleId),
+        };
       }
 
       if (dragData.type === "PLAN_OP") {
         const fromRow = dragData.row;
         const fromSpindle = dragData.spindleId;
-        const fromOp = plan[fromRow][fromSpindle];
-        const toOp = plan[row][spindleId];
+        const fromAssign = plan[fromRow][fromSpindle];
+        const toAssign = plan[row][spindleId];
 
-        // swap
-        plan[fromRow][fromSpindle] = toOp || null;
-        plan[row][spindleId] = fromOp || null;
+        plan[fromRow][fromSpindle] = toAssign || null;
+        plan[row][spindleId] = fromAssign || null;
       }
 
       dragData = null;
       renderPlan();
     }
 
-    // ---------- RENDER LIBRARY ----------
+    // ---------- LIBRARY RENDER ----------
 
     function renderCategoryTabs() {
       categoryTabsEl.innerHTML = "";
@@ -975,12 +1001,8 @@
         card.draggable = true;
 
         card.addEventListener("dragstart", () => {
-          dragData = {
-            type: "LIB_OP",
-            operationId: op.id
-          };
+          dragData = { type: "LIB_OP", operationId: op.id };
         });
-
         card.addEventListener("dragend", () => {
           dragData = null;
           clearDropHighlights();
@@ -1016,18 +1038,30 @@
       });
     }
 
-    // ---------- EDITOR / MODAL ----------
+    // ---------- MODAL / EDITOR ----------
 
     function openEditor(row, spindleId) {
       editingSlot = { row, spindleId };
 
-      const opId = plan[row][spindleId];
+      const assign = plan[row][spindleId];
+      const opId = assign && assign.operationId;
       const op = operations.find(o => o.id === opId);
 
       modalTitleMainEl.textContent = "Row " + row + ", " + spindleId;
       fieldNameEl.value = op ? op.name : "";
       fieldCategoryEl.value = op ? op.category : (activeCategory || "AUSSEN");
       fieldRemarkEl.value = op ? (op.description || "") : "";
+
+      let kanal = assign ? assign.kanal : getDefaultKanalForSpindle(spindleId);
+      fieldKanalEl.value = String(kanal);
+
+      // Dummy шпиндели жёстко привязаны к каналу
+      if (spindleId === "DUMMY1" || spindleId === "DUMMY2") {
+        fieldKanalEl.disabled = true;
+        fieldKanalEl.value = String(getDefaultKanalForSpindle(spindleId));
+      } else {
+        fieldKanalEl.disabled = false;
+      }
 
       modalBackdropEl.style.display = "flex";
     }
@@ -1049,7 +1083,11 @@
         return;
       }
 
-      // find or create operation
+      let kanal = parseInt(fieldKanalEl.value, 10);
+      if (editingSlot.spindleId === "DUMMY1") kanal = 1;
+      if (editingSlot.spindleId === "DUMMY2") kanal = 2;
+
+      // операция как шаблон
       let op = operations.find(o => o.name.toLowerCase() === name.toLowerCase());
       if (!op) {
         op = {
@@ -1065,7 +1103,10 @@
         op.description = desc;
       }
 
-      plan[editingSlot.row][editingSlot.spindleId] = op.id;
+      plan[editingSlot.row][editingSlot.spindleId] = {
+        operationId: op.id,
+        kanal
+      };
 
       closeEditor();
       renderPlan();
@@ -1084,9 +1125,7 @@
     modalSaveBtn.addEventListener("click", saveEditor);
 
     modalBackdropEl.addEventListener("click", (e) => {
-      if (e.target === modalBackdropEl) {
-        closeEditor();
-      }
+      if (e.target === modalBackdropEl) closeEditor();
     });
 
     // ---------- INIT ----------
