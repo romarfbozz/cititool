@@ -2,48 +2,240 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <title>DMG Mori – Workbench (Prototype)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DMG Mori Workbench</title>
   <style>
+    :root {
+      --bg: #f5f5f7;
+      --card-bg: #ffffff;
+      --border: #d0d0d4;
+      --text-main: #1b1b1f;
+      --text-muted: #6b6b72;
+      --radius: 10px;
+      --shadow: 0 8px 20px rgba(0,0,0,0.07);
+
+      --sp4: #d8f5dd;    /* Spindel 4 – grün */
+      --sp3: #d6e5ff;    /* Spindel 3 – blau */
+      --dummy: #fbe4d8;  /* Dummy 1/2 – выбранный цвет */
+    }
+
     * {
       box-sizing: border-box;
-      font-family: system-ui, -apple-system, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, system-ui, sans-serif;
     }
 
     body {
       margin: 0;
-      padding: 16px;
-      display: flex;
-      gap: 16px;
-      background: #f5f5f5;
+      padding: 12px;
+      background: var(--bg);
+      color: var(--text-main);
     }
 
-    /* Панель операций слева */
-    .sidebar {
-      width: 260px;
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 10px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .card-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .btn {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      padding: 4px 10px;
+      background: #f4f4f6;
+      cursor: pointer;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      border-color: #007aff;
+      background: #007aff;
+      color: #fff;
+    }
+
+    /* ====== TABLE ====== */
+
+    .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+      font-size: 11px;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 4px;
+      text-align: left;
+    }
+
+    th {
+      background: #f1f1f4;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .header-group {
+      background: #f9f9fb;
+      border-bottom: 2px solid #e05050;
+      font-size: 11px;
+    }
+
+    .col-dummy {
+      background: var(--dummy);
+    }
+    .col-sp4 {
+      background: var(--sp4);
+    }
+    .col-sp3 {
+      background: var(--sp3);
+    }
+
+    td {
       background: #fff;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .plan-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 4px;
+      font-size: 11px;
+      background: transparent;
+    }
+
+    .plan-input::placeholder {
+      color: #c0c0c6;
+    }
+
+    td.drop-target {
+      outline: 2px dashed #007aff;
+      outline-offset: -2px;
+    }
+
+    .col-label {
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    /* ====== OPERATIONS PANEL ====== */
+
+    .ops-layout {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    @media (min-width: 800px) {
+      .ops-layout {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+    }
+
+    .ops-categories {
+      flex: 2;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      max-height: 95vh;
-      overflow-y: auto;
     }
 
-    .sidebar h2 {
-      font-size: 16px;
-      margin: 0 0 8px 0;
+    .ops-add {
+      flex: 1;
+      border-left: 1px solid #ececf0;
+      padding-left: 10px;
+      margin-left: 4px;
+    }
+
+    @media (max-width: 799px) {
+      .ops-add {
+        border-left: none;
+        border-top: 1px solid #ececf0;
+        margin-left: 0;
+        padding-left: 0;
+        padding-top: 8px;
+      }
+    }
+
+    .op-category {
+      border-radius: 8px;
+      border: 1px solid #ececf0;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .op-category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .op-category-title {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .op-category-badge {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .op-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
     }
 
     .operation {
-      padding: 6px 8px;
-      margin: 2px 0;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      background: #fafafa;
+      padding: 4px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fafafc;
+      font-size: 11px;
       cursor: grab;
-      font-size: 13px;
+      display: inline-flex;
+      gap: 4px;
+      align-items: center;
+      user-select: none;
     }
 
     .operation:active {
@@ -52,272 +244,457 @@
 
     .op-code {
       font-weight: 600;
-      margin-right: 4px;
     }
 
-    /* Планировщик справа */
-    .planner {
-      flex: 1;
-      background: #fff;
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      overflow: auto;
-      max-height: 95vh;
+    .op-text {
+      white-space: nowrap;
     }
 
-    .planner-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .hint {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.4;
     }
 
-    .planner-grid {
-      display: grid;
-      grid-template-columns: repeat(6, minmax(120px, 1fr));
-      border-collapse: collapse;
-      border: 1px solid #ccc;
-      background: #fff;
-    }
-
-    .header,
-    .cell {
-      border: 1px solid #ccc;
-      padding: 4px;
-      min-height: 60px;
-      font-size: 12px;
-    }
-
-    .header {
-      font-weight: 600;
-      text-align: center;
-      background: #f0f0f0;
-    }
-
-    .header-group {
-      grid-column: span 3;
-      border-bottom: 2px solid #d00;
-      background: #f9f9f9;
-    }
-
-    .cell {
-      vertical-align: top;
-    }
-
-    .cell-inner {
-      min-height: 48px;
-      padding: 2px;
-    }
-
-    .cell.drop-target {
-      background: #e6f3ff;
-    }
-
-    .cell-ops {
+    .form-field {
+      margin-bottom: 6px;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
 
-    .cell .operation {
-      cursor: grab;
-      background: #fdfdfd;
-    }
-
-    .cell-controls {
-      margin-top: 4px;
-      display: flex;
-      justify-content: flex-end;
-      gap: 4px;
-    }
-
-    .btn {
-      border: 1px solid #ccc;
-      border-radius: 4px;
+    .form-label {
       font-size: 11px;
-      padding: 2px 6px;
-      background: #f8f8f8;
-      cursor: pointer;
     }
 
-    .btn:hover {
-      background: #eee;
+    .input, select {
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      padding: 5px 7px;
+      font-size: 11px;
+      background: #f9f9fb;
     }
 
-    .divider {
-      grid-column: span 6;
-      border-top: 2px solid #d00;
-      height: 0;
+    .input:focus, select:focus {
+      outline: 1px solid #007aff;
+      background: #fff;
+    }
+
+    .small-note {
+      font-size: 10px;
+      color: var(--text-muted);
     }
   </style>
 </head>
 <body>
+<div class="page">
 
-  <!-- Панель операций -->
-  <aside class="sidebar">
-    <h2>Операции (палитра)</h2>
-    <!-- добавь свои коды/описания по вкусу -->
-    <div class="operation" draggable="true" data-op-code="L2101" data-op-text="Außen Schruppen">
-      <span class="op-code">L2101</span>Außen Schruppen
-    </div>
-    <div class="operation" draggable="true" data-op-code="L2102" data-op-text="Innen Schlichten">
-      <span class="op-code">L2102</span>Innen Schlichten
-    </div>
-    <div class="operation" draggable="true" data-op-code="L2103" data-op-text="Nop. OP (Luen)">
-      <span class="op-code">L2103</span>NOP OP (Luen)
-    </div>
-    <div class="operation" draggable="true" data-op-code="L2104" data-op-text="Gewinde Messen">
-      <span class="op-code">L2104</span>Gewinde Messen
-    </div>
-    <div class="operation" draggable="true" data-op-code="L2107" data-op-text="Außen Schruppen (2)">
-      <span class="op-code">L2107</span>Außen Schruppen (2)
-    </div>
-    <div class="operation" draggable="true" data-op-code="L2108" data-op-text="Einstechen">
-      <span class="op-code">L2108</span>Einstechen
-    </div>
-    <div class="operation" draggable="true" data-op-code="L2202" data-op-text="Bohren Ø20">
-      <span class="op-code">L2202</span>Bohren Ø20
-    </div>
-  </aside>
-
-  <!-- Планировщик -->
-  <main class="planner">
-    <div class="planner-title">
-      <span>План операций – прототип</span>
-      <button class="btn" id="clear-all">Очистить всё</button>
+  <!-- ======= PLAN TABLE ======= -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Plan Schlitten / Spindeln</div>
+        <div class="card-subtitle">
+          Tipp: сначала тап по ячейке → потом тап по операции снизу.
+        </div>
+      </div>
+      <button class="btn" id="clear-table">Alles löschen</button>
     </div>
 
-    <div class="planner-grid" id="planner-grid">
-      <!-- Группа заголовков -->
-      <div class="header header-group">Schlitten 1 / Kanal 1 – 1000 MPF</div>
-      <div class="header header-group">Schlitten 2 / Kanal 2 – 2000 MPF</div>
-
-      <!-- Заголовки колонок -->
-      <div class="header">Dummy 1</div>
-      <div class="header">Spindel 4</div>
-      <div class="header">Spindel 3</div>
-      <div class="header">Spindel 4</div>
-      <div class="header">Spindel 3</div>
-      <div class="header">Dummy 2</div>
-
-      <!-- Несколько строк как на бумаге; можно добавить ещё -->
-      <!-- row 1 -->
-      <div class="cell" data-cell-id="r1c1"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r1c2"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r1c3"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r1c4"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r1c5"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r1c6"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-
-      <!-- row 2 -->
-      <div class="cell" data-cell-id="r2c1"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r2c2"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r2c3"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r2c4"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r2c5"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r2c6"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-
-      <!-- row 3 -->
-      <div class="cell" data-cell-id="r3c1"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r3c2"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r3c3"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r3c4"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r3c5"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r3c6"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-
-      <!-- row 4 -->
-      <div class="cell" data-cell-id="r4c1"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r4c2"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r4c3"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r4c4"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r4c5"><div class="cell-inner"><div class="cell-ops"></div></div></div>
-      <div class="cell" data-cell-id="r4c6"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+    <div class="table-wrapper">
+      <table id="plan-table">
+        <thead>
+          <tr>
+            <th class="header-group col-dummy" colspan="3">Schlitten 1 / Kanal 1 – 1000 MPF</th>
+            <th class="header-group col-sp4 col-sp3" colspan="3">Schlitten 2 / Kanal 2 – 2000 MPF</th>
+          </tr>
+          <tr>
+            <th class="col-dummy"><span class="col-label">Dummy 1</span></th>
+            <th class="col-sp4"><span class="col-label">Spindel 4</span></th>
+            <th class="col-sp3"><span class="col-label">Spindel 3</span></th>
+            <th class="col-sp4"><span class="col-label">Spindel 4</span></th>
+            <th class="col-sp3"><span class="col-label">Spindel 3</span></th>
+            <th class="col-dummy"><span class="col-label">Dummy 2</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- 8 строк, при желании увеличишь -->
+          <!-- r1..r8, c1..c6 -->
+          <!-- генерируются вручную, чтобы без JS-магии -->
+          <!-- row 1 -->
+          <tr>
+            <td data-cell-id="r1c1" data-col="dummy">
+              <input class="plan-input" placeholder="L2101 Außen ..." />
+            </td>
+            <td data-cell-id="r1c2" data-col="sp4">
+              <input class="plan-input" placeholder="L2101 Außen ..." />
+            </td>
+            <td data-cell-id="r1c3" data-col="sp3">
+              <input class="plan-input" placeholder="L2102 Innen ..." />
+            </td>
+            <td data-cell-id="r1c4" data-col="sp4">
+              <input class="plan-input" placeholder="L2101 Außen ..." />
+            </td>
+            <td data-cell-id="r1c5" data-col="sp3">
+              <input class="plan-input" placeholder="L2102 Innen ..." />
+            </td>
+            <td data-cell-id="r1c6" data-col="dummy">
+              <input class="plan-input" placeholder="L2xxx ..." />
+            </td>
+          </tr>
+          <!-- row 2 -->
+          <tr>
+            <td data-cell-id="r2c1" data-col="dummy"><input class="plan-input" /></td>
+            <td data-cell-id="r2c2" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r2c3" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r2c4" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r2c5" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r2c6" data-col="dummy"><input class="plan-input" /></td>
+          </tr>
+          <!-- row 3 -->
+          <tr>
+            <td data-cell-id="r3c1" data-col="dummy"><input class="plan-input" /></td>
+            <td data-cell-id="r3c2" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r3c3" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r3c4" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r3c5" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r3c6" data-col="dummy"><input class="plan-input" /></td>
+          </tr>
+          <!-- row 4 -->
+          <tr>
+            <td data-cell-id="r4c1" data-col="dummy"><input class="plan-input" /></td>
+            <td data-cell-id="r4c2" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r4c3" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r4c4" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r4c5" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r4c6" data-col="dummy"><input class="plan-input" /></td>
+          </tr>
+          <!-- row 5 -->
+          <tr>
+            <td data-cell-id="r5c1" data-col="dummy"><input class="plan-input" /></td>
+            <td data-cell-id="r5c2" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r5c3" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r5c4" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r5c5" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r5c6" data-col="dummy"><input class="plan-input" /></td>
+          </tr>
+          <!-- row 6 -->
+          <tr>
+            <td data-cell-id="r6c1" data-col="dummy"><input class="plan-input" /></td>
+            <td data-cell-id="r6c2" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r6c3" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r6c4" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r6c5" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r6c6" data-col="dummy"><input class="plan-input" /></td>
+          </tr>
+          <!-- row 7 -->
+          <tr>
+            <td data-cell-id="r7c1" data-col="dummy"><input class="plan-input" /></td>
+            <td data-cell-id="r7c2" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r7c3" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r7c4" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r7c5" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r7c6" data-col="dummy"><input class="plan-input" /></td>
+          </tr>
+          <!-- row 8 -->
+          <tr>
+            <td data-cell-id="r8c1" data-col="dummy"><input class="plan-input" /></td>
+            <td data-cell-id="r8c2" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r8c3" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r8c4" data-col="sp4"><input class="plan-input" /></td>
+            <td data-cell-id="r8c5" data-col="sp3"><input class="plan-input" /></td>
+            <td data-cell-id="r8c6" data-col="dummy"><input class="plan-input" /></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  </main>
+  </section>
 
-  <script>
-    let draggedEl = null;
-    let draggedFromPool = false;
+  <!-- ======= OPERATIONS PANEL ======= -->
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Operationen</div>
+        <div class="card-subtitle">Категории + палитра. Можно кликать или перетаскивать в таблицу.</div>
+      </div>
+    </div>
 
-    function makeDraggable(el) {
-      el.addEventListener('dragstart', (e) => {
-        draggedEl = el;
-        const parent = el.closest('.sidebar');
-        draggedFromPool = !!parent;
-        e.dataTransfer.effectAllowed = 'copyMove';
-      });
+    <div class="ops-layout">
+      <div class="ops-categories">
+        <!-- Außen -->
+        <div class="op-category" data-category="aussen">
+          <div class="op-category-header">
+            <span class="op-category-title">Außen Bearbeitung</span>
+            <span class="op-category-badge">Außen</span>
+          </div>
+          <div class="op-list" id="ops-aussen">
+            <div class="operation" draggable="true" data-op="L2101 Außen Schruppen">
+              <span class="op-code">L2101</span><span class="op-text">Außen Schruppen</span>
+            </div>
+            <div class="operation" draggable="true" data-op="L2107 Außen Schlichten">
+              <span class="op-code">L2107</span><span class="op-text">Außen Schlichten</span>
+            </div>
+          </div>
+        </div>
 
-      el.addEventListener('dragend', () => {
-        draggedEl = null;
-        draggedFromPool = false;
-      });
-    }
+        <!-- Innen -->
+        <div class="op-category" data-category="innen">
+          <div class="op-category-header">
+            <span class="op-category-title">Innen Bearbeitung</span>
+            <span class="op-category-badge">Innen</span>
+          </div>
+          <div class="op-list" id="ops-innen">
+            <div class="operation" draggable="true" data-op="L2102 Innen Schlichten">
+              <span class="op-code">L2102</span><span class="op-text">Innen Schlichten</span>
+            </div>
+            <div class="operation" draggable="true" data-op="L2202 Bohren Ø20 Innen">
+              <span class="op-code">L2202</span><span class="op-text">Bohren Ø20 Innen</span>
+            </div>
+          </div>
+        </div>
 
-    // Инициализация всех операций в палитре
-    document.querySelectorAll('.sidebar .operation').forEach(makeDraggable);
+        <!-- Radial -->
+        <div class="op-category" data-category="radial">
+          <div class="op-category-header">
+            <span class="op-category-title">Radial Bearbeitung</span>
+            <span class="op-category-badge">Radial</span>
+          </div>
+          <div class="op-list" id="ops-radial">
+            <div class="operation" draggable="true" data-op="L2301 Radial Einstechen">
+              <span class="op-code">L2301</span><span class="op-text">Radial Einstechen</span>
+            </div>
+          </div>
+        </div>
 
-    // Обработка дропа по ячейкам
-    document.querySelectorAll('.cell').forEach(cell => {
-      cell.addEventListener('dragover', (e) => {
-        if (!draggedEl) return;
-        e.preventDefault();
-        cell.classList.add('drop-target');
-        e.dataTransfer.dropEffect = draggedFromPool ? 'copy' : 'move';
-      });
+        <!-- Axial -->
+        <div class="op-category" data-category="axial">
+          <div class="op-category-header">
+            <span class="op-category-title">Axial Bearbeitung</span>
+            <span class="op-category-badge">Axial</span>
+          </div>
+          <div class="op-list" id="ops-axial">
+            <div class="operation" draggable="true" data-op="L2401 Axial Bohren">
+              <span class="op-code">L2401</span><span class="op-text">Axial Bohren</span>
+            </div>
+            <div class="operation" draggable="true" data-op="L2404 Axial Gewinde">
+              <span class="op-code">L2404</span><span class="op-text">Axial Gewinde</span>
+            </div>
+          </div>
+        </div>
 
-      cell.addEventListener('dragleave', () => {
-        cell.classList.remove('drop-target');
-      });
+        <!-- From table / auto-added -->
+        <div class="op-category" data-category="from-table">
+          <div class="op-category-header">
+            <span class="op-category-title">Aus Tabelle hinzugefügt</span>
+            <span class="op-category-badge" id="from-table-count">0</span>
+          </div>
+          <div class="op-list" id="ops-from-table"></div>
+          <p class="hint">
+            Любая новая строка, которую ты впишешь в таблицу (L-Code + текст),
+            автоматически попадёт сюда, чтобы потом можно было просто перетаскивать.
+          </p>
+        </div>
+      </div>
 
-      cell.addEventListener('drop', (e) => {
-        e.preventDefault();
-        cell.classList.remove('drop-target');
-        if (!draggedEl) return;
+      <!-- Добавление вручную снизу -->
+      <div class="ops-add">
+        <div class="form-field">
+          <span class="form-label">Neuer L-Satz</span>
+          <input id="new-op-code" class="input" placeholder="L2109" />
+        </div>
+        <div class="form-field">
+          <span class="form-label">Beschreibung</span>
+          <input id="new-op-text" class="input" placeholder="Außen Schruppen grob" />
+        </div>
+        <div class="form-field">
+          <span class="form-label">Kategorie</span>
+          <select id="new-op-category">
+            <option value="aussen">Außen Bearbeitung</option>
+            <option value="innen">Innen Bearbeitung</option>
+            <option value="radial">Radial Bearbeitung</option>
+            <option value="axial">Axial Bearbeitung</option>
+            <option value="from-table">Aus Tabelle / Sonstige</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" id="add-op-btn">Operation hinzufügen</button>
+        <p class="small-note">
+          Кнопка «добавить» — запасной вариант, если не хочешь сначала писать в таблицу.
+        </p>
+      </div>
+    </div>
+  </section>
 
-        const opsContainer = cell.querySelector('.cell-ops');
+  <section class="card">
+    <div class="hint">
+      • Цвета: Dummy 1/2 – персиковый, Spindel 4 – зелёный, Spindel 3 – синий.<br />
+      • Работает и с drag&drop (где браузер позволяет), и с простым тапом по ячейке и операции.
+    </div>
+  </section>
+</div>
 
-        let toInsert;
-        if (draggedFromPool) {
-          // Клонируем операцию из палитры
-          toInsert = draggedEl.cloneNode(true);
-          makeDraggable(toInsert);
-        } else {
-          // Перенос между ячейками
-          toInsert = draggedEl;
-        }
+<script>
+  // ======== STATE ========
+  let activeInput = null;
+  const knownOps = new Set(); // для контроля дублей
 
-        opsContainer.appendChild(toInsert);
-        addCellControls(cell);
-      });
+  // Инициализируем все операции из палитры как известные
+  document.querySelectorAll('.operation').forEach(op => {
+    knownOps.add(op.dataset.op);
+  });
+
+  // ======== PLAN TABLE: выбор активной ячейки + автодобавление ========
+
+  function handleInputFocus(e) {
+    activeInput = e.target;
+  }
+
+  function handleInputBlur(e) {
+    const val = e.target.value.trim();
+    if (!val) return;
+    maybeAddOpFromTable(val);
+  }
+
+  document.querySelectorAll('.plan-input').forEach(input => {
+    input.addEventListener('focus', handleInputFocus);
+    input.addEventListener('blur', handleInputBlur);
+  });
+
+  // Очистка таблицы
+  document.getElementById('clear-table').addEventListener('click', () => {
+    document.querySelectorAll('.plan-input').forEach(i => i.value = '');
+  });
+
+  // ======== ОПЕРАЦИИ: создание элемента ========
+
+  function createOperationElement(fullText) {
+    const opDiv = document.createElement('div');
+    opDiv.className = 'operation';
+    opDiv.draggable = true;
+    opDiv.dataset.op = fullText;
+
+    // наивный сплит: код = первое слово, остальное – текст
+    const parts = fullText.split(/\s+/);
+    const code = parts.shift() || '';
+    const text = parts.join(' ');
+
+    const codeSpan = document.createElement('span');
+    codeSpan.className = 'op-code';
+    codeSpan.textContent = code;
+
+    const textSpan = document.createElement('span');
+    textSpan.className = 'op-text';
+    textSpan.textContent = text;
+
+    opDiv.appendChild(codeSpan);
+    opDiv.appendChild(textSpan);
+
+    attachOperationEvents(opDiv);
+    return opDiv;
+  }
+
+  // Добавление операции в секцию "Aus Tabelle"
+  function maybeAddOpFromTable(fullText) {
+    if (!fullText) return;
+    if (knownOps.has(fullText)) return;
+    knownOps.add(fullText);
+
+    const container = document.getElementById('ops-from-table');
+    const opEl = createOperationElement(fullText);
+    container.appendChild(opEl);
+    updateFromTableCount();
+  }
+
+  function updateFromTableCount() {
+    const cnt = document.getElementById('ops-from-table').children.length;
+    document.getElementById('from-table-count').textContent = String(cnt);
+  }
+
+  // ======== Клик по операции (для тача) + drag&drop ========
+
+  function attachOperationEvents(opEl) {
+    // Клик — вставить в активную ячейку
+    opEl.addEventListener('click', () => {
+      if (!activeInput) return;
+      activeInput.value = opEl.dataset.op;
+      activeInput.focus();
+      // при клике тоже считаем, что операция использована — может быть новой
+      maybeAddOpFromTable(opEl.dataset.op);
     });
 
-    // Кнопка очистки в ячейке
-    function addCellControls(cell) {
-      let controls = cell.querySelector('.cell-controls');
-      if (!controls) {
-        controls = document.createElement('div');
-        controls.className = 'cell-controls';
-        const clearBtn = document.createElement('button');
-        clearBtn.className = 'btn';
-        clearBtn.textContent = 'Очистить';
-        clearBtn.addEventListener('click', () => {
-          const ops = cell.querySelector('.cell-ops');
-          ops.innerHTML = '';
-          controls.remove();
-        });
-        controls.appendChild(clearBtn);
-        cell.querySelector('.cell-inner').appendChild(controls);
+    // Drag&Drop (где работает)
+    opEl.addEventListener('dragstart', (e) => {
+      e.dataTransfer.effectAllowed = 'copy';
+      e.dataTransfer.setData('text/plain', opEl.dataset.op);
+    });
+  }
+
+  document.querySelectorAll('.operation').forEach(attachOperationEvents);
+
+  // Ячейки таблицы как drop-цели
+  document.querySelectorAll('#plan-table td').forEach(td => {
+    td.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer.types.includes('text/plain')) return;
+      e.preventDefault();
+      td.classList.add('drop-target');
+    });
+
+    td.addEventListener('dragleave', () => {
+      td.classList.remove('drop-target');
+    });
+
+    td.addEventListener('drop', (e) => {
+      e.preventDefault();
+      td.classList.remove('drop-target');
+      const text = e.dataTransfer.getData('text/plain');
+      const input = td.querySelector('.plan-input');
+      if (input) {
+        input.value = text;
+        maybeAddOpFromTable(text);
       }
+    });
+  });
+
+  // ======== Форма добавления операции вручную ========
+
+  document.getElementById('add-op-btn').addEventListener('click', () => {
+    const codeEl = document.getElementById('new-op-code');
+    const textEl = document.getElementById('new-op-text');
+    const catEl = document.getElementById('new-op-category');
+
+    const code = (codeEl.value || '').trim();
+    const text = (textEl.value || '').trim();
+    const cat = catEl.value;
+
+    if (!code || !text) {
+      alert('Код и описание обязательны.');
+      return;
     }
 
-    // Кнопка "Очистить всё"
-    document.getElementById('clear-all').addEventListener('click', () => {
-      document.querySelectorAll('.cell-ops').forEach(c => c.innerHTML = '');
-      document.querySelectorAll('.cell-controls').forEach(c => c.remove());
-    });
-  </script>
+    const full = code + ' ' + text;
+    if (knownOps.has(full)) {
+      alert('Такая операция уже есть.');
+      return;
+    }
+
+    knownOps.add(full);
+    const opEl = createOperationElement(full);
+
+    const map = {
+      'aussen': 'ops-aussen',
+      'innen': 'ops-innen',
+      'radial': 'ops-radial',
+      'axial': 'ops-axial',
+      'from-table': 'ops-from-table'
+    };
+    const targetId = map[cat] || 'ops-from-table';
+    const target = document.getElementById(targetId);
+    target.appendChild(opEl);
+
+    if (cat === 'from-table') updateFromTableCount();
+
+    codeEl.value = '';
+    textEl.value = '';
+  });
+</script>
 </body>
 </html>
