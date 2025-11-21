@@ -1,700 +1,983 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DMG Mori Workbench</title>
+  <title>Workbench</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     :root {
-      --bg: #f5f5f7;
+      --bg: #f3f4f6;
       --card-bg: #ffffff;
-      --border: #d0d0d4;
-      --text-main: #1b1b1f;
-      --text-muted: #6b6b72;
-      --radius: 10px;
-      --shadow: 0 8px 20px rgba(0,0,0,0.07);
-
-      --sp4: #d8f5dd;    /* Spindel 4 – grün */
-      --sp3: #d6e5ff;    /* Spindel 3 – blau */
-      --dummy: #fbe4d8;  /* Dummy 1/2 – выбранный цвет */
+      --border: #e5e7eb;
+      --text-main: #0f172a;
+      --text-muted: #6b7280;
+      --accent: #0f172a;
+      --sp4: #22c55e;
+      --sp3: #3b82f6;
+      --dummy1: #f59e0b;
+      --dummy2: #94a3b8;
     }
 
     * {
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-      font-family: -apple-system, system-ui, sans-serif;
     }
 
     body {
       margin: 0;
-      padding: 12px;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--text-main);
     }
 
-    .page {
-      max-width: 1100px;
+    .app {
+      max-width: 480px;
       margin: 0 auto;
+      padding: 12px;
+      min-height: 100vh;
+    }
+
+    .flex {
       display: flex;
+    }
+
+    .flex-row {
+      flex-direction: row;
+    }
+
+    .flex-col {
       flex-direction: column;
+    }
+
+    .justify-between {
+      justify-content: space-between;
+    }
+
+    .justify-center {
+      justify-content: center;
+    }
+
+    .items-center {
+      align-items: center;
+    }
+
+    .gap-1 {
+      gap: 4px;
+    }
+
+    .gap-2 {
+      gap: 8px;
+    }
+
+    .gap-3 {
       gap: 12px;
     }
 
-    .card {
-      background: var(--card-bg);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 10px;
-    }
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-
-    .card-title {
-      font-weight: 600;
-      font-size: 15px;
-    }
-
-    .card-subtitle {
+    .text-xs {
       font-size: 11px;
+    }
+
+    .text-sm {
+      font-size: 13px;
+    }
+
+    .font-semibold {
+      font-weight: 600;
+    }
+
+    .font-medium {
+      font-weight: 500;
+    }
+
+    .text-muted {
       color: var(--text-muted);
     }
 
     .btn {
       border-radius: 999px;
       border: 1px solid var(--border);
-      font-size: 11px;
-      padding: 4px 10px;
-      background: #f4f4f6;
-      cursor: pointer;
-    }
-
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn-primary {
-      border-color: #007aff;
-      background: #007aff;
-      color: #fff;
-    }
-
-    /* ====== TABLE ====== */
-
-    .table-wrapper {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 700px;
-      font-size: 11px;
-    }
-
-    th, td {
-      border: 1px solid var(--border);
-      padding: 4px;
-      text-align: left;
-    }
-
-    th {
-      background: #f1f1f4;
-      font-weight: 600;
-      text-align: center;
-    }
-
-    .header-group {
-      background: #f9f9fb;
-      border-bottom: 2px solid #e05050;
-      font-size: 11px;
-    }
-
-    .col-dummy {
-      background: var(--dummy);
-    }
-    .col-sp4 {
-      background: var(--sp4);
-    }
-    .col-sp3 {
-      background: var(--sp3);
-    }
-
-    td {
       background: #fff;
+      padding: 6px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      white-space: nowrap;
     }
 
-    .plan-input {
-      width: 100%;
-      border: none;
-      outline: none;
-      padding: 4px;
-      font-size: 11px;
+    .btn-ghost {
       background: transparent;
     }
 
-    .plan-input::placeholder {
-      color: #c0c0c6;
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
     }
 
-    td.drop-target {
-      outline: 2px dashed #007aff;
-      outline-offset: -2px;
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
     }
 
-    .col-label {
+    .card-soft {
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }
+
+    header {
+      margin-bottom: 8px;
+    }
+
+    header .subtitle {
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 10px;
+      color: #9ca3af;
+    }
+
+    header .title {
+      font-size: 13px;
       font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .chip-step {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.08);
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    .chip-step .circle {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: #4b5563;
+    }
+
+    /* Plan table */
+
+    .plan {
+      overflow: hidden;
+    }
+
+    .plan-header {
+      display: grid;
+      grid-template-columns: 40px repeat(4, minmax(0, 1fr));
+      background: #e5e7eb;
+      border-bottom: 1px solid var(--border);
       font-size: 11px;
     }
 
-    /* ====== OPERATIONS PANEL ====== */
+    .plan-header-cell {
+      padding: 6px 4px;
+      text-align: center;
+      border-left: 1px solid var(--border);
+      font-weight: 600;
+    }
 
-    .ops-layout {
+    .plan-header-cell:first-child {
+      border-left: none;
+    }
+
+    .plan-header-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border-width: 1px;
+      border-style: solid;
+      font-size: 10px;
+    }
+
+    .sp4 {
+      border-color: var(--sp4);
+      color: var(--sp4);
+    }
+
+    .sp3 {
+      border-color: var(--sp3);
+      color: var(--sp3);
+    }
+
+    .dummy1 {
+      border-color: var(--dummy1);
+      color: var(--dummy1);
+    }
+
+    .dummy2 {
+      border-color: var(--dummy2);
+      color: var(--dummy2);
+    }
+
+    .plan-body-row {
+      display: grid;
+      grid-template-columns: 40px repeat(4, minmax(0, 1fr));
+      border-top: 1px solid #f3f4f6;
+      font-size: 11px;
+      background: #fff;
+    }
+
+    .plan-row-index {
+      padding: 10px 4px;
+      text-align: center;
+      color: #9ca3af;
+    }
+
+    .plan-cell {
+      padding: 6px 4px;
+      border-left: 1px solid #f3f4f6;
+      position: relative;
+    }
+
+    .plan-cell-inner {
+      height: 40px;
+      border-radius: 8px;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px dashed #e5e7eb;
+      background: #f9fafb;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .plan-cell-inner.filled {
+      border-style: solid;
+      border-color: #d1d5db;
+      background: #f9fafb;
+    }
+
+    .plan-cell-inner.drop-active {
+      border-width: 2px;
+      border-style: dashed;
+      border-color: #0ea5e9;
+      background: #e0f2fe;
+    }
+
+    .plan-cell-text {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .plan-cell-category {
+      margin-left: 6px;
+      font-size: 9px;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .plan-cell-clear {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      font-size: 10px;
+      color: #9ca3af;
+      background: #f3f4f6;
+      border-radius: 999px;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+
+    /* Library */
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tab {
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      background: #f3f4f6;
+      font-size: 11px;
+      white-space: nowrap;
+      cursor: pointer;
+      color: #4b5563;
+    }
+
+    .tab.active {
+      background: #0f172a;
+      color: #fff;
+      border-color: #0f172a;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+    }
+
+    .search-input {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      padding: 6px 22px 6px 10px;
+      font-size: 11px;
+    }
+
+    .search-icon {
+      position: absolute;
+      right: 7px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      color: #9ca3af;
+    }
+
+    .library-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-top: 4px;
+    }
+
+    .lib-card {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      padding: 6px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 4px;
+      cursor: grab;
     }
 
-    @media (min-width: 800px) {
-      .ops-layout {
-        flex-direction: row;
-        align-items: flex-start;
-      }
+    .lib-card:active {
+      cursor: grabbing;
     }
 
-    .ops-categories {
-      flex: 2;
+    .lib-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .lib-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #4b5563;
+    }
+
+    .lib-pin {
+      font-size: 12px;
+      color: #d1d5db;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .lib-name {
+      font-size: 11px;
+      font-weight: 500;
+      color: #111827;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .lib-cat {
+      font-size: 9px;
+      text-transform: uppercase;
+      color: #9ca3af;
+    }
+
+    .empty-text {
+      grid-column: 1 / -1;
+      text-align: center;
+      font-size: 11px;
+      color: #9ca3af;
+      padding: 16px 0;
+    }
+
+    /* Modal */
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 480px;
+      background: #fff;
+      border-radius: 18px 18px 0 0;
+      box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.3);
+      padding: 12px;
+      max-height: 75vh;
       display: flex;
       flex-direction: column;
       gap: 8px;
     }
 
-    .ops-add {
-      flex: 1;
-      border-left: 1px solid #ececf0;
-      padding-left: 10px;
-      margin-left: 4px;
-    }
-
-    @media (max-width: 799px) {
-      .ops-add {
-        border-left: none;
-        border-top: 1px solid #ececf0;
-        margin-left: 0;
-        padding-left: 0;
-        padding-top: 8px;
-      }
-    }
-
-    .op-category {
-      border-radius: 8px;
-      border: 1px solid #ececf0;
-      padding: 6px;
+    .modal-header {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .op-category-header {
-      display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 6px;
-    }
-
-    .op-category-title {
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    .op-category-badge {
-      font-size: 10px;
-      color: var(--text-muted);
-    }
-
-    .op-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-top: 4px;
-    }
-
-    .operation {
-      padding: 4px 7px;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #fafafc;
-      font-size: 11px;
-      cursor: grab;
-      display: inline-flex;
-      gap: 4px;
       align-items: center;
-      user-select: none;
+      gap: 8px;
+      margin-bottom: 4px;
     }
 
-    .operation:active {
-      cursor: grabbing;
-    }
-
-    .op-code {
+    .modal-title-main {
+      font-size: 13px;
       font-weight: 600;
+      color: var(--text-main);
     }
 
-    .op-text {
-      white-space: nowrap;
+    .modal-title-sub {
+      font-size: 11px;
+      color: #9ca3af;
     }
 
-    .hint {
-      font-size: 10px;
-      color: var(--text-muted);
-      line-height: 1.4;
+    .modal-close {
+      font-size: 12px;
+      color: #6b7280;
+      background: transparent;
+      border: none;
+      cursor: pointer;
     }
 
-    .form-field {
-      margin-bottom: 6px;
+    .modal-body {
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .field {
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
+      margin-bottom: 8px;
     }
 
-    .form-label {
-      font-size: 11px;
-    }
-
-    .input, select {
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      padding: 5px 7px;
-      font-size: 11px;
-      background: #f9f9fb;
-    }
-
-    .input:focus, select:focus {
-      outline: 1px solid #007aff;
-      background: #fff;
-    }
-
-    .small-note {
+    .field-label {
       font-size: 10px;
-      color: var(--text-muted);
+      color: #6b7280;
+    }
+
+    .field-input,
+    .field-select,
+    .field-textarea {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 6px 8px;
+      font-size: 11px;
+      font-family: inherit;
+    }
+
+    .field-textarea {
+      min-height: 60px;
+      resize: vertical;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn-full {
+      flex: 1;
+    }
+
+    @media (min-width: 640px) {
+      .app {
+        padding-top: 16px;
+      }
     }
   </style>
 </head>
 <body>
-<div class="page">
-
-  <!-- ======= PLAN TABLE ======= -->
-  <section class="card">
-    <div class="card-header">
+  <div class="app">
+    <header class="flex flex-row justify-between items-center">
       <div>
-        <div class="card-title">Plan Schlitten / Spindeln</div>
-        <div class="card-subtitle">
-          Tipp: сначала тап по ячейке → потом тап по операции снизу.
-        </div>
+        <div class="subtitle">Workpiece</div>
+        <div class="title">WORKPIECE_1A</div>
       </div>
-      <button class="btn" id="clear-table">Alles löschen</button>
-    </div>
+      <div class="flex flex-row gap-1">
+        <button class="btn btn-ghost">Generate NC Code</button>
+        <button class="btn btn-ghost">Import from NC</button>
+      </div>
+    </header>
 
-    <div class="table-wrapper">
-      <table id="plan-table">
-        <thead>
-          <tr>
-            <th class="header-group col-dummy" colspan="3">Schlitten 1 / Kanal 1 – 1000 MPF</th>
-            <th class="header-group col-sp4 col-sp3" colspan="3">Schlitten 2 / Kanal 2 – 2000 MPF</th>
-          </tr>
-          <tr>
-            <th class="col-dummy"><span class="col-label">Dummy 1</span></th>
-            <th class="col-sp4"><span class="col-label">Spindel 4</span></th>
-            <th class="col-sp3"><span class="col-label">Spindel 3</span></th>
-            <th class="col-sp4"><span class="col-label">Spindel 4</span></th>
-            <th class="col-sp3"><span class="col-label">Spindel 3</span></th>
-            <th class="col-dummy"><span class="col-label">Dummy 2</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- 8 строк, при желании увеличишь -->
-          <!-- r1..r8, c1..c6 -->
-          <!-- генерируются вручную, чтобы без JS-магии -->
-          <!-- row 1 -->
-          <tr>
-            <td data-cell-id="r1c1" data-col="dummy">
-              <input class="plan-input" placeholder="L2101 Außen ..." />
-            </td>
-            <td data-cell-id="r1c2" data-col="sp4">
-              <input class="plan-input" placeholder="L2101 Außen ..." />
-            </td>
-            <td data-cell-id="r1c3" data-col="sp3">
-              <input class="plan-input" placeholder="L2102 Innen ..." />
-            </td>
-            <td data-cell-id="r1c4" data-col="sp4">
-              <input class="plan-input" placeholder="L2101 Außen ..." />
-            </td>
-            <td data-cell-id="r1c5" data-col="sp3">
-              <input class="plan-input" placeholder="L2102 Innen ..." />
-            </td>
-            <td data-cell-id="r1c6" data-col="dummy">
-              <input class="plan-input" placeholder="L2xxx ..." />
-            </td>
-          </tr>
-          <!-- row 2 -->
-          <tr>
-            <td data-cell-id="r2c1" data-col="dummy"><input class="plan-input" /></td>
-            <td data-cell-id="r2c2" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r2c3" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r2c4" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r2c5" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r2c6" data-col="dummy"><input class="plan-input" /></td>
-          </tr>
-          <!-- row 3 -->
-          <tr>
-            <td data-cell-id="r3c1" data-col="dummy"><input class="plan-input" /></td>
-            <td data-cell-id="r3c2" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r3c3" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r3c4" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r3c5" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r3c6" data-col="dummy"><input class="plan-input" /></td>
-          </tr>
-          <!-- row 4 -->
-          <tr>
-            <td data-cell-id="r4c1" data-col="dummy"><input class="plan-input" /></td>
-            <td data-cell-id="r4c2" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r4c3" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r4c4" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r4c5" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r4c6" data-col="dummy"><input class="plan-input" /></td>
-          </tr>
-          <!-- row 5 -->
-          <tr>
-            <td data-cell-id="r5c1" data-col="dummy"><input class="plan-input" /></td>
-            <td data-cell-id="r5c2" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r5c3" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r5c4" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r5c5" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r5c6" data-col="dummy"><input class="plan-input" /></td>
-          </tr>
-          <!-- row 6 -->
-          <tr>
-            <td data-cell-id="r6c1" data-col="dummy"><input class="plan-input" /></td>
-            <td data-cell-id="r6c2" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r6c3" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r6c4" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r6c5" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r6c6" data-col="dummy"><input class="plan-input" /></td>
-          </tr>
-          <!-- row 7 -->
-          <tr>
-            <td data-cell-id="r7c1" data-col="dummy"><input class="plan-input" /></td>
-            <td data-cell-id="r7c2" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r7c3" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r7c4" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r7c5" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r7c6" data-col="dummy"><input class="plan-input" /></td>
-          </tr>
-          <!-- row 8 -->
-          <tr>
-            <td data-cell-id="r8c1" data-col="dummy"><input class="plan-input" /></td>
-            <td data-cell-id="r8c2" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r8c3" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r8c4" data-col="sp4"><input class="plan-input" /></td>
-            <td data-cell-id="r8c5" data-col="sp3"><input class="plan-input" /></td>
-            <td data-cell-id="r8c6" data-col="dummy"><input class="plan-input" /></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ======= OPERATIONS PANEL ======= -->
-  <section class="card">
-    <div class="card-header">
-      <div>
-        <div class="card-title">Operationen</div>
-        <div class="card-subtitle">Категории + палитра. Можно кликать или перетаскивать в таблицу.</div>
+    <div class="flex justify-center">
+      <div class="chip-step">
+        <div class="circle">2</div>
+        <span>Build your plan</span>
       </div>
     </div>
 
-    <div class="ops-layout">
-      <div class="ops-categories">
-        <!-- Außen -->
-        <div class="op-category" data-category="aussen">
-          <div class="op-category-header">
-            <span class="op-category-title">Außen Bearbeitung</span>
-            <span class="op-category-badge">Außen</span>
-          </div>
-          <div class="op-list" id="ops-aussen">
-            <div class="operation" draggable="true" data-op="L2101 Außen Schruppen">
-              <span class="op-code">L2101</span><span class="op-text">Außen Schruppen</span>
-            </div>
-            <div class="operation" draggable="true" data-op="L2107 Außen Schlichten">
-              <span class="op-code">L2107</span><span class="op-text">Außen Schlichten</span>
-            </div>
-          </div>
+    <!-- PLAN -->
+    <section class="card plan" style="margin-bottom: 10px;">
+      <div class="plan-header">
+        <div class="plan-header-cell" style="color:#9ca3af;">#</div>
+        <div class="plan-header-cell">
+          <span class="plan-header-label sp4">SP4</span>
         </div>
-
-        <!-- Innen -->
-        <div class="op-category" data-category="innen">
-          <div class="op-category-header">
-            <span class="op-category-title">Innen Bearbeitung</span>
-            <span class="op-category-badge">Innen</span>
-          </div>
-          <div class="op-list" id="ops-innen">
-            <div class="operation" draggable="true" data-op="L2102 Innen Schlichten">
-              <span class="op-code">L2102</span><span class="op-text">Innen Schlichten</span>
-            </div>
-            <div class="operation" draggable="true" data-op="L2202 Bohren Ø20 Innen">
-              <span class="op-code">L2202</span><span class="op-text">Bohren Ø20 Innen</span>
-            </div>
-          </div>
+        <div class="plan-header-cell">
+          <span class="plan-header-label sp3">SP3</span>
         </div>
-
-        <!-- Radial -->
-        <div class="op-category" data-category="radial">
-          <div class="op-category-header">
-            <span class="op-category-title">Radial Bearbeitung</span>
-            <span class="op-category-badge">Radial</span>
-          </div>
-          <div class="op-list" id="ops-radial">
-            <div class="operation" draggable="true" data-op="L2301 Radial Einstechen">
-              <span class="op-code">L2301</span><span class="op-text">Radial Einstechen</span>
-            </div>
-          </div>
+        <div class="plan-header-cell">
+          <span class="plan-header-label dummy1">Dummy 1</span>
         </div>
-
-        <!-- Axial -->
-        <div class="op-category" data-category="axial">
-          <div class="op-category-header">
-            <span class="op-category-title">Axial Bearbeitung</span>
-            <span class="op-category-badge">Axial</span>
-          </div>
-          <div class="op-list" id="ops-axial">
-            <div class="operation" draggable="true" data-op="L2401 Axial Bohren">
-              <span class="op-code">L2401</span><span class="op-text">Axial Bohren</span>
-            </div>
-            <div class="operation" draggable="true" data-op="L2404 Axial Gewinde">
-              <span class="op-code">L2404</span><span class="op-text">Axial Gewinde</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- From table / auto-added -->
-        <div class="op-category" data-category="from-table">
-          <div class="op-category-header">
-            <span class="op-category-title">Aus Tabelle hinzugefügt</span>
-            <span class="op-category-badge" id="from-table-count">0</span>
-          </div>
-          <div class="op-list" id="ops-from-table"></div>
-          <p class="hint">
-            Любая новая строка, которую ты впишешь в таблицу (L-Code + текст),
-            автоматически попадёт сюда, чтобы потом можно было просто перетаскивать.
-          </p>
+        <div class="plan-header-cell">
+          <span class="plan-header-label dummy2">Dummy 2</span>
         </div>
       </div>
+      <div id="plan-body"></div>
+    </section>
 
-      <!-- Добавление вручную снизу -->
-      <div class="ops-add">
-        <div class="form-field">
-          <span class="form-label">Neuer L-Satz</span>
-          <input id="new-op-code" class="input" placeholder="L2109" />
+    <!-- LIBRARY -->
+    <section class="card-soft" style="padding:10px;">
+      <div class="section-header">
+        <span class="text-xs font-semibold">Operation Library</span>
+        <button class="btn btn-ghost text-xs">Manage templates</button>
+      </div>
+
+      <div class="tabs" id="category-tabs"></div>
+
+      <div class="search-row">
+        <div class="search-input-wrapper">
+          <input
+            id="search-input"
+            type="text"
+            class="search-input"
+            placeholder="Search operation…" />
+          <span class="search-icon">🔍</span>
         </div>
-        <div class="form-field">
-          <span class="form-label">Beschreibung</span>
-          <input id="new-op-text" class="input" placeholder="Außen Schruppen grob" />
+        <button class="btn btn-ghost text-xs">Filter</button>
+      </div>
+
+      <div class="library-grid" id="library-grid"></div>
+    </section>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-backdrop" id="modal-backdrop" style="display:none;">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title-sub">Operation Properties</div>
+          <div class="modal-title-main" id="modal-title-main">Row 1, SP4</div>
         </div>
-        <div class="form-field">
-          <span class="form-label">Kategorie</span>
-          <select id="new-op-category">
-            <option value="aussen">Außen Bearbeitung</option>
-            <option value="innen">Innen Bearbeitung</option>
-            <option value="radial">Radial Bearbeitung</option>
-            <option value="axial">Axial Bearbeitung</option>
-            <option value="from-table">Aus Tabelle / Sonstige</option>
+        <button class="modal-close" id="modal-close-btn">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <label class="field-label">Name *</label>
+          <input id="field-name" class="field-input" placeholder="Probing outer diameter" />
+        </div>
+        <div class="field">
+          <label class="field-label">Category</label>
+          <select id="field-category" class="field-select">
+            <option value="AUSSEN">Außen Bearbeitung</option>
+            <option value="INNEN">Innen Bearbeitung</option>
+            <option value="RADIAL">Radial Bearbeitung</option>
+            <option value="AXIAL">Axial</option>
           </select>
         </div>
-        <button class="btn btn-primary" id="add-op-btn">Operation hinzufügen</button>
-        <p class="small-note">
-          Кнопка «добавить» — запасной вариант, если не хочешь сначала писать в таблицу.
-        </p>
+        <div class="field">
+          <label class="field-label">Remark</label>
+          <textarea id="field-remark" class="field-textarea"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-full" id="modal-cancel-btn">Cancel</button>
+        <button class="btn btn-primary btn-full" id="modal-save-btn">Save & attach to plan</button>
       </div>
     </div>
-  </section>
+  </div>
 
-  <section class="card">
-    <div class="hint">
-      • Цвета: Dummy 1/2 – персиковый, Spindel 4 – зелёный, Spindel 3 – синий.<br />
-      • Работает и с drag&drop (где браузер позволяет), и с простым тапом по ячейке и операции.
-    </div>
-  </section>
-</div>
+  <script>
+    // ---------- DATA ----------
+    const categories = [
+      { id: "AUSSEN", label: "Außen Bearbeitung" },
+      { id: "INNEN", label: "Innen Bearbeitung" },
+      { id: "RADIAL", label: "Radial Bearbeitung" },
+      { id: "AXIAL", label: "Axial" }
+    ];
 
-<script>
-  // ======== STATE ========
-  let activeInput = null;
-  const knownOps = new Set(); // для контроля дублей
+    const spindles = [
+      { id: "SP4", label: "SP4", className: "sp4" },
+      { id: "SP3", label: "SP3", className: "sp3" },
+      { id: "DUMMY1", label: "Dummy 1", className: "dummy1" },
+      { id: "DUMMY2", label: "Dummy 2", className: "dummy2" }
+    ];
 
-  // Инициализируем все операции из палитры как известные
-  document.querySelectorAll('.operation').forEach(op => {
-    knownOps.add(op.dataset.op);
-  });
+    const rows = [1, 2, 3, 4, 5, 6];
 
-  // ======== PLAN TABLE: выбор активной ячейки + автодобавление ========
+    let operations = [
+      { id: "op1", name: "Longitudinal Turning", category: "AUSSEN", description: "" },
+      { id: "op2", name: "Probing outer diameter", category: "AUSSEN", description: "" },
+      { id: "op3", name: "Probing inner diameter", category: "INNEN", description: "" },
+      { id: "op4", name: "Radial groove pecking", category: "RADIAL", description: "" },
+      { id: "op5", name: "Face groove pecking", category: "RADIAL", description: "" },
+      { id: "op6", name: "Axial drilling", category: "AXIAL", description: "" },
+    ];
 
-  function handleInputFocus(e) {
-    activeInput = e.target;
-  }
-
-  function handleInputBlur(e) {
-    const val = e.target.value.trim();
-    if (!val) return;
-    maybeAddOpFromTable(val);
-  }
-
-  document.querySelectorAll('.plan-input').forEach(input => {
-    input.addEventListener('focus', handleInputFocus);
-    input.addEventListener('blur', handleInputBlur);
-  });
-
-  // Очистка таблицы
-  document.getElementById('clear-table').addEventListener('click', () => {
-    document.querySelectorAll('.plan-input').forEach(i => i.value = '');
-  });
-
-  // ======== ОПЕРАЦИИ: создание элемента ========
-
-  function createOperationElement(fullText) {
-    const opDiv = document.createElement('div');
-    opDiv.className = 'operation';
-    opDiv.draggable = true;
-    opDiv.dataset.op = fullText;
-
-    // наивный сплит: код = первое слово, остальное – текст
-    const parts = fullText.split(/\s+/);
-    const code = parts.shift() || '';
-    const text = parts.join(' ');
-
-    const codeSpan = document.createElement('span');
-    codeSpan.className = 'op-code';
-    codeSpan.textContent = code;
-
-    const textSpan = document.createElement('span');
-    textSpan.className = 'op-text';
-    textSpan.textContent = text;
-
-    opDiv.appendChild(codeSpan);
-    opDiv.appendChild(textSpan);
-
-    attachOperationEvents(opDiv);
-    return opDiv;
-  }
-
-  // Добавление операции в секцию "Aus Tabelle"
-  function maybeAddOpFromTable(fullText) {
-    if (!fullText) return;
-    if (knownOps.has(fullText)) return;
-    knownOps.add(fullText);
-
-    const container = document.getElementById('ops-from-table');
-    const opEl = createOperationElement(fullText);
-    container.appendChild(opEl);
-    updateFromTableCount();
-  }
-
-  function updateFromTableCount() {
-    const cnt = document.getElementById('ops-from-table').children.length;
-    document.getElementById('from-table-count').textContent = String(cnt);
-  }
-
-  // ======== Клик по операции (для тача) + drag&drop ========
-
-  function attachOperationEvents(opEl) {
-    // Клик — вставить в активную ячейку
-    opEl.addEventListener('click', () => {
-      if (!activeInput) return;
-      activeInput.value = opEl.dataset.op;
-      activeInput.focus();
-      // при клике тоже считаем, что операция использована — может быть новой
-      maybeAddOpFromTable(opEl.dataset.op);
+    // plan[row][spindleId] = operationId | null
+    const plan = {};
+    rows.forEach(row => {
+      plan[row] = {};
+      spindles.forEach(sp => {
+        plan[row][sp.id] = null;
+      });
     });
 
-    // Drag&Drop (где работает)
-    opEl.addEventListener('dragstart', (e) => {
-      e.dataTransfer.effectAllowed = 'copy';
-      e.dataTransfer.setData('text/plain', opEl.dataset.op);
+    let activeCategory = "AUSSEN";
+    let searchTerm = "";
+    let dragData = null; // { type: "LIB_OP" | "PLAN_OP", operationId?, row?, spindleId? }
+
+    // modal / editor state
+    let editingSlot = null; // { row, spindleId }
+
+    // ---------- DOM ----------
+
+    const planBodyEl = document.getElementById("plan-body");
+    const libraryGridEl = document.getElementById("library-grid");
+    const categoryTabsEl = document.getElementById("category-tabs");
+    const searchInputEl = document.getElementById("search-input");
+
+    const modalBackdropEl = document.getElementById("modal-backdrop");
+    const modalTitleMainEl = document.getElementById("modal-title-main");
+    const fieldNameEl = document.getElementById("field-name");
+    const fieldCategoryEl = document.getElementById("field-category");
+    const fieldRemarkEl = document.getElementById("field-remark");
+    const modalCloseBtn = document.getElementById("modal-close-btn");
+    const modalCancelBtn = document.getElementById("modal-cancel-btn");
+    const modalSaveBtn = document.getElementById("modal-save-btn");
+
+    // ---------- RENDER PLAN ----------
+
+    function renderPlan() {
+      planBodyEl.innerHTML = "";
+      rows.forEach(row => {
+        const rowEl = document.createElement("div");
+        rowEl.className = "plan-body-row";
+
+        const indexEl = document.createElement("div");
+        indexEl.className = "plan-row-index";
+        indexEl.textContent = row;
+        rowEl.appendChild(indexEl);
+
+        spindles.forEach(sp => {
+          const cellEl = document.createElement("div");
+          cellEl.className = "plan-cell";
+          cellEl.dataset.row = row;
+          cellEl.dataset.spindleId = sp.id;
+
+          const inner = document.createElement("div");
+          inner.className = "plan-cell-inner";
+
+          const opId = plan[row][sp.id];
+          const op = operations.find(o => o.id === opId);
+
+          if (op) {
+            inner.classList.add("filled");
+            inner.draggable = true;
+            inner.addEventListener("dragstart", () => {
+              dragData = {
+                type: "PLAN_OP",
+                row,
+                spindleId: sp.id
+              };
+            });
+            inner.addEventListener("dragend", () => {
+              dragData = null;
+              clearDropHighlights();
+            });
+          }
+
+          const textSpan = document.createElement("span");
+          textSpan.className = "plan-cell-text";
+          textSpan.textContent = op ? op.name : "Drop / Tap to edit";
+          inner.appendChild(textSpan);
+
+          if (op) {
+            const catSpan = document.createElement("span");
+            catSpan.className = "plan-cell-category";
+            catSpan.textContent = op.category;
+            inner.appendChild(catSpan);
+
+            const clearBtn = document.createElement("div");
+            clearBtn.className = "plan-cell-clear";
+            clearBtn.textContent = "×";
+            clearBtn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              plan[row][sp.id] = null;
+              renderPlan();
+            });
+            cellEl.appendChild(clearBtn);
+          }
+
+          // Click -> open editor
+          inner.addEventListener("click", () => {
+            openEditor(row, sp.id);
+          });
+
+          // Drag over / drop
+          cellEl.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            if (!dragData) return;
+            inner.classList.add("drop-active");
+          });
+
+          cellEl.addEventListener("dragleave", () => {
+            inner.classList.remove("drop-active");
+          });
+
+          cellEl.addEventListener("drop", (e) => {
+            e.preventDefault();
+            inner.classList.remove("drop-active");
+            handleDropOnSlot(row, sp.id);
+          });
+
+          cellEl.appendChild(inner);
+          rowEl.appendChild(cellEl);
+        });
+
+        planBodyEl.appendChild(rowEl);
+      });
+    }
+
+    function clearDropHighlights() {
+      const inners = document.querySelectorAll(".plan-cell-inner");
+      inners.forEach(i => i.classList.remove("drop-active"));
+    }
+
+    // ---------- DROP LOGIC ----------
+
+    function handleDropOnSlot(row, spindleId) {
+      if (!dragData) return;
+
+      if (dragData.type === "LIB_OP") {
+        plan[row][spindleId] = dragData.operationId;
+      }
+
+      if (dragData.type === "PLAN_OP") {
+        const fromRow = dragData.row;
+        const fromSpindle = dragData.spindleId;
+        const fromOp = plan[fromRow][fromSpindle];
+        const toOp = plan[row][spindleId];
+
+        // swap
+        plan[fromRow][fromSpindle] = toOp || null;
+        plan[row][spindleId] = fromOp || null;
+      }
+
+      dragData = null;
+      renderPlan();
+    }
+
+    // ---------- RENDER LIBRARY ----------
+
+    function renderCategoryTabs() {
+      categoryTabsEl.innerHTML = "";
+      categories.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.className = "tab" + (cat.id === activeCategory ? " active" : "");
+        btn.textContent = cat.label;
+        btn.addEventListener("click", () => {
+          activeCategory = cat.id;
+          renderCategoryTabs();
+          renderLibrary();
+        });
+        categoryTabsEl.appendChild(btn);
+      });
+    }
+
+    function renderLibrary() {
+      libraryGridEl.innerHTML = "";
+
+      const filtered = operations.filter(op => {
+        if (op.category !== activeCategory) return false;
+        if (!searchTerm) return true;
+        return op.name.toLowerCase().includes(searchTerm.toLowerCase());
+      });
+
+      if (filtered.length === 0) {
+        const emptyEl = document.createElement("div");
+        emptyEl.className = "empty-text";
+        emptyEl.textContent = "Keine Operationen in dieser Kategorie. Erstelle über Plan oben.";
+        libraryGridEl.appendChild(emptyEl);
+        return;
+      }
+
+      filtered.forEach(op => {
+        const card = document.createElement("div");
+        card.className = "lib-card";
+        card.draggable = true;
+
+        card.addEventListener("dragstart", () => {
+          dragData = {
+            type: "LIB_OP",
+            operationId: op.id
+          };
+        });
+
+        card.addEventListener("dragend", () => {
+          dragData = null;
+          clearDropHighlights();
+        });
+
+        const top = document.createElement("div");
+        top.className = "lib-card-top";
+
+        const icon = document.createElement("div");
+        icon.className = "lib-icon";
+        icon.textContent = "OP";
+
+        const pinBtn = document.createElement("button");
+        pinBtn.className = "lib-pin";
+        pinBtn.textContent = "★";
+
+        top.appendChild(icon);
+        top.appendChild(pinBtn);
+
+        const nameEl = document.createElement("div");
+        nameEl.className = "lib-name";
+        nameEl.textContent = op.name;
+
+        const catEl = document.createElement("div");
+        catEl.className = "lib-cat";
+        catEl.textContent = op.category;
+
+        card.appendChild(top);
+        card.appendChild(nameEl);
+        card.appendChild(catEl);
+
+        libraryGridEl.appendChild(card);
+      });
+    }
+
+    // ---------- EDITOR / MODAL ----------
+
+    function openEditor(row, spindleId) {
+      editingSlot = { row, spindleId };
+
+      const opId = plan[row][spindleId];
+      const op = operations.find(o => o.id === opId);
+
+      modalTitleMainEl.textContent = "Row " + row + ", " + spindleId;
+      fieldNameEl.value = op ? op.name : "";
+      fieldCategoryEl.value = op ? op.category : (activeCategory || "AUSSEN");
+      fieldRemarkEl.value = op ? (op.description || "") : "";
+
+      modalBackdropEl.style.display = "flex";
+    }
+
+    function closeEditor() {
+      modalBackdropEl.style.display = "none";
+      editingSlot = null;
+    }
+
+    function saveEditor() {
+      if (!editingSlot) return;
+
+      const name = fieldNameEl.value.trim();
+      const category = fieldCategoryEl.value;
+      const desc = fieldRemarkEl.value.trim();
+
+      if (!name) {
+        alert("Name darf nicht leer sein.");
+        return;
+      }
+
+      // find or create operation
+      let op = operations.find(o => o.name.toLowerCase() === name.toLowerCase());
+      if (!op) {
+        op = {
+          id: "op_" + Date.now().toString(36),
+          name,
+          category,
+          description: desc
+        };
+        operations.push(op);
+      } else {
+        op.name = name;
+        op.category = category;
+        op.description = desc;
+      }
+
+      plan[editingSlot.row][editingSlot.spindleId] = op.id;
+
+      closeEditor();
+      renderPlan();
+      renderLibrary();
+    }
+
+    // ---------- EVENTS ----------
+
+    searchInputEl.addEventListener("input", (e) => {
+      searchTerm = e.target.value;
+      renderLibrary();
     });
-  }
 
-  document.querySelectorAll('.operation').forEach(attachOperationEvents);
+    modalCloseBtn.addEventListener("click", closeEditor);
+    modalCancelBtn.addEventListener("click", closeEditor);
+    modalSaveBtn.addEventListener("click", saveEditor);
 
-  // Ячейки таблицы как drop-цели
-  document.querySelectorAll('#plan-table td').forEach(td => {
-    td.addEventListener('dragover', (e) => {
-      if (!e.dataTransfer.types.includes('text/plain')) return;
-      e.preventDefault();
-      td.classList.add('drop-target');
-    });
-
-    td.addEventListener('dragleave', () => {
-      td.classList.remove('drop-target');
-    });
-
-    td.addEventListener('drop', (e) => {
-      e.preventDefault();
-      td.classList.remove('drop-target');
-      const text = e.dataTransfer.getData('text/plain');
-      const input = td.querySelector('.plan-input');
-      if (input) {
-        input.value = text;
-        maybeAddOpFromTable(text);
+    modalBackdropEl.addEventListener("click", (e) => {
+      if (e.target === modalBackdropEl) {
+        closeEditor();
       }
     });
-  });
 
-  // ======== Форма добавления операции вручную ========
-
-  document.getElementById('add-op-btn').addEventListener('click', () => {
-    const codeEl = document.getElementById('new-op-code');
-    const textEl = document.getElementById('new-op-text');
-    const catEl = document.getElementById('new-op-category');
-
-    const code = (codeEl.value || '').trim();
-    const text = (textEl.value || '').trim();
-    const cat = catEl.value;
-
-    if (!code || !text) {
-      alert('Код и описание обязательны.');
-      return;
-    }
-
-    const full = code + ' ' + text;
-    if (knownOps.has(full)) {
-      alert('Такая операция уже есть.');
-      return;
-    }
-
-    knownOps.add(full);
-    const opEl = createOperationElement(full);
-
-    const map = {
-      'aussen': 'ops-aussen',
-      'innen': 'ops-innen',
-      'radial': 'ops-radial',
-      'axial': 'ops-axial',
-      'from-table': 'ops-from-table'
-    };
-    const targetId = map[cat] || 'ops-from-table';
-    const target = document.getElementById(targetId);
-    target.appendChild(opEl);
-
-    if (cat === 'from-table') updateFromTableCount();
-
-    codeEl.value = '';
-    textEl.value = '';
-  });
-</script>
+    // ---------- INIT ----------
+    renderPlan();
+    renderCategoryTabs();
+    renderLibrary();
+  </script>
 </body>
 </html>
