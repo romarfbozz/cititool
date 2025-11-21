@@ -1,207 +1,323 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Fasen-Assistent • OD Angle → Radius (Auto Rmax)</title>
-<style>
-  :root{ --bg:#f6f8fb; --ink:#0d1b2a; --muted:#6b7a90; --brand:#2d6cdf; --hair:#e9eef6; }
-  *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-       font:15px/1.45 -apple-system,BlinkMacSystemFont,Inter,Segoe UI,Roboto,sans-serif}
-  .wrap{max-width:1100px;margin:18px auto;padding:0 12px;display:grid;gap:12px}
-  h1{font:900 22px/1.2 Inter,system-ui;margin:8px 0}
-  .grid{display:grid;grid-template-columns:360px 1fr;gap:12px}
-  .card{background:#fff;border:1px solid var(--hair);border-radius:16px;padding:14px;
-        box-shadow:0 6px 20px rgba(13,27,42,.08)}
-  .row{display:grid;grid-template-columns:1fr 130px;gap:8px;align-items:center;margin:6px 0}
-  input,select{height:40px;border:1px solid #d9e3f5;border-radius:10px;padding:0 10px}
-  .btn{height:40px;border-radius:10px;background:var(--brand);color:#fff;border:0;padding:0 14px;font-weight:700}
-  .muted{color:var(--muted)}
-  .note{background:#fff8e1;border:1px solid #f3d27a;color:#584000;border-radius:12px;padding:10px;margin-top:8px}
-  .ok{background:#e8f4ff;border:1px solid #cfe6ff;color:#0f3b7a;border-radius:12px;padding:10px;margin-top:8px}
-  pre{background:#0e1220;color:#eaf2ff;border-radius:12px;padding:12px;overflow:auto}
-  code{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
-  svg{width:100%;height:520px;background:#fff;border:1px solid var(--hair);border-radius:16px}
-  .axis{stroke:#9db1cd;stroke-width:1;stroke-dasharray:4 4}
-  .shape{stroke:#0d1b2a;stroke-width:2;fill:none}
-  .dim{stroke:#2d6cdf;stroke-width:1;fill:none}
-  .txt{font:12px system-ui;fill:#2d6cdf}
-  .err{color:#c21e1e;font-weight:700}
-  @media (max-width:840px){ .grid{grid-template-columns:1fr} }
-</style>
+  <meta charset="UTF-8" />
+  <title>DMG Mori – Workbench (Prototype)</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      padding: 16px;
+      display: flex;
+      gap: 16px;
+      background: #f5f5f5;
+    }
+
+    /* Панель операций слева */
+    .sidebar {
+      width: 260px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 95vh;
+      overflow-y: auto;
+    }
+
+    .sidebar h2 {
+      font-size: 16px;
+      margin: 0 0 8px 0;
+    }
+
+    .operation {
+      padding: 6px 8px;
+      margin: 2px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      background: #fafafa;
+      cursor: grab;
+      font-size: 13px;
+    }
+
+    .operation:active {
+      cursor: grabbing;
+    }
+
+    .op-code {
+      font-weight: 600;
+      margin-right: 4px;
+    }
+
+    /* Планировщик справа */
+    .planner {
+      flex: 1;
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      overflow: auto;
+      max-height: 95vh;
+    }
+
+    .planner-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .planner-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      border-collapse: collapse;
+      border: 1px solid #ccc;
+      background: #fff;
+    }
+
+    .header,
+    .cell {
+      border: 1px solid #ccc;
+      padding: 4px;
+      min-height: 60px;
+      font-size: 12px;
+    }
+
+    .header {
+      font-weight: 600;
+      text-align: center;
+      background: #f0f0f0;
+    }
+
+    .header-group {
+      grid-column: span 3;
+      border-bottom: 2px solid #d00;
+      background: #f9f9f9;
+    }
+
+    .cell {
+      vertical-align: top;
+    }
+
+    .cell-inner {
+      min-height: 48px;
+      padding: 2px;
+    }
+
+    .cell.drop-target {
+      background: #e6f3ff;
+    }
+
+    .cell-ops {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .cell .operation {
+      cursor: grab;
+      background: #fdfdfd;
+    }
+
+    .cell-controls {
+      margin-top: 4px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 4px;
+    }
+
+    .btn {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 11px;
+      padding: 2px 6px;
+      background: #f8f8f8;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #eee;
+    }
+
+    .divider {
+      grid-column: span 6;
+      border-top: 2px solid #d00;
+      height: 0;
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>Fasen-Assistent (Außen) — Winkel → Übergangs-Radius</h1>
-  <div class="grid">
-    <!-- Параметры -->
-    <div class="card">
-      <div class="row"><label>Start-Ø X<sub>start</sub> (mm)</label><input id="xStart" type="number" step="0.001" value="20"></div>
-      <div class="row"><label>End-Ø X<sub>end</sub> (mm)</label><input id="xEnd" type="number" step="0.001" value="12"></div>
-      <div class="row"><label>Länge bis фаски L (mm)</label><input id="len" type="number" step="0.001" value="6"></div>
-      <div class="row"><label>Winkel α (°)</label><input id="angle" type="number" step="0.1" value="30"></div>
-      <div class="row"><label>Übergangs-Radius R (mm)</label><input id="R" type="number" step="0.001" value="0.5"></div>
-      <div class="row"><label>Vorschub F (optional)</label><input id="feed" type="number" step="0.001" placeholder="z.B. 0.15"></div>
-      <div class="row"><label>Start-Z (Datum) Z<sub>0</sub> (mm)</label><input id="z0" type="number" step="0.001" value="0"></div>
-      <div class="row"><label class="muted">X-Modus</label>
-        <select id="mode">
-          <option value="diameter">X als Durchmesser (typisch)</option>
-          <option value="radius">X als Radius (X = Ø/2)</option>
-        </select>
-      </div>
-      <div class="row"><span></span><button class="btn" id="calc">Berechnen</button></div>
-      <div id="hint" class="ok"></div>
-      <div id="warn" class="note" style="display:none"></div>
-      <div id="err"  class="err"></div>
+
+  <!-- Панель операций -->
+  <aside class="sidebar">
+    <h2>Операции (палитра)</h2>
+    <!-- добавь свои коды/описания по вкусу -->
+    <div class="operation" draggable="true" data-op-code="L2101" data-op-text="Außen Schruppen">
+      <span class="op-code">L2101</span>Außen Schruppen
+    </div>
+    <div class="operation" draggable="true" data-op-code="L2102" data-op-text="Innen Schlichten">
+      <span class="op-code">L2102</span>Innen Schlichten
+    </div>
+    <div class="operation" draggable="true" data-op-code="L2103" data-op-text="Nop. OP (Luen)">
+      <span class="op-code">L2103</span>NOP OP (Luen)
+    </div>
+    <div class="operation" draggable="true" data-op-code="L2104" data-op-text="Gewinde Messen">
+      <span class="op-code">L2104</span>Gewinde Messen
+    </div>
+    <div class="operation" draggable="true" data-op-code="L2107" data-op-text="Außen Schruppen (2)">
+      <span class="op-code">L2107</span>Außen Schruppen (2)
+    </div>
+    <div class="operation" draggable="true" data-op-code="L2108" data-op-text="Einstechen">
+      <span class="op-code">L2108</span>Einstechen
+    </div>
+    <div class="operation" draggable="true" data-op-code="L2202" data-op-text="Bohren Ø20">
+      <span class="op-code">L2202</span>Bohren Ø20
+    </div>
+  </aside>
+
+  <!-- Планировщик -->
+  <main class="planner">
+    <div class="planner-title">
+      <span>План операций – прототип</span>
+      <button class="btn" id="clear-all">Очистить всё</button>
     </div>
 
-    <!-- Чертёж + G-code -->
-    <div class="card">
-      <svg id="svg" viewBox="-10 -70 230 150" preserveAspectRatio="xMidYMid meet">
-        <line class="axis" x1="0" y1="-60" x2="0" y2="60"></line>
-        <line class="axis" x1="-10" y1="0" x2="220" y2="0"></line>
-        <text class="txt" x="205" y="-4">Z →</text>
-        <text class="txt" x="4" y="-58">↑ X</text>
-        <g id="shape"></g>
-        <g id="dim"></g>
-      </svg>
-      <h3>G-Code</h3>
-      <pre><code id="g"></code></pre>
+    <div class="planner-grid" id="planner-grid">
+      <!-- Группа заголовков -->
+      <div class="header header-group">Schlitten 1 / Kanal 1 – 1000 MPF</div>
+      <div class="header header-group">Schlitten 2 / Kanal 2 – 2000 MPF</div>
+
+      <!-- Заголовки колонок -->
+      <div class="header">Dummy 1</div>
+      <div class="header">Spindel 4</div>
+      <div class="header">Spindel 3</div>
+      <div class="header">Spindel 4</div>
+      <div class="header">Spindel 3</div>
+      <div class="header">Dummy 2</div>
+
+      <!-- Несколько строк как на бумаге; можно добавить ещё -->
+      <!-- row 1 -->
+      <div class="cell" data-cell-id="r1c1"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r1c2"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r1c3"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r1c4"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r1c5"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r1c6"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+
+      <!-- row 2 -->
+      <div class="cell" data-cell-id="r2c1"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r2c2"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r2c3"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r2c4"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r2c5"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r2c6"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+
+      <!-- row 3 -->
+      <div class="cell" data-cell-id="r3c1"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r3c2"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r3c3"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r3c4"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r3c5"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r3c6"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+
+      <!-- row 4 -->
+      <div class="cell" data-cell-id="r4c1"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r4c2"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r4c3"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r4c4"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r4c5"><div class="cell-inner"><div class="cell-ops"></div></div></div>
+      <div class="cell" data-cell-id="r4c6"><div class="cell-inner"><div class="cell-ops"></div></div></div>
     </div>
-  </div>
-</div>
+  </main>
 
-<script>
-const $ = id => document.getElementById(id);
-const fmt = v => (Math.round(v*10000)/10000).toFixed(4);
+  <script>
+    let draggedEl = null;
+    let draggedFromPool = false;
 
-function geometry(params){
-  const {Xs,Xe,L,a,R,Z0} = params;
-  const m = -Math.tan(a);     // наклон фаски
-  const b = Xs - m*(Z0+L);    // прямая фаски: x = m z + b
+    function makeDraggable(el) {
+      el.addEventListener('dragstart', (e) => {
+        draggedEl = el;
+        const parent = el.closest('.sidebar');
+        draggedFromPool = !!parent;
+        e.dataTransfer.effectAllowed = 'copyMove';
+      });
 
-  const offs = R*Math.sqrt(1+m*m);
-  const xC = Xe - R;                          // центр смещённой вертикали
-  const zC = (xC - (b - offs)) / m;           // пересечение с оффсет-линией (смещение внутрь)
-  const TV = {x: Xe, z: zC};                  // касание на вертикали
+      el.addEventListener('dragend', () => {
+        draggedEl = null;
+        draggedFromPool = false;
+      });
+    }
 
-  // проекция центра на исходную линию → точка касания TL
-  const zTL = (m*(xC - b) + zC) / (m*m + 1);
-  const xTL = m*zTL + b;
-  const TL = {x:xTL, z:zTL};
+    // Инициализация всех операций в палитре
+    document.querySelectorAll('.sidebar .operation').forEach(makeDraggable);
 
-  const P0 = {x: Xs, z: Z0 + L};
-  return {m,b,P0,TL,TV,xC,zC};
-}
+    // Обработка дропа по ячейкам
+    document.querySelectorAll('.cell').forEach(cell => {
+      cell.addEventListener('dragover', (e) => {
+        if (!draggedEl) return;
+        e.preventDefault();
+        cell.classList.add('drop-target');
+        e.dataTransfer.dropEffect = draggedFromPool ? 'copy' : 'move';
+      });
 
-/* Проверяем валидность: TL должна быть правее/не левее старта фаски */
-function isValid(params){
-  const {P0,TL,TV} = geometry(params);
-  return (TL.z >= P0.z) && (TV.z >= TL.z) && isFinite(TL.z) && isFinite(TV.z);
-}
+      cell.addEventListener('dragleave', () => {
+        cell.classList.remove('drop-target');
+      });
 
-/* Численно находим Rmax для фикс. Xs,Xe,L,a (бинарный поиск) */
-function findRmax(params){
-  const p = {...params};
-  let lo = 0, hi = 1000; // верхнюю границу расширим по мере надобности
-  // увеличиваем hi пока решение существует
-  while(isValid({...p,R:hi})) hi *= 2;
-  // теперь hi — уже невалидно, lo — ещё валидно
-  while(hi - lo > 1e-6){
-    const mid = (lo + hi)/2;
-    if(isValid({...p,R:mid})) lo = mid; else hi = mid;
-  }
-  return lo; // максимально допустимый
-}
+      cell.addEventListener('drop', (e) => {
+        e.preventDefault();
+        cell.classList.remove('drop-target');
+        if (!draggedEl) return;
 
-/* Для заданного R найдём минимально нужную L, чтобы стало валидно */
-function findLmin(params){
-  const p = {...params};
-  let lo = 0, hi = Math.max(1, p.L);
-  // увеличиваем верхнюю границу L, пока решение не станет валидным
-  while(!isValid({...p,L:hi})) hi *= 2;
-  // бинарный поиск L
-  for(let k=0;k<60;k++){
-    const mid = (lo+hi)/2;
-    if(isValid({...p,L:mid})) hi = mid; else lo = mid;
-  }
-  return hi;
-}
+        const opsContainer = cell.querySelector('.cell-ops');
 
-function draw(P0, TL, TV, R){
-  const S = $('shape'), D = $('dim'); S.innerHTML=''; D.innerHTML='';
-  const seg = (p,q,cls='shape') => {
-    const e = document.createElementNS('http://www.w3.org/2000/svg','line');
-    e.setAttribute('class',cls);
-    e.setAttribute('x1',p.z); e.setAttribute('y1',-p.x);
-    e.setAttribute('x2',q.z); e.setAttribute('y2',-q.x);
-    S.appendChild(e);
-  };
-  // вспомогательные оси вокруг TV
-  seg({x:TV.x, z:TV.z-35}, {x:TV.x, z:TV.z+35}, 'axis');
+        let toInsert;
+        if (draggedFromPool) {
+          // Клонируем операцию из палитры
+          toInsert = draggedEl.cloneNode(true);
+          makeDraggable(toInsert);
+        } else {
+          // Перенос между ячейками
+          toInsert = draggedEl;
+        }
 
-  // фаска
-  seg(P0, TL);
-  // дуга TL→TV
-  const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-  const d = `M ${TL.z} ${-TL.x} A ${R} ${R} 0 0 1 ${TV.z} ${-TV.x}`;
-  path.setAttribute('d',d); path.setAttribute('class','shape'); S.appendChild(path);
+        opsContainer.appendChild(toInsert);
+        addCellControls(cell);
+      });
+    });
 
-  const t=(x,y,txt)=>{const e=document.createElementNS('http://www.w3.org/2000/svg','text');
-    e.setAttribute('class','txt'); e.setAttribute('x',x); e.setAttribute('y',y); e.textContent=txt; D.appendChild(e);}
-  t(TV.z+2, -TV.x-6, 'Xend');
-  t(P0.z-2, -P0.x-6, 'Start');
-}
+    // Кнопка очистки в ячейке
+    function addCellControls(cell) {
+      let controls = cell.querySelector('.cell-controls');
+      if (!controls) {
+        controls = document.createElement('div');
+        controls.className = 'cell-controls';
+        const clearBtn = document.createElement('button');
+        clearBtn.className = 'btn';
+        clearBtn.textContent = 'Очистить';
+        clearBtn.addEventListener('click', () => {
+          const ops = cell.querySelector('.cell-ops');
+          ops.innerHTML = '';
+          controls.remove();
+        });
+        controls.appendChild(clearBtn);
+        cell.querySelector('.cell-inner').appendChild(controls);
+      }
+    }
 
-function solve(){
-  $('err').textContent=''; $('warn').style.display='none';
-  const Xs = Number($('xStart').value);
-  const Xe = Number($('xEnd').value);
-  const L  = Number($('len').value);
-  const a  = Number($('angle').value)*Math.PI/180;
-  let   R  = Number($('R').value);
-  const Z0 = Number($('z0').value);
-  const mode = $('mode').value;
-
-  if(!(Xs>0 && Xe>0 && L>=0 && R>=0 && a>0 && a<89.9)){
-    $('err').textContent='Проверь входные данные.'; return;
-  }
-
-  // если невалидно — автоснэп к Rmax, плюс подсказка Lmin
-  const params = {Xs,Xe,L,a,R,Z0};
-  let usedR = R;
-  if(!isValid(params)){
-    const Rmax = findRmax({...params,R:0});         // максимально допустимый
-    const Lmin = findLmin({...params});             // нужная длина при исходном R
-    usedR = Rmax;
-    $('warn').style.display='block';
-    $('warn').textContent = `Введённый R=${fmt(R)} слишком большой. `+
-      `Максимально допустимый при этих Xs,Xe,L,α: Rmax=${fmt(Rmax)}. `+
-      `Я применил R=${fmt(Rmax)}. `+
-      `Либо увеличьте L ≥ ${fmt(Lmin)} для сохранения вашего R.`;
-  }
-  const geom = geometry({Xs,Xe,L,a,R:usedR,Z0});
-  draw(geom.P0, geom.TL, geom.TV, usedR);
-
-  // G-код
-  const diam = (x)=> mode==='diameter' ? x : (x/2);
-  const F = Number($('feed').value);
-  let g = [];
-  g.push(`(OD Angle → Radius)`);
-  g.push(`G0 X${fmt(diam(Xs))} Z${fmt(Z0)}`);
-  g.push(`G1 Z${fmt(geom.P0.z)}`);
-  g.push(`G1 X${fmt(diam(geom.TL.x))} Z${fmt(geom.TL.z)}   (fasen)`);
-  g.push(`G3 X${fmt(diam(geom.TV.x))} Z${fmt(geom.TV.z)} R${fmt(usedR)}  (Übergang)`);
-  g.push(`G1 X${fmt(diam(Xe))}                 (senkrecht)`);
-  if(F>0) g = g.map(line => (line.startsWith('G1')||line.startsWith('G3')) ? `${line} F${F}` : line);
-  $('g').textContent = g.join('\n');
-
-  $('hint').textContent = `Вход: Xs=${Xs}, Xe=${Xe}, L=${L}, α=${(a*180/Math.PI).toFixed(1)}°, R=${fmt(usedR)} (режим X: ${$('mode').value})`;
-}
-
-$('calc').addEventListener('click', solve);
-solve();
-</script>
+    // Кнопка "Очистить всё"
+    document.getElementById('clear-all').addEventListener('click', () => {
+      document.querySelectorAll('.cell-ops').forEach(c => c.innerHTML = '');
+      document.querySelectorAll('.cell-controls').forEach(c => c.remove());
+    });
+  </script>
 </body>
 </html>
