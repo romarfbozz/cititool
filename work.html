@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>DMG MORI Workbench</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --border: #e5e7eb;
+      --border-strong: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #6b7280;
+      --accent: #111827;
+      --sp4: #22c55e;
+      --sp3: #3b82f6;
+      --danger: #ef4444;
+      --radius: 10px;
+      --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.07);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        sans-serif;
+      background: #111827;
+      color: var(--text-main);
+    }
+
+    .app-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: linear-gradient(to bottom, #111827 0, #1f2937 120px);
+      padding: 16px 12px 40px;
+    }
+
+    @media (min-width: 768px) {
+      .app-shell {
+        padding-inline: 24px;
+      }
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 14px 14px 20px;
+      box-shadow: var(--shadow-soft);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      color: #e5e7eb;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.25);
+    }
+
+    .header-sub {
+      font-size: 11px;
+      color: #9ca3af;
+      margin-top: 2px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    .header-logo {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+    }
+
+    .layout-main {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    @media (min-width: 900px) {
+      .layout-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr);
+        gap: 16px;
+      }
+    }
+
+    .section-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .section-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Kanal switcher */
+
+    .kanal-switcher {
+      display: inline-flex;
+      padding: 2px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      border: 1px solid #d1d5db;
+      position: relative;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .kanal-option {
+      position: relative;
+      z-index: 1;
+      padding: 4px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      color: #4b5563;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .kanal-option.active {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .kanal-pill-bg {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      width: 50%;
+      border-radius: 999px;
+      background: #ffffff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.2);
+      transition: transform 0.22s cubic-bezier(0.22, 0.61, 0.36, 1);
+    }
+
+    .kanal-pill-bg.kanal-2 {
+      transform: translateX(100%);
+    }
+
+    .kanal-chip {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    /* Slots */
+
+    .slots-card {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .slot-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .slot-row {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: stretch;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px dashed var(--border);
+      background: #f9fafb;
+      font-size: 12px;
+      position: relative;
+      transition: background 0.15s ease, border-color 0.15s ease,
+        box-shadow 0.15s ease;
+    }
+
+    .slot-row.filled {
+      background: #ffffff;
+      border-style: solid;
+      border-color: var(--border-strong);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+    }
+
+    .slot-row.drag-over {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.15);
+      background: #eef2ff;
+    }
+
+    .slot-index {
+      font-size: 11px;
+      color: var(--text-muted);
+      width: 22px;
+      text-align: right;
+    }
+
+    .slot-main {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .slot-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .slot-placeholder {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .slot-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .slot-meta-label {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .slot-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: flex-end;
+      justify-content: center;
+      min-width: 26px;
+    }
+
+    .icon-btn {
+      border: none;
+      padding: 3px;
+      border-radius: 999px;
+      cursor: pointer;
+      background: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-btn:hover {
+      background: #e5e7eb;
+    }
+
+    .icon-btn.danger:hover {
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .icon {
+      font-size: 13px;
+    }
+
+    .add-slot-btn {
+      margin-top: 6px;
+      align-self: flex-start;
+      font-size: 11px;
+      border-radius: 999px;
+      padding: 5px 10px;
+      border: 1px dashed #d1d5db;
+      background: #f9fafb;
+      color: #374151;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .add-slot-btn:hover {
+      background: #eef2ff;
+      border-style: solid;
+    }
+
+    /* Library */
+
+    .library-card {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .library-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .filter-pill {
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 11px;
+      border: 1px solid #e5e7eb;
+      background: #f9fafb;
+      color: #4b5563;
+      cursor: pointer;
+    }
+
+    .filter-pill.active {
+      border-color: #111827;
+      background: #111827;
+      color: #f9fafb;
+    }
+
+    .library-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 6px;
+      max-height: 260px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .op-card {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      padding: 8px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: grab;
+      user-select: none;
+      transition: box-shadow 0.12s ease, transform 0.12s ease,
+        background 0.12s ease;
+    }
+
+    .op-card:active {
+      cursor: grabbing;
+      transform: scale(0.99);
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+    }
+
+    .op-title {
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .op-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .op-meta {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-weight: 500;
+      color: #f9fafb;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-sp4 {
+      background: var(--sp4);
+    }
+
+    .badge-sp3 {
+      background: var(--sp3);
+    }
+
+    .badge-soft {
+      background: #e5e7eb;
+      color: #374151;
+      text-transform: none;
+      font-weight: 400;
+    }
+
+    .library-empty {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 4px 2px;
+    }
+
+    .library-form {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+      gap: 6px;
+      margin-top: 6px;
+      align-items: center;
+    }
+
+    @media (max-width: 720px) {
+      .library-form {
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-rows: auto auto;
+      }
+      .library-form button {
+        grid-column: 1 / -1;
+        justify-self: flex-start;
+      }
+    }
+
+    .field-input,
+    .field-select {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid #e5e7eb;
+      padding: 6px 10px;
+      font-size: 11px;
+      outline: none;
+      background: #f9fafb;
+    }
+
+    .field-input:focus,
+    .field-select:focus {
+      border-color: #111827;
+      background: #ffffff;
+    }
+
+    .btn-primary {
+      border-radius: 999px;
+      border: none;
+      background: #111827;
+      color: #f9fafb;
+      font-size: 11px;
+      padding: 6px 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-primary:hover {
+      background: #020617;
+    }
+
+    /* Plan preview */
+
+    .plan-card {
+      margin-top: 14px;
+    }
+
+    .plan-table-wrapper {
+      margin-top: 8px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      overflow: auto;
+      background: #f9fafb;
+    }
+
+    .plan-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 540px;
+      font-size: 11px;
+    }
+
+    .plan-table thead {
+      background: #e5e7eb;
+    }
+
+    .plan-table th,
+    .plan-table td {
+      border: 1px solid #e5e7eb;
+      padding: 4px 6px;
+      text-align: left;
+    }
+
+    .plan-table th {
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .plan-table .th-group {
+      text-align: center;
+      font-size: 11px;
+      background: #d1d5db;
+    }
+
+    .plan-table .sp3-head {
+      background: #1d4ed8;
+      color: #f9fafb;
+    }
+
+    .plan-table .sp4-head {
+      background: #16a34a;
+      color: #f9fafb;
+    }
+
+    .plan-row-index {
+      width: 26px;
+      text-align: right;
+      color: #9ca3af;
+      font-size: 10px;
+      background: #f3f4f6;
+    }
+
+    .plan-cell {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="header">
+      <div>
+        <div class="header-title">
+          <span class="header-dot"></span>
+          WORKPIECE_1A – Workbench
+        </div>
+        <div class="header-sub">DMG MORI – Gildemeister Struktur</div>
+      </div>
+      <div class="header-right">
+        <span class="header-logo">DMG MORI</span>
+      </div>
+    </div>
+
+    <div class="layout-main">
+      <!-- LEFT: Slots -->
+      <div class="card slots-card">
+        <div class="section-title-row">
+          <div>
+            <div class="section-title">Programmplan</div>
+            <div class="section-subtitle">
+              Slots mit Operationen belegen (Drag &amp; Drop)
+            </div>
+          </div>
+          <div class="kanal-switcher" id="kanalSwitcher">
+            <div
+              class="kanal-pill-bg kanal-1"
+              id="kanalPillBg"
+            ></div>
+            <div
+              class="kanal-option active"
+              data-kanal="1"
+            >
+              Kanal 1
+              <span class="kanal-chip">1000.MPF</span>
+            </div>
+            <div
+              class="kanal-option"
+              data-kanal="2"
+            >
+              Kanal 2
+              <span class="kanal-chip">2000.MPF</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="slotList" class="slot-list"></div>
+        <button id="addSlotBtn" class="add-slot-btn">
+          <span>＋</span> Weitere Zeile
+        </button>
+      </div>
+
+      <!-- RIGHT: Library -->
+      <div class="card">
+        <div class="section-title-row">
+          <div>
+            <div class="section-title">Operation Library</div>
+            <div class="section-subtitle">
+              Tippen oder ziehen, um Operationen zuzuweisen
+            </div>
+          </div>
+        </div>
+
+        <div class="library-card">
+          <div class="library-filters" id="libraryFilters"></div>
+
+          <div id="libraryList" class="library-list"></div>
+
+          <form id="addOpForm" class="library-form">
+            <input
+              type="text"
+              id="opNameInput"
+              class="field-input"
+              placeholder="Neue Operation…"
+              required
+            />
+            <select id="opSpindleSelect" class="field-select">
+              <option value="SP4">SP4 (grün)</option>
+              <option value="SP3">SP3 (blau)</option>
+            </select>
+            <select id="opCategorySelect" class="field-select">
+              <option value="Außen">Außen Bearbeitung</option>
+              <option value="Innen">Innen Bearbeitung</option>
+              <option value="Radial">Radial Bearbeitung</option>
+              <option value="Axial">Axial</option>
+            </select>
+            <button type="submit" class="btn-primary">
+              <span>＋</span> Op hinzufügen
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAN -->
+    <div class="card plan-card">
+      <div class="section-title-row">
+        <div>
+          <div class="section-title">Plan – DMG MORI Struktur</div>
+          <div class="section-subtitle">
+            Revolver oben/unten · Kanal 1/2 · Spindel 3/4
+          </div>
+        </div>
+      </div>
+
+      <div class="plan-table-wrapper">
+        <table class="plan-table" id="planTable">
+          <!-- JS füllt Inhalt -->
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- State -----------------------------------------------------------
+
+    const MIN_SLOTS = 5;
+
+    const state = {
+      currentKanal: "1",
+      slots: {
+        "1": Array(MIN_SLOTS).fill(null), // jedes Element: operationId oder null
+        "2": Array(MIN_SLOTS).fill(null),
+      },
+      library: [],
+      categories: ["Alle", "Außen", "Innen", "Radial", "Axial"],
+      activeCategory: "Alle",
+      nextOpId: 1,
+    };
+
+    // --- Helpers ---------------------------------------------------------
+
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    function getOperationById(id) {
+      return state.library.find((op) => op.id === id) || null;
+    }
+
+    function createDefaultLibrary() {
+      const defs = [
+        {
+          name: "L1101 – Außen Schruppen",
+          spindle: "SP4",
+          category: "Außen",
+        },
+        {
+          name: "L1102 – Innen Schlichten",
+          spindle: "SP3",
+          category: "Innen",
+        },
+        {
+          name: "L2101 – Einstechen",
+          spindle: "SP3",
+          category: "Radial",
+        },
+        {
+          name: "L2104 – Scheibenfräsen",
+          spindle: "SP4",
+          category: "Axial",
+        },
+        {
+          name: "Probe – Außendurchmesser",
+          spindle: "SP3",
+          category: "Radial",
+        },
+      ];
+
+      state.library = defs.map((def) => ({
+        ...def,
+        id: "op_" + state.nextOpId++,
+      }));
+    }
+
+    // --- Render: Kanal switcher -----------------------------------------
+
+    function initKanalSwitcher() {
+      const pill = $("#kanalPillBg");
+      $$("#kanalSwitcher .kanal-option").forEach((el) => {
+        el.addEventListener("click", () => {
+          const kanal = el.dataset.kanal;
+          if (state.currentKanal === kanal) return;
+          state.currentKanal = kanal;
+
+          $$("#kanalSwitcher .kanal-option").forEach((opt) =>
+            opt.classList.toggle(
+              "active",
+              opt.dataset.kanal === state.currentKanal
+            )
+          );
+          pill.classList.toggle("kanal-2", state.currentKanal === "2");
+
+          renderSlots();
+          renderPlan();
+        });
+      });
+    }
+
+    // --- Render: Slots ---------------------------------------------------
+
+    function renderSlots() {
+      const list = $("#slotList");
+      list.innerHTML = "";
+
+      const kanalSlots = state.slots[state.currentKanal];
+      const rowCount = Math.max(MIN_SLOTS, kanalSlots.length);
+
+      for (let i = 0; i < rowCount; i++) {
+        const container = document.createElement("div");
+        container.className = "slot-row";
+        container.dataset.index = String(i);
+        container.addEventListener("dragover", onSlotDragOver);
+        container.addEventListener("dragleave", onSlotDragLeave);
+        container.addEventListener("drop", onSlotDrop);
+
+        const idx = document.createElement("div");
+        idx.className = "slot-index";
+        idx.textContent = i + 1;
+
+        const main = document.createElement("div");
+        main.className = "slot-main";
+
+        const opId = kanalSlots[i] ?? null;
+        const op = opId ? getOperationById(opId) : null;
+
+        if (op) {
+          container.classList.add("filled");
+          const title = document.createElement("div");
+          title.className = "slot-title";
+          title.textContent = op.name;
+          main.appendChild(title);
+
+          const meta = document.createElement("div");
+          meta.className = "slot-meta";
+
+          const label = document.createElement("span");
+          label.className = "slot-meta-label";
+          label.textContent = `Kanal ${state.currentKanal}`;
+
+          const badge = document.createElement("span");
+          badge.className =
+            "badge " + (op.spindle === "SP4" ? "badge-sp4" : "badge-sp3");
+          badge.textContent = op.spindle;
+
+          const cat = document.createElement("span");
+          cat.className = "badge badge-soft";
+          cat.textContent = op.category;
+
+          meta.append(label, badge, cat);
+          main.appendChild(meta);
+        } else {
+          const placeholder = document.createElement("div");
+          placeholder.className = "slot-placeholder";
+          placeholder.textContent = "Operation hier ablegen oder aus Bibliothek wählen";
+          main.appendChild(placeholder);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "slot-actions";
+
+        const clearBtn = document.createElement("button");
+        clearBtn.className = "icon-btn danger";
+        clearBtn.title = "Slot leeren";
+        clearBtn.innerHTML = '<span class="icon">🗑️</span>';
+        clearBtn.addEventListener("click", () => {
+          kanalSlots[i] = null;
+          renderSlots();
+          renderPlan();
+        });
+
+        actions.appendChild(clearBtn);
+
+        container.append(idx, main, actions);
+        list.appendChild(container);
+      }
+    }
+
+    function onSlotDragOver(e) {
+      e.preventDefault();
+      this.classList.add("drag-over");
+    }
+
+    function onSlotDragLeave(e) {
+      this.classList.remove("drag-over");
+    }
+
+    function onSlotDrop(e) {
+      e.preventDefault();
+      this.classList.remove("drag-over");
+      const opId = e.dataTransfer.getData("text/plain");
+      if (!opId) return;
+      const idx = Number(this.dataset.index);
+      const kanalSlots = state.slots[state.currentKanal];
+
+      // Falls noch keine Zeile existiert, erweitern
+      while (kanalSlots.length <= idx) {
+        kanalSlots.push(null);
+      }
+      kanalSlots[idx] = opId;
+      renderSlots();
+      renderPlan();
+    }
+
+    // --- Render: Library -------------------------------------------------
+
+    function renderLibraryFilters() {
+      const container = $("#libraryFilters");
+      container.innerHTML = "";
+
+      state.categories.forEach((cat) => {
+        const pill = document.createElement("button");
+        pill.type = "button";
+        pill.className =
+          "filter-pill" + (state.activeCategory === cat ? " active" : "");
+        pill.textContent = cat === "Alle" ? "Alle Kategorien" : cat + " Bearbeitung";
+        pill.addEventListener("click", () => {
+          state.activeCategory = cat;
+          renderLibraryFilters();
+          renderLibraryList();
+        });
+        container.appendChild(pill);
+      });
+    }
+
+    function renderLibraryList() {
+      const list = $("#libraryList");
+      list.innerHTML = "";
+
+      let ops = state.library;
+      if (state.activeCategory !== "Alle") {
+        ops = ops.filter((op) => op.category === state.activeCategory);
+      }
+
+      if (!ops.length) {
+        const empty = document.createElement("div");
+        empty.className = "library-empty";
+        empty.textContent = "Keine Operationen in dieser Kategorie.";
+        list.appendChild(empty);
+        return;
+      }
+
+      ops.forEach((op) => {
+        const card = document.createElement("div");
+        card.className = "op-card";
+        card.setAttribute("draggable", "true");
+        card.dataset.opId = op.id;
+
+        card.addEventListener("dragstart", (e) => {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", op.id);
+        });
+
+        // Klick auf Karte -> erste freie Zeile im aktuellen Kanal
+        card.addEventListener("click", (e) => {
+          // Klick auf Buttons ignorieren
+          if (e.target.closest("button")) return;
+          assignOpToFirstFreeSlot(op.id);
+        });
+
+        const title = document.createElement("div");
+        title.className = "op-title";
+        title.textContent = op.name;
+
+        const footer = document.createElement("div");
+        footer.className = "op-footer";
+
+        const meta = document.createElement("div");
+        meta.className = "op-meta";
+
+        const badgeSp = document.createElement("span");
+        badgeSp.className =
+          "badge " + (op.spindle === "SP4" ? "badge-sp4" : "badge-sp3");
+        badgeSp.textContent = op.spindle;
+
+        const badgeCat = document.createElement("span");
+        badgeCat.className = "badge badge-soft";
+        badgeCat.textContent = op.category;
+
+        meta.append(badgeSp, badgeCat);
+
+        const btns = document.createElement("div");
+
+        const editBtn = document.createElement("button");
+        editBtn.type = "button";
+        editBtn.className = "icon-btn";
+        editBtn.title = "Bearbeiten";
+        editBtn.innerHTML = '<span class="icon">✏️</span>';
+        editBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          editOperation(op.id);
+        });
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "icon-btn danger";
+        delBtn.title = "Löschen";
+        delBtn.innerHTML = '<span class="icon">🗑️</span>';
+        delBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          deleteOperation(op.id);
+        });
+
+        btns.append(editBtn, delBtn);
+        footer.append(meta, btns);
+
+        card.append(title, footer);
+        list.appendChild(card);
+      });
+    }
+
+    function assignOpToFirstFreeSlot(opId) {
+      const kanalSlots = state.slots[state.currentKanal];
+      let index = kanalSlots.findIndex((v) => v === null);
+      if (index === -1) {
+        kanalSlots.push(null);
+        index = kanalSlots.length - 1;
+      }
+      kanalSlots[index] = opId;
+      renderSlots();
+      renderPlan();
+    }
+
+    function editOperation(id) {
+      const op = getOperationById(id);
+      if (!op) return;
+
+      const newName = prompt("Neuer Name für die Operation:", op.name);
+      if (!newName) return;
+
+      const newSpindle =
+        prompt('Spindel eingeben: "SP3" oder "SP4"', op.spindle) || op.spindle;
+      const normalizedSp = newSpindle.toUpperCase().trim();
+      if (normalizedSp !== "SP3" && normalizedSp !== "SP4") {
+        alert("Ungültige Spindel – erwartet SP3 oder SP4.");
+        return;
+      }
+
+      const newCat =
+        prompt(
+          'Kategorie (Außen, Innen, Radial, Axial):',
+          op.category
+        ) || op.category;
+
+      op.name = newName.trim();
+      op.spindle = normalizedSp;
+      op.category = newCat.trim() || op.category;
+
+      renderLibraryList();
+      renderSlots();
+      renderPlan();
+    }
+
+    function deleteOperation(id) {
+      if (!confirm("Operation wirklich löschen?")) return;
+
+      // Aus Slots entfernen
+      ["1", "2"].forEach((kanal) => {
+        state.slots[kanal] = state.slots[kanal].map((slotId) =>
+          slotId === id ? null : slotId
+        );
+      });
+
+      state.library = state.library.filter((op) => op.id !== id);
+      renderLibraryList();
+      renderSlots();
+      renderPlan();
+    }
+
+    function initAddOperationForm() {
+      const form = $("#addOpForm");
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = $("#opNameInput").value.trim();
+        if (!name) return;
+
+        const spindle = $("#opSpindleSelect").value;
+        const category = $("#opCategorySelect").value;
+
+        state.library.push({
+          id: "op_" + state.nextOpId++,
+          name,
+          spindle,
+          category,
+        });
+
+        form.reset();
+        $("#opSpindleSelect").value = "SP4";
+        $("#opCategorySelect").value = "Außen";
+
+        renderLibraryList();
+      });
+    }
+
+    // --- Render: Plan ----------------------------------------------------
+
+    function renderPlan() {
+      const table = $("#planTable");
+      const slots1 = state.slots["1"];
+      const slots2 = state.slots["2"];
+      const rowCount = Math.max(slots1.length, slots2.length, MIN_SLOTS);
+
+      let html = "";
+      html += "<thead>";
+      html += "<tr>";
+      html += '<th class="plan-row-index"></th>';
+      html +=
+        '<th colspan="2" class="th-group">Revolver – oben Kanal 1 · 1000.MPF</th>';
+      html +=
+        '<th colspan="2" class="th-group">Revolver – unten Kanal 2 · 2000.MPF</th>';
+      html += "</tr>";
+      html += "<tr>";
+      html += '<th class="plan-row-index"></th>';
+      html += '<th class="sp3-head">Spindel 3</th>';
+      html += '<th class="sp4-head">Spindel 4</th>';
+      html += '<th class="sp3-head">Spindel 3</th>';
+      html += '<th class="sp4-head">Spindel 4</th>';
+      html += "</tr>";
+      html += "</thead>";
+      html += "<tbody>";
+
+      for (let i = 0; i < rowCount; i++) {
+        const op1Id = slots1[i] ?? null;
+        const op2Id = slots2[i] ?? null;
+        const op1 = op1Id ? getOperationById(op1Id) : null;
+        const op2 = op2Id ? getOperationById(op2Id) : null;
+
+        const c1sp3 =
+          op1 && op1.spindle === "SP3" ? op1.name : "";
+        const c1sp4 =
+          op1 && op1.spindle === "SP4" ? op1.name : "";
+        const c2sp3 =
+          op2 && op2.spindle === "SP3" ? op2.name : "";
+        const c2sp4 =
+          op2 && op2.spindle === "SP4" ? op2.name : "";
+
+        html += "<tr>";
+        html += `<td class="plan-row-index">${i + 1}</td>`;
+        html += `<td class="plan-cell">${c1sp3}</td>`;
+        html += `<td class="plan-cell">${c1sp4}</td>`;
+        html += `<td class="plan-cell">${c2sp3}</td>`;
+        html += `<td class="plan-cell">${c2sp4}</td>`;
+        html += "</tr>";
+      }
+
+      html += "</tbody>";
+      table.innerHTML = html;
+    }
+
+    // --- Init ------------------------------------------------------------
+
+    function initAddSlotButton() {
+      $("#addSlotBtn").addEventListener("click", () => {
+        const kanalSlots = state.slots[state.currentKanal];
+        kanalSlots.push(null);
+        renderSlots();
+        renderPlan();
+      });
+    }
+
+    function init() {
+      createDefaultLibrary();
+      initKanalSwitcher();
+      initAddSlotButton();
+      initAddOperationForm();
+      renderSlots();
+      renderLibraryFilters();
+      renderLibraryList();
+      renderPlan();
+    }
+
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
