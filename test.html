@@ -19,9 +19,7 @@
       --split-red: #dc2626;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -83,9 +81,7 @@
       box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
     }
 
-    header {
-      margin-bottom: 8px;
-    }
+    header { margin-bottom: 8px; }
     header .subtitle {
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -122,42 +118,30 @@
       color: #4b5563;
     }
 
-    /* Spindle toggle */
+    /* Kanal toggle (вместо SP4/SP3) */
 
-    .spindle-toggle {
+    .kanal-toggle {
       display: flex;
-      gap: 4px;
+      gap: 6px;
       padding: 6px 8px;
       border-bottom: 1px solid var(--border);
       background: #f9fafb;
       overflow-x: auto;
     }
-    .spindle-toggle-btn {
+    .kanal-toggle-btn {
       border-radius: 999px;
-      padding: 3px 8px;
+      padding: 4px 10px;
       border: 1px solid var(--border);
       background: #ffffff;
       font-size: 10px;
       cursor: pointer;
       white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
     }
-    .spindle-toggle-btn.active {
+    .kanal-toggle-btn.active {
       background: #0f172a;
       color: #ffffff;
       border-color: #0f172a;
     }
-    .spindle-color-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-    }
-    .spindle-color-sp4 { background: var(--sp4); }
-    .spindle-color-sp3 { background: var(--sp3); }
-    .spindle-color-dummy1 { background: var(--dummy1); }
-    .spindle-color-dummy2 { background: var(--dummy2); }
 
     /* Plan table */
 
@@ -168,6 +152,7 @@
       background: #e5e7eb;
       border-bottom: 1px solid var(--border);
       font-size: 11px;
+      grid-template-columns: 40px repeat(4, minmax(0, 1fr));
     }
     .plan-header-cell {
       padding: 6px 4px;
@@ -193,6 +178,7 @@
 
     .plan-body-row {
       display: grid;
+      grid-template-columns: 40px repeat(4, minmax(0, 1fr));
       border-top: 1px solid #f3f4f6;
       font-size: 11px;
       background: #fff;
@@ -235,12 +221,26 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .plan-cell-meta {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      margin-left: 4px;
+    }
     .plan-cell-category {
-      margin-left: 6px;
       font-size: 9px;
       text-transform: uppercase;
       color: #9ca3af;
     }
+    .plan-cell-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .plan-cell-badge.sp4 { border-color: var(--sp4); color: var(--sp4); }
+    .plan-cell-badge.sp3 { border-color: var(--sp3); color: var(--sp3); }
     .plan-cell-clear {
       position: absolute;
       top: 4px;
@@ -388,9 +388,6 @@
       margin-bottom: 4px;
       font-weight: 600;
     }
-    .program-header span {
-      white-space: nowrap;
-    }
 
     .program-grid-header-row,
     .program-grid-row {
@@ -519,6 +516,29 @@
       resize: vertical;
     }
 
+    .spindle-radio-group {
+      display: inline-flex;
+      gap: 6px;
+    }
+    .spindle-radio-btn {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #f9fafb;
+      cursor: pointer;
+    }
+    .spindle-radio-btn.active-sp4 {
+      border-color: var(--sp4);
+      color: var(--sp4);
+      background: #ecfdf3;
+    }
+    .spindle-radio-btn.active-sp3 {
+      border-color: var(--sp3);
+      color: var(--sp3);
+      background: #eff6ff;
+    }
+
     @media (min-width: 640px) {
       .app { padding-top: 16px; }
     }
@@ -546,8 +566,25 @@
 
     <!-- PLAN -->
     <section class="card plan" style="margin-bottom: 10px;">
-      <div class="spindle-toggle" id="spindle-toggle"></div>
-      <div class="plan-header" id="plan-header"></div>
+      <!-- переключатель каналов -->
+      <div class="kanal-toggle" id="kanal-toggle"></div>
+
+      <!-- заголовок с Dummy/SP4/SP3/Dummy2 -->
+      <div class="plan-header">
+        <div class="plan-header-cell" style="color:#9ca3af;">#</div>
+        <div class="plan-header-cell">
+          <span class="plan-header-label dummy1-label">Dummy 1</span>
+        </div>
+        <div class="plan-header-cell">
+          <span class="plan-header-label sp4-label">Spindel 4</span>
+        </div>
+        <div class="plan-header-cell">
+          <span class="plan-header-label sp3-label">Spindel 3</span>
+        </div>
+        <div class="plan-header-cell">
+          <span class="plan-header-label dummy2-label">Dummy 2</span>
+        </div>
+      </div>
       <div id="plan-body"></div>
     </section>
 
@@ -618,6 +655,13 @@
           </select>
         </div>
         <div class="field">
+          <label class="field-label">Spindel Badge</label>
+          <div class="spindle-radio-group">
+            <button type="button" id="spindle-badge-sp4" class="spindle-radio-btn">SP4</button>
+            <button type="button" id="spindle-badge-sp3" class="spindle-radio-btn">SP3</button>
+          </div>
+        </div>
+        <div class="field">
           <label class="field-label">Remark</label>
           <textarea id="field-remark" class="field-textarea"></textarea>
         </div>
@@ -638,11 +682,11 @@
       { id: "AXIAL", label: "Axial" }
     ];
 
-    const spindles = [
-      { id: "SP4", label: "SP4", labelClass: "sp4-label", dotClass: "spindle-color-sp4" },
-      { id: "SP3", label: "SP3", labelClass: "sp3-label", dotClass: "spindle-color-sp3" },
-      { id: "DUMMY1", label: "Dummy 1", labelClass: "dummy1-label", dotClass: "spindle-color-dummy1" },
-      { id: "DUMMY2", label: "Dummy 2", labelClass: "dummy2-label", dotClass: "spindle-color-dummy2" }
+    const allSpindles = [
+      { id: "DUMMY1", label: "Dummy 1" },
+      { id: "SP4", label: "Spindel 4" },
+      { id: "SP3", label: "Spindel 3" },
+      { id: "DUMMY2", label: "Dummy 2" },
     ];
 
     const rows = [1, 2, 3, 4, 5, 6];
@@ -656,11 +700,11 @@
       { id: "op6", name: "Axial drilling", category: "AXIAL", description: "" },
     ];
 
-    // plan[row][spindleId] = { operationId, kanal } | null
+    // plan[row][spindleId] = { operationId, kanal, spindleBadge } | null
     const plan = {};
     rows.forEach(row => {
       plan[row] = {};
-      spindles.forEach(sp => {
+      allSpindles.forEach(sp => {
         plan[row][sp.id] = null;
       });
     });
@@ -668,10 +712,15 @@
     let activeCategory = "AUSSEN";
     let searchTerm = "";
     let dragData = null; // { type: "LIB_OP" | "PLAN_OP", operationId?, row?, spindleId? }
-    let activeSpindleView = "ALL"; // "ALL" | one of spindle ids
-    let editingSlot = null; // { row, spindleId }
 
-    // Program table config (как на бумаге)
+    // какой канал сейчас редактируем 1 / 2
+    let activeKanalView = 1;
+
+    // state модалки
+    let editingSlot = null; // { row, spindleId }
+    let editorSpindleBadge = "SP4";
+
+    // Program table config (бумажная таблица)
     const programColumns = [
       { kanal: 1, spindleId: "DUMMY1", label: "Dummy 1" },
       { kanal: 1, spindleId: "SP4", label: "Spindel 4" },
@@ -682,12 +731,11 @@
     ];
 
     // ---------- DOM ----------
-    const planHeaderEl = document.getElementById("plan-header");
+    const kanalToggleEl = document.getElementById("kanal-toggle");
     const planBodyEl = document.getElementById("plan-body");
     const libraryGridEl = document.getElementById("library-grid");
     const categoryTabsEl = document.getElementById("category-tabs");
     const searchInputEl = document.getElementById("search-input");
-    const spindleToggleEl = document.getElementById("spindle-toggle");
 
     const programGridHeaderEl = document.getElementById("program-grid-header");
     const programGridBodyEl = document.getElementById("program-grid-body");
@@ -701,57 +749,36 @@
     const modalCloseBtn = document.getElementById("modal-close-btn");
     const modalCancelBtn = document.getElementById("modal-cancel-btn");
     const modalSaveBtn = document.getElementById("modal-save-btn");
+    const spindleBadgeSp4Btn = document.getElementById("spindle-badge-sp4");
+    const spindleBadgeSp3Btn = document.getElementById("spindle-badge-sp3");
 
-    // ---------- UTILS ----------
+    // ---------- KANAL TOGGLE ----------
 
-    function getDefaultKanalForSpindle(spindleId) {
-      if (spindleId === "DUMMY1") return 1;
-      if (spindleId === "DUMMY2") return 2;
-      return 1;
-    }
+    function renderKanalToggle() {
+      kanalToggleEl.innerHTML = "";
 
-    // ---------- SPINDLE TOGGLE ----------
-
-    function renderSpindleToggle() {
-      spindleToggleEl.innerHTML = "";
-
-      // All
-      const allBtn = document.createElement("button");
-      allBtn.className = "spindle-toggle-btn" + (activeSpindleView === "ALL" ? " active" : "");
-      allBtn.textContent = "All";
-      allBtn.addEventListener("click", () => {
-        activeSpindleView = "ALL";
-        renderSpindleToggle();
+      const btn1 = document.createElement("button");
+      btn1.className = "kanal-toggle-btn" + (activeKanalView === 1 ? " active" : "");
+      btn1.textContent = "Schlitten 1 / Kanal 1 — 1000.MPF";
+      btn1.addEventListener("click", () => {
+        activeKanalView = 1;
+        renderKanalToggle();
         renderPlan();
       });
-      spindleToggleEl.appendChild(allBtn);
+      kanalToggleEl.appendChild(btn1);
 
-      spindles.forEach(sp => {
-        const btn = document.createElement("button");
-        btn.className = "spindle-toggle-btn" + (activeSpindleView === sp.id ? " active" : "");
-        const dot = document.createElement("span");
-        dot.className = "spindle-color-dot " + sp.dotClass;
-        const label = document.createElement("span");
-        label.textContent = sp.label;
-        btn.appendChild(dot);
-        btn.appendChild(label);
-
-        btn.addEventListener("click", () => {
-          activeSpindleView = sp.id;
-          renderSpindleToggle();
-          renderPlan();
-        });
-
-        spindleToggleEl.appendChild(btn);
+      const btn2 = document.createElement("button");
+      btn2.className = "kanal-toggle-btn" + (activeKanalView === 2 ? " active" : "");
+      btn2.textContent = "Schlitten 2 / Kanal 2 — 2000.MPF";
+      btn2.addEventListener("click", () => {
+        activeKanalView = 2;
+        renderKanalToggle();
+        renderPlan();
       });
+      kanalToggleEl.appendChild(btn2);
     }
 
-    function getVisibleSpindles() {
-      if (activeSpindleView === "ALL") return spindles;
-      return spindles.filter(s => s.id === activeSpindleView);
-    }
-
-    // ---------- PROGRAM TABLE RENDER ----------
+    // ---------- PROGRAM TABLE ----------
 
     function renderProgramTable() {
       // header row
@@ -769,7 +796,7 @@
 
       programGridHeaderEl.appendChild(headerRow);
 
-      // body rows
+      // body
       programGridBodyEl.innerHTML = "";
       rows.forEach(row => {
         const rowEl = document.createElement("div");
@@ -811,50 +838,21 @@
       });
     }
 
-    // ---------- PLAN RENDER ----------
+    // ---------- PLAN ----------
 
     function renderPlan() {
-      const visibleSpindles = getVisibleSpindles();
-
-      // header
-      planHeaderEl.innerHTML = "";
-      const headerRow = document.createElement("div");
-      headerRow.className = "plan-header";
-      headerRow.style.gridTemplateColumns =
-        "40px repeat(" + visibleSpindles.length + ", minmax(0, 1fr))";
-
-      const indexHeader = document.createElement("div");
-      indexHeader.className = "plan-header-cell";
-      indexHeader.style.color = "#9ca3af";
-      indexHeader.textContent = "#";
-      headerRow.appendChild(indexHeader);
-
-      visibleSpindles.forEach(sp => {
-        const cell = document.createElement("div");
-        cell.className = "plan-header-cell";
-        const labelSpan = document.createElement("span");
-        labelSpan.className = "plan-header-label " + sp.labelClass;
-        labelSpan.textContent = sp.label;
-        cell.appendChild(labelSpan);
-        headerRow.appendChild(cell);
-      });
-
-      planHeaderEl.appendChild(headerRow);
-
-      // body
       planBodyEl.innerHTML = "";
+
       rows.forEach(row => {
         const rowEl = document.createElement("div");
         rowEl.className = "plan-body-row";
-        rowEl.style.gridTemplateColumns =
-          "40px repeat(" + visibleSpindles.length + ", minmax(0, 1fr))";
 
         const indexEl = document.createElement("div");
         indexEl.className = "plan-row-index";
         indexEl.textContent = row;
         rowEl.appendChild(indexEl);
 
-        visibleSpindles.forEach(sp => {
+        allSpindles.forEach(sp => {
           const cellEl = document.createElement("div");
           cellEl.className = "plan-cell";
           cellEl.dataset.row = row;
@@ -864,8 +862,8 @@
           inner.className = "plan-cell-inner";
 
           const assign = plan[row][sp.id];
-          const opId = assign && assign.operationId;
-          const op = operations.find(o => o.id === opId);
+          const opId = assign && assign.kanal === activeKanalView ? assign.operationId : null;
+          const op = opId ? operations.find(o => o.id === opId) : null;
 
           if (op) {
             inner.classList.add("filled");
@@ -885,18 +883,34 @@
           inner.appendChild(textSpan);
 
           if (op) {
+            const meta = document.createElement("div");
+            meta.className = "plan-cell-meta";
+
             const catSpan = document.createElement("span");
             catSpan.className = "plan-cell-category";
             catSpan.textContent = op.category;
-            inner.appendChild(catSpan);
+            meta.appendChild(catSpan);
+
+            // бейдж SP4/SP3 (виден только для реальных SP4/SP3)
+            if (sp.id === "SP4" || sp.id === "SP3") {
+              const badge = document.createElement("span");
+              badge.className =
+                "plan-cell-badge " + (sp.id === "SP4" ? "sp4" : "sp3");
+              badge.textContent = sp.id;
+              meta.appendChild(badge);
+            }
+
+            inner.appendChild(meta);
 
             const clearBtn = document.createElement("div");
             clearBtn.className = "plan-cell-clear";
             clearBtn.textContent = "×";
             clearBtn.addEventListener("click", (e) => {
               e.stopPropagation();
-              plan[row][sp.id] = null;
-              renderPlan();
+              if (assign && assign.kanal === activeKanalView) {
+                plan[row][sp.id] = null;
+                renderPlan();
+              }
             });
             cellEl.appendChild(clearBtn);
           }
@@ -926,7 +940,6 @@
         planBodyEl.appendChild(rowEl);
       });
 
-      // каждая перерисовка плана обновляет и таблицу 1000/2000
       renderProgramTable();
     }
 
@@ -944,6 +957,7 @@
         plan[row][spindleId] = {
           operationId: dragData.operationId,
           kanal: getDefaultKanalForSpindle(spindleId),
+          spindleBadge: spindleId === "SP3" ? "SP3" : "SP4",
         };
       }
 
@@ -961,7 +975,13 @@
       renderPlan();
     }
 
-    // ---------- LIBRARY RENDER ----------
+    function getDefaultKanalForSpindle(spindleId) {
+      if (spindleId === "DUMMY1") return 1;
+      if (spindleId === "DUMMY2") return 2;
+      return activeKanalView; // SP4 / SP3 по текущему каналу
+    }
+
+    // ---------- LIBRARY ----------
 
     function renderCategoryTabs() {
       categoryTabsEl.innerHTML = "";
@@ -1040,12 +1060,23 @@
 
     // ---------- MODAL / EDITOR ----------
 
+    function setSpindleBadgeButtons(badge) {
+      editorSpindleBadge = badge;
+      spindleBadgeSp4Btn.className = "spindle-radio-btn" +
+        (badge === "SP4" ? " active-sp4" : "");
+      spindleBadgeSp3Btn.className = "spindle-radio-btn" +
+        (badge === "SP3" ? " active-sp3" : "");
+    }
+
+    spindleBadgeSp4Btn.addEventListener("click", () => setSpindleBadgeButtons("SP4"));
+    spindleBadgeSp3Btn.addEventListener("click", () => setSpindleBadgeButtons("SP3"));
+
     function openEditor(row, spindleId) {
       editingSlot = { row, spindleId };
 
       const assign = plan[row][spindleId];
-      const opId = assign && assign.operationId;
-      const op = operations.find(o => o.id === opId);
+      const opId = assign ? assign.operationId : null;
+      const op = opId ? operations.find(o => o.id === opId) : null;
 
       modalTitleMainEl.textContent = "Row " + row + ", " + spindleId;
       fieldNameEl.value = op ? op.name : "";
@@ -1055,12 +1086,27 @@
       let kanal = assign ? assign.kanal : getDefaultKanalForSpindle(spindleId);
       fieldKanalEl.value = String(kanal);
 
-      // Dummy шпиндели жёстко привязаны к каналу
+      // Dummy шпиндели фиксированы
       if (spindleId === "DUMMY1" || spindleId === "DUMMY2") {
         fieldKanalEl.disabled = true;
         fieldKanalEl.value = String(getDefaultKanalForSpindle(spindleId));
       } else {
         fieldKanalEl.disabled = false;
+      }
+
+      // бейдж SP4/SP3
+      if (spindleId === "SP4" || spindleId === "SP3") {
+        const badge = assign && assign.spindleBadge
+          ? assign.spindleBadge
+          : spindleId;
+        setSpindleBadgeButtons(badge);
+        spindleBadgeSp4Btn.disabled = false;
+        spindleBadgeSp3Btn.disabled = false;
+      } else {
+        // для Dummy бейджи неактивны
+        setSpindleBadgeButtons("SP4");
+        spindleBadgeSp4Btn.disabled = true;
+        spindleBadgeSp3Btn.disabled = true;
       }
 
       modalBackdropEl.style.display = "flex";
@@ -1087,7 +1133,7 @@
       if (editingSlot.spindleId === "DUMMY1") kanal = 1;
       if (editingSlot.spindleId === "DUMMY2") kanal = 2;
 
-      // операция как шаблон
+      // операция-шаблон
       let op = operations.find(o => o.name.toLowerCase() === name.toLowerCase());
       if (!op) {
         op = {
@@ -1103,9 +1149,23 @@
         op.description = desc;
       }
 
-      plan[editingSlot.row][editingSlot.spindleId] = {
+      let targetSpindleId = editingSlot.spindleId;
+
+      // если выбрали другой бейдж — перекидываем между SP4/SP3
+      if (editingSlot.spindleId === "SP4" || editingSlot.spindleId === "SP3") {
+        if (editorSpindleBadge === "SP4") targetSpindleId = "SP4";
+        if (editorSpindleBadge === "SP3") targetSpindleId = "SP3";
+      }
+
+      // очистить старый слот если поменялся шпиндель
+      if (targetSpindleId !== editingSlot.spindleId) {
+        plan[editingSlot.row][editingSlot.spindleId] = null;
+      }
+
+      plan[editingSlot.row][targetSpindleId] = {
         operationId: op.id,
-        kanal
+        kanal,
+        spindleBadge: editorSpindleBadge
       };
 
       closeEditor();
@@ -1129,7 +1189,7 @@
     });
 
     // ---------- INIT ----------
-    renderSpindleToggle();
+    renderKanalToggle();
     renderPlan();
     renderCategoryTabs();
     renderLibrary();
